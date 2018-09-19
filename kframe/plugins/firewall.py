@@ -92,11 +92,11 @@ class Firewall(Plugin):
 	def get_blacklist(self):
 		return self._black
 
-if __name__ == '__main__':
-	fr = Firewall(None)
+LOAD_SCHEME = {
+	"target":Firewall,
+	"module":False,
+	"arg":(),
+	"kwargs":{},
+	"dependes":[]
+}
 
-	for i in range(20):
-		print(" - %s - "%i)
-		print("banned: %s"%fr.banned("127.0.0.1",code=404))
-		print("Blacklist: %s"%(fr.get_blacklist()))
-		time.sleep(1.0)

@@ -48,3 +48,11 @@ class Mchunk(Plugin):
 	#
 	def get(self):
 		return self._data
+
+LOAD_SCHEME = {
+	"target":Mchunk,
+	"module":False,
+	"arg":(),
+	"kwargs":{},
+	"dependes":[]
+}

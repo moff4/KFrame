@@ -147,3 +147,11 @@ class SQL(Plugin):
 	#
 	def stop(self,wait=True):
 		pass
+
+LOAD_SCHEME = {
+	"target":SQL,
+	"module":False,
+	"arg":(),
+	"kwargs":{},
+	"dependes":[]
+}

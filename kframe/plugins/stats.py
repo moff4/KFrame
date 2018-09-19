@@ -96,3 +96,11 @@ class Stats(Plugin):
 		for key in self._stats:
 			d[key] = self._export(key)
 		return d
+
+LOAD_SCHEME = {
+	"target":Stats,
+	"module":False,
+	"arg":(),
+	"kwargs":{},
+	"dependes":[]
+}

@@ -99,12 +99,13 @@ class Parent:
 	def print_errmsg(self):
 		_type = "error" if self.FATAL else "notify"
 		for i in self.errmsg:
-			self.log(i,_type="\t"+_type)
+			self.log("\t"+i,_type=_type)
 
 	#
 	# start each plugins
 	#
 	def run(self):
+		self("PARENT: start plugins",_type="debug")
 		for i in self.plugins:
 			self.plugins[i].start()
 		while self.RUN_FLAG:
@@ -235,8 +236,9 @@ class Parent:
 	# start program
 	#
 	def start(self):
+		self.print_errmsg()
 		if self.FATAL:
-			self.print_errmsg()
+			return
 		else:
 			try:
 				self.run() 

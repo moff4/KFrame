@@ -130,3 +130,12 @@ class Cache(plugin):
 			return len(self._d[nodename][0])
 		else:
 			return 0
+
+LOAD_SCHEME = {
+	"target":Cache,
+	"module":True,
+	"arg":(),
+	"kwargs":{},
+	"dependes":[]
+}
+

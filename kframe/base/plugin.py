@@ -6,7 +6,7 @@ class Plugin:
 			self.parent = parent
 			self.name = plugin_name
 			
-			self.FATAL = True
+			self.FATAL = False
 			self.errmsg = "initialized successfully - %s"%(self.name)
 
 			if 'init' in dir(self):
@@ -45,3 +45,17 @@ class Plugin:
 	#
 	def __contains__(self,key):
 		return key in self.parent
+
+	#
+	# CAN BE OVERLOADED
+	# method to start you main job
+	#
+	def start(self):
+		pass
+	
+	#
+	# CAN BE OVERLOADED
+	# method to stop you main job
+	#
+	def stop(self,wait=True):
+		pass
