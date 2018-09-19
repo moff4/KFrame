@@ -64,7 +64,7 @@ class Parent:
 			self.log("Load priority queue: %s"%(az),_type="debug")
 			for i in az:
 				try:
-					a ,b = self.init_plugin(key=i,plugin_name=i,args=self.plugin_t[i]['args'])
+					a ,b = self.init_plugin(key=i,plugin_name=i,args=self.plugin_t[i]['args'],kwargs=self.plugin_t[i]['kwargs'])
 					self.FATAL = self.FATAL or not a
 					self.errmsg.append(b)
 				except Exception as e:
@@ -80,13 +80,13 @@ class Parent:
 	# and save it with key
 	# return True on success , extra msg (errmsg) 
 	#
-	def init_plugin(self,key,plugin_name,args):
+	def init_plugin(self,key,plugin_name,args,kwargs):
 		try:
 			if self.plugin_t[key]['module']:
 				self.modules[key] = self.plugin_t[plugin_name]['target']
 				return True , "\t%s loaded successfully"%(plugin_name)
 			else:
-				self.plugins[key] = self.plugin_t[plugin_name]['target'](self,plugin_name,args)
+				self.plugins[key] = self.plugin_t[plugin_name]['target'](self,plugin_name,args,kwargs)
 				return not self.plugins[key].FATAL , self.plugins[key].errmsg
 		except Exception as e:
 			e = Trace()
@@ -141,6 +141,7 @@ class Parent:
 				"target"	: kwargs['target'],
 				"module"    : kwargs['module'],
 				"args"		: kwargs['args'] if 'args' in kwargs else (),
+				"kwargs"	: kwargs['kwargs'] if 'kwargs' in kwargs else {},
 				"dependes"	: kwargs['dependes'] if 'dependes' in kwargs else [],
 			}
 

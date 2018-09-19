@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 class Plugin:
-	def __init__(self,parent,plugin_name,args):
+	def __init__(self,parent,plugin_name,args,kwargs):
 		try:
 			self.parent = parent
 			self.name = plugin_name
@@ -10,7 +10,7 @@ class Plugin:
 			self.errmsg = "initialized successfully - %s"%(self.name)
 
 			if 'init' in dir(self):
-				self.init(*args)
+				self.init(*args,**kwargs)
 
 		except Exception as e:
 			self.FATAL = True

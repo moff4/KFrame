@@ -1,10 +1,11 @@
-#!/usr/bin/etc python3
+#!/usr/bin/env python3
 
-import kframe as kf
+from kframe.base.parent import Parent
+from kframe.plugins.cookie import Cookies
 import conf
 
-p = kf.Parent(conf)
-p.add_plugin(key="sql",target=kf.plugins.SQL,module=False,args=(conf.SQL,))
+p = Parent(conf)
+p.add_plugin(key="sql",target=Cookies,module=True,args=())
 p.init_plugins()
 p.start()
 p.stop()
