@@ -15,15 +15,19 @@ class Parent:
 			
 			# variables
 			self.debug = '--debug' in sys.argv[1:]
-
-			self.plugin_t = {} if plugins is None else plugins
-				
 			self.plugins = {}
 			self.modules = {}
-
 			self.RUN_FLAG = True # U can use this falg as a signal to stop program
 
 			self.log('---------------------------------------------')
+
+			self.plugin_t = {} if plugins is None else plugins
+			for pl in self.plugin_t:
+				for i in ['target','module']:
+					if i not in self.plugin_t[pl]:
+						raise RuntimeError("%s plugin does not has propery %s"%(pl,i))
+				
+
 
 			self.FATAL = False
 			self.errmsg = []
@@ -184,7 +188,13 @@ class Parent:
 	def __contains__(self,key):
 		return key in self.plugins or key in self.modules
 
-				
+	#
+	# return Class/Module for the key
+	# NOT the initialized object!
+	# or None in case of nothing was found
+	#
+	def get_class(self,key):
+		return self.plugin_t[key]['target'] if key in self.plugin_t else None
 
 	#
 	# log function
