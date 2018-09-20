@@ -9,15 +9,28 @@ from traceback import format_exc as Trace
 # plugins - dict : key as str => dict { target -> module/class, dependes -> list of key, module -> True if that's module, args -> tuple of args for plugins (optional) ]
 #
 class Parent:
-	def __init__(self,cfg,plugins=None):
+	def __init__(self,cfg,plugins=None,name="KFrame"):
 		try:
 			self.cfg = cfg
-			
+			self.name = name
+
 			# variables
 			self.debug = '--debug' in sys.argv[1:]
 			self.plugins = {}
 			self.modules = {}
 			self.RUN_FLAG = True # U can use this falg as a signal to stop program
+
+			self._argv_p = {}    # keep params and flags
+			self._argv_rules = {}# collected rules from all plugins
+			self._my_argvs = {
+				'-h' 		:{'critical':False,'description':"See this message again"},
+				'-?' 		:{'critical':False,'description':"See this message again"},
+				'--help'	:{'critical':False,'description':"See this message again"},
+				'--stdout' 	:{'critical':False,'description':"Extra print logs to stdout"},
+				'--debug' 	:{'critical':False,'description':"Verbose log"},
+				'--no-log' 	:{'critical':False,'description':"Do not save logs to log.file"},
+
+			}
 
 			self.log('---------------------------------------------')
 
@@ -27,15 +40,44 @@ class Parent:
 					if i not in self.plugin_t[pl]:
 						raise RuntimeError("%s plugin does not has propery %s"%(pl,i))
 				
-
-
 			self.FATAL = False
 			self.errmsg = []
-
 		except Exception as e:
 			e = Trace()
 			self.FATAL = True
 			self.errmsg = ["Parent init : %s"%(e)]
+
+	def collect_argv(self):
+		rules = {}
+		for i in self.plugins:
+			r = self.plugins[i].get_argv_rules()
+			for j in r:
+				if not j in rules:
+					rules[j] = r[j]
+				else:
+					rules[j]['critical'] = rules[j]['critical'] or r[j]['critical']
+		self._argv_rules = rules
+		self._argv_rules.update(self._my_argvs)
+
+	#
+	# parse argv according to plugin's rules
+	#
+	def parse_argv(self):
+		self.collect_argv()
+		l = list(filter(lambda x:self._argv_rules[x]['critical'],self._argv_rules.keys()))
+		for arg in sys.argv[1:]:
+			if '=' in arg:
+				key = arg.split('=')
+				value = arg[len(key)+1:]
+			else:
+				key = arg
+				value = True
+			self._argv_p[key] = value
+			if key in l:
+				l.pop(l.index(l))
+		if len(l) > 0:
+			self.FATAL = True
+			self.errmsg = ["Parent: parse-argv: not all critical params were passed : %s"%l]
 
 	#
 	# initialize plugins and modules
@@ -101,6 +143,27 @@ class Parent:
 		for i in self.errmsg:
 			self.log("\t"+i,_type=_type)
 
+	#
+	# print all expected 
+	#
+	def print_help(self):
+		def topic(name):
+
+			st = name
+			while len(st) < 20:
+				st = " %s "%st
+			st = '|%s|'%st
+			x = '-' if len(st)%2 else ''
+			return "".join([" " for i in range(16)]) + "+-------------------%s-+\n"%x \
+			+ "".join([" " for i in range(16)]) + st + "\n" \
+			+ "".join([" " for i in range(16)]) + "+-------------------%s-+\n"%x 
+		def insert_tabs(txt,tabs):
+			return "".join(list(map(lambda x: "".join(["\t" for i in range(tabs)]) + x,txt.split("\n"))))
+		st = topic(self.name) + "Flags:\n"
+		self.collect_argv()
+		for i in self._argv_rules:
+			st += "\t{key}\n{desc}{critical}\n\n".format(key=i,desc=insert_tabs(self._argv_rules[i]['description'],tabs=2),critical="\n\t\tCritical!" if self._argv_rules[i]['critical'] else "")
+		print(st)
 	#
 	# start each plugins
 	#
@@ -199,6 +262,14 @@ class Parent:
 		return self.plugin_t[key]['target'] if key in self.plugin_t else None
 
 	#
+	# return param's value if param was passed
+	# return True as bool if that's was flag
+	# else return None if nothing was passed
+	#
+	def get_param(self,key):
+		return self._argv_p[key] if key in self._argv_p else None
+
+	#
 	# log function
 	# st - message to save
 	# _type | sence
@@ -236,11 +307,15 @@ class Parent:
 	# start program
 	#
 	def start(self):
+		if '-h' in sys.argv[1:] or '-?' in sys.argv[1:] or '--help' in sys.argv[1:]:
+			self.print_help()
+			return
 		self.print_errmsg()
 		if self.FATAL:
 			return
 		else:
 			try:
+				self.parse_argv()
 				self.run() 
 			except Exception as e:
 				e = Trace()

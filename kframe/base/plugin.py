@@ -6,6 +6,8 @@ class Plugin:
 			self.parent = parent
 			self.name = plugin_name
 			
+			self._params = {}
+
 			self.FATAL = False
 			self.errmsg = "initialized successfully - %s"%(self.name)
 
@@ -15,6 +17,17 @@ class Plugin:
 		except Exception as e:
 			self.FATAL = True
 			self.errmsg = "%s: %s"%(self.name,e)
+
+	#
+	# export argv rules for Parent
+	#
+	def get_argv_rules(self):
+		return self._params
+
+
+	#==========================================================================
+	#                            USER API
+	#==========================================================================
 
 
 	#
@@ -59,3 +72,16 @@ class Plugin:
 	#
 	def stop(self,wait=True):
 		pass
+
+	#
+	# add expected key to storage
+	# flag as bool - True if we expect flag or False if param
+	# critical as bool - True if this param/flag is critical (default: False)
+	# description as str - some descrition for human (default: "")
+	#
+	def expect_argv(self,key,critical=False,description=""):
+		d = {
+			'critical':critical,
+			'description':description,
+		}
+		self._params[key] = d
