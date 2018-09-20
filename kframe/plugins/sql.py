@@ -148,7 +148,7 @@ class SQL(Plugin):
 	def stop(self,wait=True):
 		pass
 
-LOAD_SCHEME = {
+DEFAULT_LOAD_SCHEME = {
 	"target":SQL,
 	"module":False,
 	"arg":(),

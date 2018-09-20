@@ -6,11 +6,23 @@ from threading import Thread
 
 from ..base.plugin import Plugin
 
-class Cache(plugin):
-	def init(self,timeout=1.0):
+#
+# kwargs:
+#	timeout - interval of checking nodes for old rows ; default: 1.0
+#	save_file - filename for temporary buffer ; default: cache.json
+#
+class Cache(Plugin):
+	def init(self,**kwargs):
+		defaults = {
+			'timeout'		: 1.0,
+			'save_file'		: 'cache.json',
+		}
+		self.cfg = {}
+		for i in defaults:
+			self.cfg[i] = cfg[i] if i in kwargs else defaults[i]
 		self._d = {} # nodename -> [  cache as dict , timeout as float , filter as function : time.time() of add -> bool , autoclean ]
 		self._th = None
-		self.sem = {'cache':False}
+		self._run = True
 		self.load()
 	#==========================================================================
 	#                                 UTILS
@@ -21,14 +33,14 @@ class Cache(plugin):
 			data = {}
 			for i in self._d:
 				data[i] = {"d":self._d[i][0],"t":self._d[i][1],"a":self._d[i][3]}
-			open(self.parent.cfg.cache_save_file,"w").write(json.dumps(data))
+			open(self.cfg['save_file'],"w").write(json.dumps(data))
 		except Exception as e:
 			self("save temporary file: %s"%e,_type="warring")
 
 
 	def load(self):
 		try:
-			data = json.load(open(self.parent.cfg.cache_save_file))
+			data = json.load(open(self.cfg['save_file']))
 			for i in data:
 				self._d[i] = [ data[i]["d"] , data[i]["t"] , None , data[i]["a"]]
 		except Exception as e:
@@ -44,8 +56,8 @@ class Cache(plugin):
 
 	def _loop(self):
 		self("start loop",_type="debug")
-		while self.sem['cache']:
-			time.sleep(self.timeout)
+		while self._run:
+			time.sleep(self.cfg['timeout'])
 			self._clean()
 		self("stop loop",_type="debug")
 
@@ -53,14 +65,19 @@ class Cache(plugin):
 	#                                USER API
 	#==========================================================================
 
-	def start(self,arg={'cache':True}):
-		self.sem = arg
-		self.sem['cache'] = True
+	#
+	# overwrite
+	#
+	def start(self):
+		self._run = True
 		self._th = Thread(target=self._loop)
 		self._th.start()
 
+	#
+	# overwrite
+	#
 	def stop(self,wait=True):
-		self.sem['cache'] = False
+		self._run = False
 		if wait:
 			self._th.join()
 			self.save()
@@ -131,9 +148,9 @@ class Cache(plugin):
 		else:
 			return 0
 
-LOAD_SCHEME = {
+DEFAULT_LOAD_SCHEME = {
 	"target":Cache,
-	"module":True,
+	"module":False,
 	"arg":(),
 	"kwargs":{},
 	"dependes":[]

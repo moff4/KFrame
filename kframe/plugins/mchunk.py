@@ -49,7 +49,7 @@ class Mchunk(Plugin):
 	def get(self):
 		return self._data
 
-LOAD_SCHEME = {
+DEFAULT_LOAD_SCHEME = {
 	"target":Mchunk,
 	"module":False,
 	"arg":(),

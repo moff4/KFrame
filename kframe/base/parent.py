@@ -4,14 +4,21 @@ import time
 import sys
 from traceback import format_exc as Trace
 
+
+# filename for logs (str)
+LOG_FILE 	=	"log.txt"
+
+# how to show user time (str)
+SHOW_TIME_FORMAT = "%d.%m.%Y %H:%M:%S"
+
+
 #
 # cfg - module conf
 # plugins - dict : key as str => dict { target -> module/class, dependes -> list of key, module -> True if that's module, args -> tuple of args for plugins (optional) ]
 #
 class Parent:
-	def __init__(self,cfg,plugins=None,name="KFrame"):
+	def __init__(self,plugins=None,name="KFrame"):
 		try:
-			self.cfg = cfg
 			self.name = name
 
 			# variables
@@ -126,7 +133,7 @@ class Parent:
 		try:
 			if self.plugin_t[key]['module']:
 				self.modules[key] = self.plugin_t[plugin_name]['target']
-				return True , "\t%s loaded successfully"%(plugin_name)
+				return True , "loaded successfully - %s"%(plugin_name)
 			else:
 				self.plugins[key] = self.plugin_t[plugin_name]['target'](self,plugin_name,args,kwargs)
 				return not self.plugins[key].FATAL , self.plugins[key].errmsg
@@ -187,26 +194,24 @@ class Parent:
 	# -- must be --
 	#	key as str - how u wanna call it
 	#	target as class/module - smth that'll be kept here and maybe called
-	# 	module as bool -
 	# -- optional --
+	# 	module as bool - True if target is module ; otherwise target is plugin (default: False)
 	#	dependes as list of str - list of other plugins/modules that must be initialized before this one
 	#		ignored if kwagrs[module] == True
 	#		Default: empty list
-	#	args as tuple - tuple of arg that will be passed to init() (plugins only)
+	#	args as tuple - tuple of arg that will be passed to init() as *args (plugins only)
+	#	kwargs as dict - dict of arg that will be passed to init() as **kwargs (plugins only)
 	# return True if plugin/module added to list of all plugins/modules
 	# or False if not
 	#
-	def add_plugin(self,**kwargs):
+	def add_plugin(self,key,target,**kw):
 		try:
-			for i in ['key','target','module']:
-				if i not in kwargs:
-					return False , "Expected '%s'"%i
-			self.plugin_t[kwargs['key']] = {
-				"target"	: kwargs['target'],
-				"module"    : kwargs['module'],
-				"args"		: kwargs['args'] if 'args' in kwargs else (),
-				"kwargs"	: kwargs['kwargs'] if 'kwargs' in kwargs else {},
-				"dependes"	: kwargs['dependes'] if 'dependes' in kwargs else [],
+			self.plugin_t[key] = {
+				"target"	: target,
+				"module"    : kw['module'] if 'module' in kw else False,
+				"args"		: kw['args'] if 'args' in kw else (),
+				"kwargs"	: kw['kwargs'] if 'kwargs' in kw else {},
+				"dependes"	: kw['dependes'] if 'dependes' in kw else [],
 			}
 
 			return True , "Success"
@@ -289,11 +294,11 @@ class Parent:
 			if not self.debug:
 				return
 			yn = " Debug "
-		st = "%s -:- %s : %s"%(time.strftime(self.cfg.SHOW_TIME_FORMAT,time.localtime()),yn,st)
+		st = "%s -:- %s : %s"%(time.strftime(SHOW_TIME_FORMAT,time.localtime()),yn,st)
 		if '--stdout' in sys.argv[1:]:
 			print(st)
 		if '--no-log' not in sys.argv[1:]:
-			f = open(self.cfg.LOG_FILE,'ab')
+			f = open(LOG_FILE,'ab')
 			f.write(st.encode('utf-8') + b'\n')
 			f.close()
 

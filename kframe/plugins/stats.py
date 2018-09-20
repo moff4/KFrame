@@ -2,7 +2,7 @@
 
 from ..base.plugin import Plugin
 
-POSSIBLE_TYPES 	= set(['inc','single','aver','collect'])
+POSSIBLE_TYPES 	= set(['inc','single','aver','collect','set'])
 SIMPLE_TYPES 	= set(['inc','single','collect'])
 
 class Stats(Plugin):
@@ -18,6 +18,8 @@ class Stats(Plugin):
 			if len(self._stats[key]['data']) > 0:
 				return "%.4f"%(sum(self._stats[key]['data']) / len(self._stats[key]['data']))
 			return 0.0
+		if self._stats[key]['type'] == 'set':
+			return list(self._stats[key]['data'])
 
 	#==========================================================================
 	#                                 USER API
@@ -28,8 +30,7 @@ class Stats(Plugin):
 	# params:
 	#   <must be>
 	#     key - internal name of stat
-	#     data - where data stores
-	#     type - type of stats possible: aver / collect / single / inc
+	#     type - type of stats possible: aver / collect / set / single / inc
 	#   <optional>
 	#     default - default value for any type
 	#     count - number of elements saved for type "aver" and "collect"
@@ -38,7 +39,7 @@ class Stats(Plugin):
 	#       default: 1
 	# return tuple ( flag of success , errmsg in case of error )
 	#
-	def init_stat(self,**kwargs):
+	def init_stat(self,key,type,**kwargs):
 		if 'key' not in kwargs:
 			return False, "Expected key 'key'"
 		if 'type' not in kwargs:
@@ -46,15 +47,17 @@ class Stats(Plugin):
 		if kwargs['type'] not in POSSIBLE_TYPES:
 			return False , "Unknown type of stat"
 		d = dict(kwargs)
-		if 'default' not in d:
+		if 'default' in d:
+			default = d['default']
+		else:
 			if d['type'] == 'inc':
 				default = 0
 			elif d['type'] in ['aver','collect']:
 				default = []
 			elif d['type'] == 'single':
 				default = None
-		else:
-			default = d['default']
+			else:
+				default = set()
 		d['data'] = default
 		self._stats[d['key']] = d
 		return True , "Success"
@@ -78,6 +81,8 @@ class Stats(Plugin):
 			self._stats[key]['data'] += self._stats[key]['increment'] if 'increment' in self._stats[key] else 1
 		elif self._stats[key]['type'] == 'single':
 			self._stats[key]['data'] = value
+		elif self._stats[key]['type'] == 'set':
+			self._stats[key]['data'].add(value)
 		else:
 			return False
 		return True
@@ -97,7 +102,7 @@ class Stats(Plugin):
 			d[key] = self._export(key)
 		return d
 
-LOAD_SCHEME = {
+DEFAULT_LOAD_SCHEME = {
 	"target":Stats,
 	"module":False,
 	"arg":(),

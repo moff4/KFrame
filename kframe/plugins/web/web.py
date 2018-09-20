@@ -5,16 +5,10 @@ import time
 import socket
 import signal
 import threading as th
+from traceback import format_exc as Trace
+from ...base.plugin import Plugin
 
-from ..base.plugin import Plugin
-
-# FIXME
-try:
-	from .utils import *
-except:
-	from utils import *
-
-SITE_DIRECTORY 	=	'./var'
+from .utils import *
 
 private_ip =  set(['10.',  '192.168.',  '0.0.0.0',  '127.0.0.' ] +  [("100.%s."%i) for i in range(64,128)]  +  [("172.%s."%i) for i in range(16,32)])
 
@@ -50,37 +44,50 @@ MAX_URL_LEN 		= 2*2**10
 
 #
 # class for web-server
-# parent must have:
-# - cgi_modules - list of Objects/Modules with CGI-plugin interfce # move out of parent # FIXME
-# - cfg obj/module that has field Web as dict - {
-#      'only_local_hosts':bool
-#      'use_ssl':bool
-#      'http_port':int
-#      'https_port':int
-#      'ca_cert':path as str
-#      'keyfile':path as str
-#      'certfile':path as str
-#      'cgi_bin_dir':str
-#	 } # FIXME now it's param
+# **kwargs - configuration parametrs {
+#       only_local_hosts 	: bool
+#       use_ssl 			: bool
+#       http_port 			: int
+#       https_port 			: int
+#       ca_cert 			: path as str
+#       keyfile 			: path as str
+#       certfile 			: path as str
+#       cgi_bin_dir 		: str ( self.Path + cgi_bin_dir == prefix of url for dinamic requests)
+#	    site_directory 		: str
+#	    cgi_modules 		: list of Objects/Modules with CGI-plugin interfce
+#	 }
 # }
 #
 # CGI-plugin interface :
 #  - method handler(req as dict, secure - True if SSL or False if not secure)
-#    must return tuple ( data (bytes) , Headers (list of str) , HTTP-CODE (int) )
+#    must return tuple ( data (bytes or str) , Headers (list of str) , HTTP-CODE (int) )
 #  - method cgi(req as dict, secure - True if SSL or False if not secure)
-#    must return tuple ( data (bytes) , Headers (list of str) , HTTP-CODE (int) )
+#    must return tuple ( data (bytes or str) , Headers (list of str) , HTTP-CODE (int) )
 #  - Hosts - list of str (list of domain names) or ['any']
 #  - Path - path identifier for handler-module (str)
 #
 class Web(Plugin):
-	def init(self,cfg):
+	def init(self,**kwargs):
 		try:
-			self.var_dir = SITE_DIRECTORY
-			self._run = True
+			defaults = {
+				'only_local_hosts'	: False,
+				'http_port'			: 8080,
+				'https_port'		: 8081,
+				'use_ssl'			: False,
+				'ca_cert'			: "./ca.cert",
+				'keyfile'			: "./key.pem",
+				'certfile'			: "./cert.pem",
+				'cgi_bin_dir'		: "cgi/",
+				'site_directory'	: './var',
+				'cgi_modules'		: [self]
+			}
+			self.cfg = {}
+			for i in defaults:
+				self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
 
-			self.cfg = cfg
+			self._run = True
+			self._th = None
 		
-			self.site_modules = self.parent.cgi_modules + [self]  # move out of parent # FIXME
 			self.Hosts = ['any']
 			self.Path = '/'
 
@@ -92,15 +99,12 @@ class Web(Plugin):
 			
 			self.main_requested = 0;
 
-			self.stats = { # move to stats-plugin # FIXME
-				'start-time':time.time(),
-				'requests':{
-					True:0,
-					False:0,
-				},
-				'connections':0,
-				'ip':set()
-			}
+			if 'stats' in self:
+				self['stats'].init_stat(key="start-time"      ,type="single",default=time.time())
+				self['stats'].init_stat(key="requests-success",type="inc")
+				self['stats'].init_stat(key="requests-failed" ,type="inc")
+				self['stats'].init_stat(key="connections"     ,type="inc")
+				self['stats'].init_stat(key="ip"              ,type="set")
 
 			self.FATAL = False
 			self.errmsg = '%s initialized successfully'%(self.name)
@@ -137,7 +141,6 @@ class Web(Plugin):
 	#
 	def cgi(self,req,secure):
 		# FUCK EVERY BODY
-		return FUCK_U
 		return '<h1>Error: cgi not implemented<h1>', [CONTENT_HTML] , 404
 
 	#
@@ -145,12 +148,11 @@ class Web(Plugin):
 	#
 	def handler(self,req,secure):
 		if 'firewall' in self:
-			self['firewall'].banned(req['addr'][0],code=404,react=True)
-		return FUCK_U
+			self['firewall'].banned(req['addr'][0],code=False,react=True)
 		if req['url'].endswith('/'):
 			req['url'] += 'index.html'
 		try:
-			return open(self.var_dir + req['url'],'rb').read(), [Content_type(req['url'])] , 200
+			return open(self.cfg['site_directory'] + req['url'],'rb').read(), [Content_type(req['url'])] , 200
 		except Exception as e:
 			self(e,_type="error")
 			return NOT_FOUND , [CONTENT_HTML,"Connection: close"] , 404
@@ -169,7 +171,8 @@ class Web(Plugin):
 			'addr':addr,
 			'postfix':b''
 		}
-		self.stats['ip'].add(addr[0]) # add ip to set of connections
+		if 'stats' in self:
+			self['stats'].add('ip',addr[0]) # add ip to set of connections
 		st = readln(conn,max_len=MAX_URL_LEN)
 		while 0 < len(st) and st[:1] != b' ':
 			request['method'] += st[:1]
@@ -260,16 +263,15 @@ class Web(Plugin):
 				raise RuntimeError('unknown method %s'%(req['method']))
 
 			# cookies import :D
-			ck = self.parent.get_class('cookies')
-			if not ck is None:
-				req['cookies'] = ck(self.parent,req)
+			if 'cookies' in self:
+				req['cookies'] = self['cookies'](self.parent,'cookies',args={req})
 
 			site_extensions = []
 			if 'Host' in req['headers']:
 				host = req['headers']['Host'][0]
 				self('host - %s'%host)
 				try:
-					for i in self.site_modules:
+					for i in self.cfg['cgi_modules']:
 						if host in i.Hosts or 'any' in i.Hosts:
 							site_extensions.append(i)
 							break;
@@ -310,8 +312,7 @@ class Web(Plugin):
 					CODE = 404
 
 			# cookies export :D
-			if 'cookies' in req:
-				if not req['cookies'] is None:
+			if 'cookies' in req and req['cookies'] != None:
 					extra_headers += req['cookies'].export()
 
 			headers = apply_standart_headers(extra_headers)
@@ -319,6 +320,7 @@ class Web(Plugin):
 				headers += "Content-Length: %s\r\n"%(len(txt))
 
 		except Exception as e:
+			e = Trace()
 			self('Parse answer: %s'%e)
 			CODE = 404
 			txt = NOT_FOUND
@@ -328,7 +330,8 @@ class Web(Plugin):
 			txt = txt.encode('utf-8')
 		conn.send(("%s %s %s\r\n%s\r\n"%(req['http_version'],CODE,http_code_msg[CODE],headers)).encode('utf-8'))
 		conn.send(txt)
-		self.stats['requests'][CODE <= 400] += 1
+		if 'stats' in self:
+			self['stats'].add('requests-'% "success" if CODE <= 400 else "failed" )
 		self("%s %s %s"%(req['http_version'],CODE,http_code_msg[CODE]))
 		return True
 
@@ -367,7 +370,8 @@ class Web(Plugin):
 				request['ssl'] = _ssl
 				secure = (self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl'])
 				self.parse_request(conn,request,secure=secure)
-				self.stats['connections'] += 1
+				if 'stats' in self:
+					self['stats'].add('connections')
 				conn.close()
 			except Exception as e:
 				self('Deal with it: (%s) %s'%(addr[0],e))
@@ -422,10 +426,8 @@ class Web(Plugin):
 
 	def beep(self,obj,thread=True):
 		try:
-			if thread:
-				os.kill(i.ident,signal.SIGINT)
-			else:
-				os.kill(i.pid,signal.SIGINT)
+			if not thread and obj != None:
+				os.kill(obj.pid,signal.SIGINT)
 		except:
 			pass
 	def _open(self):
@@ -471,16 +473,16 @@ class Web(Plugin):
 	#========================================================================
 
 	#
-	# add new site_modules
+	# add new cgi_modules
 	#
 	def add_site_module(self,module):
-		self.site_modules.append(module)
+		self.cfg['cgi_modules'].append(module)
 
 	#
 	# start web-server
 	#
 	def start(self):
-		self._th = Thread(target=self._loop)
+		self._th = th.Thread(target=self._loop)
 		self._th.start()
 
 	#
@@ -488,9 +490,17 @@ class Web(Plugin):
 	#
 	def stop(self,wait=True):
 		self._run = False
-		self._open()
 		self.beep(self._th)
+		self._open()
 		if wait:
 			if not self._th is None:
 				self._th.join()
 
+
+DEFAULT_LOAD_SCHEME = {
+	"target":Web,
+	"module":False,
+	"arg":(),
+	"kwargs":{},
+	"dependes":['firewall','cookies','stats']
+}
