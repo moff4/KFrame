@@ -40,7 +40,7 @@ FUCK_U 				= NOT_FOUND , [CONTENT_HTML] , 404
 
 MAX_DATA_LEN 		= 4*2**10
 MAX_HEADER_COUNT	= 32
-MAX_URL_LEN 		= 2*2**10
+MAX_HEADER_LEN 		= 2*2**10
 
 #
 # class for web-server
@@ -55,6 +55,9 @@ MAX_URL_LEN 		= 2*2**10
 #       cgi_bin_dir 		: str ( self.Path + cgi_bin_dir == prefix of url for dinamic requests)
 #	    site_directory 		: str
 #	    cgi_modules 		: list of Objects/Modules with CGI-plugin interfce
+#		max_data_length		: max size of data in bytes in one request
+#		max_header_count	: max number of headers in one request
+#		max_header_length	: max size of one header in bytes
 #	 }
 # }
 #
@@ -80,6 +83,9 @@ class Web(Plugin):
 				'cgi_bin_dir'		: "cgi/",
 				'site_directory'	: './var',
 				'cgi_modules'		: [self]
+				'max_data_length'	: MAX_DATA_LfEN,
+				'max_header_count' 	: MAX_HEADER_COUNT,
+				'max_header_length'	: MAX_HEADER_LEN,
 			}
 			self.cfg = {}
 			for i in defaults:
@@ -173,7 +179,7 @@ class Web(Plugin):
 		}
 		if 'stats' in self:
 			self['stats'].add('ip',addr[0]) # add ip to set of connections
-		st = readln(conn,max_len=MAX_URL_LEN)
+		st = readln(conn,max_len=self.cfg['max_header_length'])
 		while 0 < len(st) and st[:1] != b' ':
 			request['method'] += st[:1]
 			st = st[1:]
@@ -210,7 +216,7 @@ class Web(Plugin):
 		header_count = 0
 		while True:
 			value = ''
-			st = readln(conn,max_len=MAX_URL_LEN).decode('utf-8')
+			st = readln(conn,max_len=self.cfg['max_header_length']).decode('utf-8')
 			if st == '':
 				break
 			else:
@@ -236,7 +242,7 @@ class Web(Plugin):
 			else:
 				request['headers'][key] = [value]
 			header_count += 1
-			if header_count >= MAX_HEADER_COUNT:
+			if header_count >= self.cfg['max_header_count']:
 				raise RuntimeError("Too many headers")
 
 		for i in ['http_version','url','method']:
@@ -247,7 +253,7 @@ class Web(Plugin):
 
 		if 'Content-Length' in request['headers']:
 			_len = int(request['headers']['Content-Length'][0])
-			if _len >= MAX_DATA_LEN:
+			if _len >= self.cfg['max_data_length']:
 				raise RuntimeError("Too much data")
 			request['data'] = conn.recv(_len)
 		return request
