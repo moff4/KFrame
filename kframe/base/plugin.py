@@ -80,8 +80,7 @@ class Plugin:
 	# description as str - some descrition for human (default: "")
 	#
 	def expect_argv(self,key,critical=False,description=""):
-		d = {
+		self._params[key] = {
 			'critical':critical,
 			'description':description,
 		}
-		self._params[key] = d

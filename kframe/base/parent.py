@@ -193,7 +193,7 @@ class Parent:
 	# kwargs:
 	# -- must be --
 	#	key as str - how u wanna call it
-	#	target as class/module - smth that'll be kept here and maybe called
+	#	target as class/module - smth that'll be kept here and maybe called (if that's plugin)
 	# -- optional --
 	# 	module as bool - True if target is module ; otherwise target is plugin (default: False)
 	#	dependes as list of str - list of other plugins/modules that must be initialized before this one
@@ -201,22 +201,29 @@ class Parent:
 	#		Default: empty list
 	#	args as tuple - tuple of arg that will be passed to init() as *args (plugins only)
 	#	kwargs as dict - dict of arg that will be passed to init() as **kwargs (plugins only)
-	# return True if plugin/module added to list of all plugins/modules
-	# or False if not
 	#
 	def add_plugin(self,key,target,**kw):
-		try:
-			self.plugin_t[key] = {
-				"target"	: target,
-				"module"    : kw['module'] if 'module' in kw else False,
-				"args"		: kw['args'] if 'args' in kw else (),
-				"kwargs"	: kw['kwargs'] if 'kwargs' in kw else {},
-				"dependes"	: kw['dependes'] if 'dependes' in kw else [],
-			}
+		self.plugin_t[key] = {
+			"target"	: target,
+			"module"    : kw['module'] if 'module' in kw else False,
+			"args"		: kw['args'] if 'args' in kw else (),
+			"kwargs"	: kw['kwargs'] if 'kwargs' in kw else {},
+			"dependes"	: kw['dependes'] if 'dependes' in kw else [],
+		}
 
-			return True , "Success"
-		except Exception as e:
-			return False, "Exception: %s"%e
+	#
+	# Add new module 
+	# same as to Parent.add_plugin() with module=True
+	#
+	def add_module(self,key,target):
+		self.plugin_t[key] = {
+			"target"	: target,
+			"module"    : True,
+			"args"		: (),
+			"kwargs"	: {},
+			"dependes"	: [],
+		}
+
 
 	#
 	# initialize plugins and modules
