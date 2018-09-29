@@ -136,6 +136,13 @@ def _hash(data):
 
 #
 # TESTED
+# export basic class for ability to count hash for big data
+#
+class _Hash(GOST34112012512):
+	pass
+
+#
+# TESTED
 # generates initialization vector 
 #
 def gen_iv():
