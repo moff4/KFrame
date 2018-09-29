@@ -224,6 +224,11 @@ class Parent:
 			"dependes"	: [],
 		}
 
+	#
+	# just for easier use
+	#
+	def init(self):
+		self.init_plugins()
 
 	#
 	# initialize plugins and modules
