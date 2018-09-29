@@ -7,8 +7,8 @@ from .coder import Coder
 # convert data to bytes
 # mask - some mask to be applied on marshaled data
 #
-def marshal(data,mask=None):
-	c = Coder(data)
+def marshal(data,mask=None,random=True):
+	c = Coder(data,random=random)
 	c.magic()
 	if mask is None:
 		return c.export()
@@ -25,7 +25,11 @@ def unmarshal(data=None,fd=None,mask=None):
 	p = Parser(mask=mask)
 	if data is None:
 		p.set_fd(fd)
-	else:
+	elif type(data) == bytes:
 		p.set_data(data)
+	elif type(data) == str:
+		p.set_data(data.encode())
+	else:
+		return data
 	p.magic()
 	return p.export()

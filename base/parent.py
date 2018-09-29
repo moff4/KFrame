@@ -98,7 +98,9 @@ class Parent:
 			l = len(bz)
 			while i < l and len(bz) > 0:
 				for j in list(d.keys()):
-					if d[j]['module']:
+					if not d[j]['autostart']:
+						pass
+					elif d[j]['module']:
 						d.pop(j)
 						az.append(j)
 						if j in bz:
@@ -113,7 +115,7 @@ class Parent:
 			self.log("Load priority queue: %s"%(az),_type="debug")
 			for i in az:
 				try:
-					a ,b = self.init_plugin(key=i,plugin_name=i,args=self.plugin_t[i]['args'],kwargs=self.plugin_t[i]['kwargs'])
+					a ,b = self.__init_plugin(key=i,plugin_name=i,args=self.plugin_t[i]['args'],kwargs=self.plugin_t[i]['kwargs'])
 					self.FATAL = self.FATAL or not a
 					self.errmsg.append(b)
 				except Exception as e:
@@ -127,15 +129,24 @@ class Parent:
 	#
 	# initialize plugin with plugin_name
 	# and save it with key
-	# return True on success , extra msg (errmsg) 
+	# if export:
+	#	return initilized object (plugin or module)
+	# else:
+	# 	return True on success , extra msg (errmsg) 
 	#
-	def init_plugin(self,key,plugin_name,args,kwargs):
+	def __init_plugin(self,key,plugin_name,args,kwargs,export=False):
 		try:
 			if self.plugin_t[key]['module']:
-				self.modules[key] = self.plugin_t[plugin_name]['target']
+				obj = self.plugin_t[plugin_name]['target']
+				if export:
+					return obj
+				self.modules[key] = obj
 				return True , "loaded successfully - %s"%(plugin_name)
 			else:
-				self.plugins[key] = self.plugin_t[plugin_name]['target'](self,plugin_name,args,kwargs)
+				obj = self.plugin_t[plugin_name]['target'](self,plugin_name,args,kwargs)
+				if export:
+					return obj
+				self.plugins[key] = obj
 				return not self.plugins[key].FATAL , self.plugins[key].errmsg
 		except Exception as e:
 			e = Trace()
@@ -195,6 +206,7 @@ class Parent:
 	#	key as str - how u wanna call it
 	#	target as class/module - smth that'll be kept here and maybe called (if that's plugin)
 	# -- optional --
+	#	autostart as bool - initialize plugin when call Parent.init() (default: True)
 	# 	module as bool - True if target is module ; otherwise target is plugin (default: False)
 	#	dependes as list of str - list of other plugins/modules that must be initialized before this one
 	#		ignored if kwagrs[module] == True
@@ -205,6 +217,7 @@ class Parent:
 	def add_plugin(self,key,target,**kw):
 		self.plugin_t[key] = {
 			"target"	: target,
+			"autostart"	: kw['autostart'] if 'autostart' in kw else True,
 			"module"    : kw['module'] if 'module' in kw else False,
 			"args"		: kw['args'] if 'args' in kw else (),
 			"kwargs"	: kw['kwargs'] if 'kwargs' in kw else {},
@@ -219,6 +232,7 @@ class Parent:
 		self.plugin_t[key] = {
 			"target"	: target,
 			"module"    : True,
+			"autostart" : True,
 			"args"		: (),
 			"kwargs"	: {},
 			"dependes"	: [],
@@ -241,6 +255,15 @@ class Parent:
 			return False
 		self._init_plugins()
 		return not self.FATAL
+
+	#
+	# initialize plugin/module and return it
+	# returned object doesn't saved in this class
+	# if args and kwargs not passed => use ones passed in Parent.add_plugin() or Parent.add_module()
+	# return initialized object
+	#
+	def init_plugin(self,key,*args,**kwargs):
+		return self.__init_plugin(key=key,plugin_name=key,args=self.plugin_t[key]['args'] if len(args) <= 0 else args,kwargs=self.plugin_t[key]['kwargs'] if len(kwargs) <= 0 else kwargs,export=True)
 		
 
 	#
@@ -283,8 +306,8 @@ class Parent:
 	# return True as bool if that's was flag
 	# else return None if nothing was passed
 	#
-	def get_param(self,key):
-		return self._argv_p[key] if key in self._argv_p else None
+	def get_param(self,key,default=None):
+		return self._argv_p[key] if key in self._argv_p else default
 
 	#
 	# log function
@@ -323,7 +346,7 @@ class Parent:
 	#
 	# start program
 	#
-	def start(self):
+	def start(self,wait=True):
 		if '-h' in sys.argv[1:] or '-?' in sys.argv[1:] or '--help' in sys.argv[1:]:
 			self.print_help()
 			return
@@ -333,6 +356,7 @@ class Parent:
 		else:
 			try:
 				self.parse_argv()
+				self.RUN_FLAG = wait
 				self.run() 
 			except Exception as e:
 				e = Trace()

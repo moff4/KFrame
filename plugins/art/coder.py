@@ -7,25 +7,27 @@ INT_NEG 	= 2
 FLOAT_POS 	= 3
 FLOAT_NEG 	= 4
 BYTES 		= 5
-STRIGN 		= 6
+STRING 		= 6
 LIST  		= 7
 MAP 		= 8
-NULL 		= 9
+TRUE 		= 9
+FALSE 		= 10
+NULL 		= 11
 
 class Coder:
-
-	def __init__(self,data):
+	def __init__(self,data,random=True):
 		self.result = b""
 		self.data = data
+		self.rand = random
 
 	#
 	# generate type with noice
 	#
 	def _gen_type(self,t):
-		return bytes([ t | (urandom(1)[0] & 0xF0) ])
+		return bytes([ t | (urandom(1)[0] & 0xF0) ]) if self.rand else bytes([t])
 
 	#
-	# 1 Positive Integer
+	# Positive Integer
 	#
 	def _int(self,data,just=False):
 		if data != 0:
@@ -42,7 +44,7 @@ class Coder:
 		return st if just else self._gen_type(INT_NEG if sign else INT_POS) + st
 
 	#
-	# 3 Float
+	# Float
 	#
 	def _float(self,data,just=False):
 		a = data
@@ -55,7 +57,7 @@ class Coder:
 		return st if just else self._gen_type(FLOAT_NEG if sign else FLOAT_POS) + st
 
 	#
-	# 4 String
+	# String
 	#
 	def _bytes(self,data,string=False,just=False):
 		st = []
@@ -75,12 +77,13 @@ class Coder:
 			st += list(self._int(c,just=True))
 		st.append(0)
 		st.append(0)
-		st = bytes(st)
-		return st if just else self._gen_type(STRIGN if string else BYTES) + st
+		if not just:
+			st.insert(0,self._gen_type(STRING if string else BYTES)[0])
+		return bytes(st)
 
 
 	#
-	# 5 list
+	# list
 	#
 	def _list(self,data,just=False):
 		_st = [self._none()] if len(data) <= 0 else ([ i for i in map(self._type,data)] + [self._none()])
@@ -90,7 +93,7 @@ class Coder:
 		return st if just else self._gen_type(LIST) + st
 
 	#
-	# 6 dict
+	# dict
 	#
 	def _map(self,data,just=False):
 		st = b""
@@ -102,7 +105,13 @@ class Coder:
 		return st if just else self._gen_type(MAP) + st
 
 	#
-	# 7 None
+	# Bool
+	#
+	def _bool(self,data):
+		return self._gen_type(TRUE if data else FALSE)
+
+	#
+	# None
 	#
 	def _none(self):
 		return self._gen_type(NULL)
@@ -124,6 +133,8 @@ class Coder:
 			return self._list(list(data))
 		elif type(data) == dict:
 			return self._map(data)
+		elif type(data) == bool:
+			return self._bool(data)
 		elif data is None:
 			return self._none()
 		else:
