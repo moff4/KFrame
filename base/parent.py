@@ -75,7 +75,8 @@ class Parent:
 		for arg in sys.argv[1:]:
 			if '=' in arg:
 				key = arg.split('=')
-				value = arg[len(key)+1:]
+				value = key[1]
+				key = key[0]
 			else:
 				key = arg
 				value = True
