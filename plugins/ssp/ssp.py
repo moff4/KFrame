@@ -3,11 +3,15 @@
 from kframe.base import Plugin
 
 from traceback import format_exc as Trace
+from os import urandom
+
+CODE_CLOSE 			= b"1"
+CODE_AUTH_SUCCESS 	= b"2"
+CODE_AUTH_FAILED 	= b"3"
 
 #
 # Simple Secure Protocol
 # Wrapper over socket
-# FIXME: Add authetication methods
 #
 class SSP(Plugin):
 	#
@@ -22,19 +26,25 @@ class SSP(Plugin):
 	# 	known_users - list of unmarshaled public - keys of known peers
 	#		if not passed - empty list
 	#
-	def init(self,conn,**kwargs):
-		self.conn = conn
+	def init(self,**kwargs):
+		self.conn = kwargs['conn'] if 'conn' in kwargs else None
 		self.private , self.public = kwargs['keys'] if 'keys' in kwargs else self['crypto'].generate_key_pair()
 		self.ukm = kwargs['ukm'] if 'ukm' in kwargs else self['crypto'].gen_ukm()
 		self.auth = kwargs['auth'] if 'auth' in kwargs else False
 		self.known_users = kwargs['known_users']  if 'known_users' in kwargs else []
 		self.cipher = None
+		self._chan = False
 		return self
 
 	#
 	# Marshal , encrypt, send!
+	# if system - send system code as bytes()
+	# code = 1 - close connection
+	# code = 2 - auth successeded
+	# code = 3 - auth failed ; close connection
 	#
-	def _send(self,data,iv,system=False):
+	def _send(self,data,system=False):
+		iv = self['crypto'].gen_iv()
 		data = self['art'].marshal( 
 			{
 				(1 + int(system)):self.cipher.encrypt(data=data,iv=iv),
@@ -49,42 +59,54 @@ class SSP(Plugin):
 
 	#
 	# generate shared secret and start encrypted connection
+	# kwargs can be passed same as for SSP.init()
 	#
-	def connect(self):
+	def connect(self,**kwargs):
 		def int_to_bytes(x):
 			st = []
 			while x > 0:
 				st.append(x%256)
 				x //= 256
 			return bytes(st)
+
+		self.conn = kwargs['conn'] if 'conn' in kwargs else self.conn
+		self.private , self.public = kwargs['keys'] if 'keys' in kwargs else (self.private , self.public)
+		self.ukm = kwargs['ukm'] if 'ukm' in kwargs else self.ukm
+		self.auth = kwargs['auth'] if 'auth' in kwargs else self.auth
+		self.known_users = kwargs['known_users']  if 'known_users' in kwargs else self.known_users
+
 		try:
-			self.conn.send(self['art'].marshal({
-					"ukm":self.ukm,
-					"pub":self['crypto'].export_public_key(self.public),
-					"auth":self.auth
-				}))
+			pkg = {
+				"ukm":self.ukm,
+				"pub":self['crypto'].export_public_key(self.public),
+			}
+			
+			self.conn.send(self['art'].marshal(pkg))
 			res = self['art'].unmarshal(fd=self.conn)
 			
 			if 'ukm' not in res or 'pub' not in res:
 				return False , "Bad peer's answer"
 			self.peers_ukm = int_to_bytes(res['ukm'])
 			self.mine_ukm = int_to_bytes(self.ukm)
-			secret = self['crypto'].diffie_hellman(self.private,self['crypto'].import_public_key(res['pub']),res['ukm'] ^ self.ukm)
-			
+			peers_key = self['crypto'].import_public_key(res['pub'])
+			secret = self['crypto'].diffie_hellman(self.private,peers_key,res['ukm'] ^ self.ukm)
+
 			self.cipher = self['crypto'].Cipher(secret)
 
-			# FIXME
-			if res["auth"]:
-				# send proof
-				# wait for answer
-				pass
-			if self.auth: # deadlock ?????? 
-				# wait for proof
-				# answer
-				pass
+			if self.auth and peers_key not in self.known_users:
+				self._send(data=CODE_AUTH_FAILED,system=True)
+				self.conn.close()
+			else:
+				self._send(data=CODE_AUTH_SUCCESS,system=True)
+				self._chan = True
 
-
-			return True , "Success!"
+			if self.recv(system=True) == CODE_AUTH_SUCCESS:
+				self._chan = True
+				return True , "Success!"
+			else:
+				self._chan = False
+				self.conn.close()
+				return False , "Authentication failed"
 		except Exception as e:
 			return False , str(e)
 	#
@@ -93,7 +115,9 @@ class SSP(Plugin):
 	# Flag is True in case of success
 	# or False in case of error
 	#
-	def recv(self):
+	def recv(self,system=False):
+		if not self._chan:
+			return False , None
 		try:
 			res = self['art'].unmarshal(fd=self.conn,mask=self.peers_ukm)
 			if 3 not in res:
@@ -103,7 +127,9 @@ class SSP(Plugin):
 				return True , self['art'].unmarshal(res,mask=self.peers_ukm)
 			elif 2 in res:
 				code = self.cipher.decrypt(data=res[2],iv=res[3])
-				if code == b"1":
+				if system:
+					return code
+				if code == CODE_CLOSE:
 					self.conn.close()
 					return False , None
 				else:
@@ -122,9 +148,11 @@ class SSP(Plugin):
 	# or False in case of error
 	#
 	def send(self,data):
+		if not self._chan:
+			return False
 		try:
 			data = self['art'].marshal(data,mask=self.mine_ukm)
-			return self._send(data,self['crypto'].gen_iv())
+			return self._send(data)
 		except Exception as e:
 			self("Connetion (S) closed: %s"%(e))
 			self.conn.close()
@@ -135,7 +163,7 @@ class SSP(Plugin):
 	#
 	def close(self):
 		try:
-			self._send(data=b"1",iv=self['crypto'].gen_iv(),system=True)
+			self._send(data=CODE_CLOSE,system=True)
 			self.conn.close()
 		except:
 			pass
