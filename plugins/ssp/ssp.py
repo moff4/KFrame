@@ -4,6 +4,7 @@ from kframe.base import Plugin
 
 from traceback import format_exc as Trace
 from os import urandom
+from socket import timeout as Timeout
 
 CODE_CLOSE 			= b"1"
 CODE_AUTH_SUCCESS 	= b"2"
@@ -114,6 +115,7 @@ class SSP(Plugin):
 	# return tuple ( Flag of success , recived data )
 	# Flag is True in case of success
 	# or False in case of error
+	# IF SOSCKET IS NON-BLOCKED - POSSIBLE TO RAISE TIMEOUT-EXCEPTION
 	#
 	def recv(self,system=False):
 		if not self._chan:
@@ -137,6 +139,8 @@ class SSP(Plugin):
 			else:
 				self("Unknow message: %s"%(res),_type="error")
 			return self.recv()
+		except Timeout as e:
+			raise e
 		except Exception as e:
 			self("Connetion (R) closed: %s"%(e),_type="debug")
 			self.conn.close()
@@ -157,6 +161,13 @@ class SSP(Plugin):
 			self("Connetion (S) closed: %s"%(e))
 			self.conn.close()
 			return False
+
+	#
+	# equal to socket.settimeout()
+	#
+	def settimeout(self,value):
+		if self.conn:
+			self.conn.settimeout(value)
 
 	#
 	# close connection

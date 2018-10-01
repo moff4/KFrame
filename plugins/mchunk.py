@@ -54,5 +54,6 @@ DEFAULT_LOAD_SCHEME = {
 	"module":False,
 	"arg":(),
 	"kwargs":{},
-	"dependes":[]
+	"dependes":[],
+	"autostart":False
 }

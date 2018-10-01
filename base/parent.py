@@ -55,7 +55,7 @@ class Parent:
 			self.errmsg = ["Parent init : %s"%(e)]
 
 	def collect_argv(self):
-		rules = {}
+		rules = dict(self._my_argvs)
 		for i in self.plugins:
 			r = self.plugins[i].get_argv_rules()
 			for j in r:
@@ -64,7 +64,7 @@ class Parent:
 				else:
 					rules[j]['critical'] = rules[j]['critical'] or r[j]['critical']
 		self._argv_rules = rules
-		self._argv_rules.update(self._my_argvs)
+		#self._argv_rules.update(self._my_argvs)
 
 	#
 	# parse argv according to plugin's rules
@@ -177,7 +177,7 @@ class Parent:
 			+ "".join([" " for i in range(16)]) + st + "\n" \
 			+ "".join([" " for i in range(16)]) + "+-------------------%s-+\n"%x 
 		def insert_tabs(txt,tabs):
-			return "".join(list(map(lambda x: "".join(["\t" for i in range(tabs)]) + x,txt.split("\n"))))
+			return "".join(list(map(lambda x: "".join(["\t" for i in range(tabs)]) + x + "\n",txt.split("\n"))))
 		st = topic(self.name) + "Flags:\n"
 		self.collect_argv()
 		for i in self._argv_rules:
@@ -263,8 +263,8 @@ class Parent:
 	# if args and kwargs not passed => use ones passed in Parent.add_plugin() or Parent.add_module()
 	# return initialized object
 	#
-	def init_plugin(self,key,*args,**kwargs):
-		return self.__init_plugin(key=key,plugin_name=key,args=self.plugin_t[key]['args'] if len(args) <= 0 else args,kwargs=self.plugin_t[key]['kwargs'] if len(kwargs) <= 0 else kwargs,export=True)
+	def init_plugin(self,key,export=True,*args,**kwargs):
+		return self.__init_plugin(key=key,plugin_name=key,args=self.plugin_t[key]['args'] if len(args) <= 0 else args,kwargs=self.plugin_t[key]['kwargs'] if len(kwargs) <= 0 else kwargs,export=export)
 		
 
 	#
