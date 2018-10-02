@@ -29,6 +29,7 @@ class Parent:
 
 			self._argv_p = {}    # keep params and flags
 			self._argv_rules = {}# collected rules from all plugins
+			self._params = {}
 			self._my_argvs = {
 				'-h' 		:{'critical':False,'description':"See this message again"},
 				'-?' 		:{'critical':False,'description':"See this message again"},
@@ -56,6 +57,7 @@ class Parent:
 
 	def collect_argv(self):
 		rules = dict(self._my_argvs)
+		rules.update(self._params)
 		for i in self.plugins:
 			r = self.plugins[i].get_argv_rules()
 			for j in r:
@@ -309,6 +311,18 @@ class Parent:
 	#
 	def get_param(self,key,default=None):
 		return self._argv_p[key] if key in self._argv_p else default
+
+	#
+	# add expected key to storage
+	# flag as bool - True if we expect flag or False if param
+	# critical as bool - True if this param/flag is critical (default: False)
+	# description as str - some descrition for human (default: "")
+	#
+	def expect_argv(self,key,critical=False,description=""):
+		self._params[key] = {
+			'critical':critical,
+			'description':description,
+		}
 
 	#
 	# log function

@@ -35,6 +35,11 @@ class SSP(Plugin):
 		self.known_users = kwargs['known_users']  if 'known_users' in kwargs else []
 		self.cipher = None
 		self._chan = False
+
+		self.peers_pub_key 	= b''
+		self.peers_ukm 		= b''
+		self.mine_ukm 		= b''
+
 		return self
 
 	#
@@ -87,6 +92,7 @@ class SSP(Plugin):
 			
 			if 'ukm' not in res or 'pub' not in res:
 				return False , "Bad peer's answer"
+			self.peers_pub_key = self['art'].marshal(res['pub'])
 			self.peers_ukm = int_to_bytes(res['ukm'])
 			self.mine_ukm = int_to_bytes(self.ukm)
 			peers_key = self['crypto'].import_public_key(res['pub'])
@@ -123,7 +129,7 @@ class SSP(Plugin):
 		try:
 			res = self['art'].unmarshal(fd=self.conn,mask=self.peers_ukm)
 			if 3 not in res:
-				raise ValueError("IV was nto passed")
+				raise ValueError("IV was not passed")
 			if 1 in res:
 				res = self.cipher.decrypt(data=res[1],iv=res[3])
 				return True , self['art'].unmarshal(res,mask=self.peers_ukm)
