@@ -163,7 +163,8 @@ class SSP(Plugin):
 			return False
 		try:
 			data = self['art'].marshal(data,mask=self.mine_ukm)
-			return self._send(data)
+			self._send(data)
+			return True
 		except Exception as e:
 			self("Connetion (S) closed: %s"%(e))
 			self.conn.close()
