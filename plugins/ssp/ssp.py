@@ -16,15 +16,15 @@ CODE_AUTH_FAILED 	= b"3"
 #
 class SSP(Plugin):
 	#
-	# conn - raw socket
 	# kwargs:
+	# 	conn - raw socket
 	#	keys - tuple ( private , public ) - keys for DH
 	#		if not passed - generate new pair of keys
 	# 	ukm - User Key Material - parametr for DH 
 	#		if not passed - generate new ukm
 	#	auth - bool - should ask peer to authenticate
 	#		if not passed - auth == False
-	# 	known_users - list of unmarshaled public - keys of known peers
+	# 	known_users - list of ART-marshaled public keys with random=False - public keys of known peers
 	#		if not passed - empty list
 	#
 	def init(self,**kwargs):
@@ -66,6 +66,9 @@ class SSP(Plugin):
 	#
 	# generate shared secret and start encrypted connection
 	# kwargs can be passed same as for SSP.init()
+	# return tuple ( Flag , msg )
+	# Flag is True if conenction established
+	# or False when error happened
 	#
 	def connect(self,**kwargs):
 		def int_to_bytes(x):
@@ -92,11 +95,12 @@ class SSP(Plugin):
 			
 			if 'ukm' not in res or 'pub' not in res:
 				return False , "Bad peer's answer"
-			self.peers_pub_key = self['art'].marshal(res['pub'])
 			self.peers_ukm = int_to_bytes(res['ukm'])
 			self.mine_ukm = int_to_bytes(self.ukm)
 			peers_key = self['crypto'].import_public_key(res['pub'])
+			self.peers_pub_key = self['art'].marshal(peers_key,random=False)
 			secret = self['crypto'].diffie_hellman(self.private,peers_key,res['ukm'] ^ self.ukm)
+			peers_key = self['art'].marshal(peers_key,random=False)
 
 			self.cipher = self['crypto'].Cipher(secret)
 
@@ -121,7 +125,6 @@ class SSP(Plugin):
 	# return tuple ( Flag of success , recived data )
 	# Flag is True in case of success
 	# or False in case of error
-	# IF SOSCKET IS NON-BLOCKED - POSSIBLE TO RAISE TIMEOUT-EXCEPTION
 	#
 	def recv(self,system=False):
 		if not self._chan:
@@ -145,8 +148,6 @@ class SSP(Plugin):
 			else:
 				self("Unknow message: %s"%(res),_type="error")
 			return self.recv()
-		except Timeout as e:
-			raise e
 		except Exception as e:
 			self("Connetion (R) closed: %s"%(e),_type="debug")
 			self.conn.close()

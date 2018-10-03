@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from traceback import format_exc as Trace
+
 class Plugin:
 	def __init__(self,parent,plugin_name,args,kwargs):
 		try:
@@ -11,8 +13,10 @@ class Plugin:
 			self.FATAL = False
 			self.errmsg = "initialized successfully - %s"%(self.name)
 
-			if 'init' in dir(self):
+			try:
 				self.init(*args,**kwargs)
+			except Exception as e:
+				self("__init__ - init : %s"%Trace(),_type="error")
 
 		except Exception as e:
 			self.FATAL = True
