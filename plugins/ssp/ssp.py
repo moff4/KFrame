@@ -149,7 +149,8 @@ class SSP(Plugin):
 				self("Unknow message: %s"%(res),_type="error")
 			return self.recv()
 		except Exception as e:
-			self("Connetion (R) closed: %s"%(e),_type="debug")
+			self("Connetion (R) closed: %s"%(e),_type="error")
+			self("Connetion (R) closed: %s"%(Trace()),_type="debug")
 			self.conn.close()
 			return False , None
 
@@ -166,7 +167,8 @@ class SSP(Plugin):
 			self._send(data)
 			return True
 		except Exception as e:
-			self("Connetion (S) closed: %s"%(e))
+			self("Connetion (S) closed: %s"%(e),_type="error")
+			self("Connetion (S) closed: %s"%(Trace()),_type="debug")
 			self.conn.close()
 			return False
 
