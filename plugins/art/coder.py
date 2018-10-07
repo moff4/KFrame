@@ -41,6 +41,7 @@ class Coder:
 			st = bytes(st)
 		else:
 			st = b"\x80"
+			sign = False
 		return st if just else self._gen_type(INT_NEG if sign else INT_POS) + st
 
 	#
