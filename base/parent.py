@@ -226,6 +226,7 @@ class Parent:
 			"kwargs"	: kw['kwargs'] if 'kwargs' in kw else {},
 			"dependes"	: kw['dependes'] if 'dependes' in kw else [],
 		}
+		return self
 
 	#
 	# Add new module 
@@ -240,12 +241,14 @@ class Parent:
 			"kwargs"	: {},
 			"dependes"	: [],
 		}
+		return self
 
 	#
 	# just for easier use
 	#
 	def init(self):
 		self.init_plugins()
+		return self
 
 	#
 	# initialize plugins and modules
@@ -323,6 +326,7 @@ class Parent:
 			'critical':critical,
 			'description':description,
 		}
+		return self
 
 	#
 	# log function
@@ -351,12 +355,12 @@ class Parent:
 			f = open(LOG_FILE,'ab')
 			f.write(st.encode('utf-8') + b'\n')
 			f.close()
-
+		return self
 	#
 	# same as log()
 	#
 	def __call__(self,st,_type=0):
-		self.log(st,_type)
+		return self.log(st,_type)
 
 	#
 	# start program
@@ -364,10 +368,10 @@ class Parent:
 	def start(self,wait=True):
 		if '-h' in sys.argv[1:] or '-?' in sys.argv[1:] or '--help' in sys.argv[1:]:
 			self.print_help()
-			return
+			return self
 		self.print_errmsg()
 		if self.FATAL:
-			return
+			return self
 		else:
 			try:
 				self.parse_argv()
@@ -376,6 +380,7 @@ class Parent:
 			except Exception as e:
 				e = Trace()
 				self.log("Twin: start: %s"%(e),_type="error")
+		return self
 
 	#
 	# stop all plugins
@@ -387,3 +392,4 @@ class Parent:
 		if not lite:
 			for i in self.plugins:
 				self.plugins[i].stop(wait=True)
+		return self
