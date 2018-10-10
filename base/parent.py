@@ -102,14 +102,15 @@ class Parent:
 			while i < l and len(bz) > 0:
 				for j in list(d.keys()):
 					if not d[j]['autostart']:
-						pass
+						d.pop(j)
 					elif d[j]['module']:
 						d.pop(j)
 						az.append(j)
 						if j in bz:
 							bz.pop(bz.index(j))
 					else:
-						if len(list(filter(lambda x:x in d,d[j]['dependes']))) <= 0:
+						d[j]['dependes'] = list(filter(lambda x:x not in az and x in d,d[j]['dependes']))
+						if len(d[j]['dependes']) <= 0:
 							d.pop(j)
 							az.append(j)
 							if j in bz:
@@ -340,11 +341,11 @@ class Parent:
 	def log(self,st,_type=0):
 		_type = str(_type)
 		yn = " Error "
-		if _type in ["0","notify"]:
+		if _type in [0,"0","notify"]:
 			yn = "Notify "
-		elif _type in ["1","warring"]:
+		elif _type in [1,"1","warring"]:
 			yn = "Warring"
-		elif _type in ["3","debug"]:
+		elif _type in [3,"3","debug"]:
 			if not self.debug:
 				return
 			yn = " Debug "

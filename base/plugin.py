@@ -64,6 +64,14 @@ class Plugin:
 		return key in self.parent
 
 	#
+	# return param's value if param was passed
+	# return True as bool if that's was flag
+	# else return None if nothing was passed
+	#
+	def get_param(self,key,default=None):
+		return self.parent.get_param(key=key,default=default)
+
+	#
 	# CAN BE OVERLOADED
 	# method to start you main job
 	#

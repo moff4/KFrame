@@ -20,13 +20,7 @@ from ..base.plugin import Plugin
 class SQL(Plugin):
 	def init(self,cfg):
 		try:
-			self.host 				= cfg['host']		# str
-			self.port 				= cfg['port']		# int
-			self.user 				= cfg['username']	# str
-			self.passwd 			= cfg['password']	# str
-			self.db 				= cfg['scheme']		# str
-			self.ddl  				= cfg['DDL']  		# list of tuple ( str - tablename , str - script for creating )
-			
+			self.cfg = cfg
 			self.conn = None
 			self.lock = False
 
@@ -51,10 +45,15 @@ class SQL(Plugin):
 	#
 	def connect(self):
 		try:
-			self.conn = sql.connect(host=self.host,port=self.port,user=self.user,passwd=self.passwd,db=self.db)
+			params = {}
+			for i in ['user','passwd','host','port']:
+				params[i] = self.cfg[i]
+			if 'scheme' in self.cfg:
+				params['db'] = self.cfg['scheme']
+			self.conn = sql.connect(**params)
 			return True
 		except Exception as e:
-			self('connect-error: ({}@{}:{}/{}): {}'.format(self.user,self.host,self.port,self.db,e),_type="error")
+			self('connect-error: ({user}@{host}:{port}/{scheme}): {}'.format(self.cfg['user'],self.cfg['host'],self.cfg['port'],self.cfg['scheme'] if 'scheme' in cfg else "",e),_type="error")
 			return False
 
 	#
@@ -64,7 +63,7 @@ class SQL(Plugin):
 	def close(self):
 		try:
 			self.conn.close()
-		except:
+		except Exception:
 			pass
 
 	#
