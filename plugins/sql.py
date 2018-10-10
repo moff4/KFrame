@@ -53,7 +53,7 @@ class SQL(Plugin):
 			self.conn = sql.connect(**params)
 			return True
 		except Exception as e:
-			self('connect-error: ({user}@{host}:{port}/{scheme}): {}'.format(self.cfg['user'],self.cfg['host'],self.cfg['port'],self.cfg['scheme'] if 'scheme' in cfg else "",e),_type="error")
+			self('connect-error: ({user}@{host}:{port}/{scheme}): {ex}'.format(user=self.cfg['user'],host=self.cfg['host'],port=self.cfg['port'],scheme=self.cfg['scheme'] if 'scheme' in self.cfg else "",ex=e),_type="error")
 			return False
 
 	#
@@ -128,8 +128,9 @@ class SQL(Plugin):
 	#
 	def create_table(self):
 		try:
-			for i in self.ddl:	
-				self("%s execute create table script: %s"%(i[0],self.execute(i[1],commit=True)[0]),_type="debug")
+			if 'ddl' in self.cfg:
+				for i in self.cfg['ddl']:	
+					self("%s execute create table script: %s"%(i[0],self.execute(i[1],commit=True)[0]),_type="debug")
 			return True, None
 		except Exception as e:
 			self("create-table: %s"%(e),_type="error")

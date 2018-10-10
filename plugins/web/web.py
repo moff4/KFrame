@@ -82,8 +82,8 @@ class Web(Plugin):
 				'certfile'			: "./cert.pem",
 				'cgi_bin_dir'		: "cgi/",
 				'site_directory'	: './var',
-				'cgi_modules'		: [self]
-				'max_data_length'	: MAX_DATA_LfEN,
+				'cgi_modules'		: [self],
+				'max_data_length'	: MAX_DATA_LEN,
 				'max_header_count' 	: MAX_HEADER_COUNT,
 				'max_header_length'	: MAX_HEADER_LEN,
 			}
