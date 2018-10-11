@@ -42,17 +42,14 @@ class Cookies(Plugin):
 	# return None in case of cookie not exists
 	#
 	def get(self,key):
-		if key in self.cookies:
-			return self.cookies[key]
-		else:
-			return None
+		return self.cookies[key] if key in self.cookies else None
 
 	#
 	# delete cookie
 	#
 	def pop(self,key):
-		if key in self.cookies:
-			self.cookies.pop(key)
+		return self.cookies.pop(key) if key in self.cookies else None
+			
 
 	def __getitem__(self,key):
 		return self.get(key)
@@ -61,10 +58,7 @@ class Cookies(Plugin):
 		return key in self.cookies
 
 	def __str__(self):
-		st = ""
-		for i in self.export():
-			st += i + "\n"
-		return st[:-1]
+		return "".join([i+"\n" for i in self.export()])[:-1]
 
 	def __len__(self):
 		return len(self.cookies)
@@ -73,10 +67,11 @@ class Cookies(Plugin):
 	# return list of HTTP-header
 	#
 	def export(self):
-		st = []
-		for key in self.cookies:
-			st.append(str(self.cookies[key]))
-		return st
+		# st = []
+		# for key in self.cookies:
+		# 	st.append(str(self.cookies[key]))
+		# return st
+		return [str(self.cookies[key]) for key in self.cookies]
 
 	#
 	# scheme = dict: cookie-key => attributes

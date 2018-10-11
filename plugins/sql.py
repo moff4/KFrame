@@ -84,7 +84,7 @@ class SQL(Plugin):
 	# exec query
 	# return tuple( flag of success , data as list of tuples )
 	#
-	def execute(self,query,commit=False):
+	def execute(self,query,commit=False,multi=False):
 		i = 0.1
 		while self.lock:
 			time.sleep(min(i,1.5))
@@ -97,7 +97,7 @@ class SQL(Plugin):
 			self.reconnect()
 			if self.conn != None and self.conn.is_connected():
 				cu = self.conn.cursor()
-				cu.execute(query)
+				cu.execute(query,multi=multi)
 				res = []
 				try:
 					res = cu.fetchall()

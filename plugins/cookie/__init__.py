@@ -8,5 +8,6 @@ DEFAULT_LOAD_SCHEME = {
 	'module':True,
 	'args':(),
 	'kwargs':{},
-	'depends':[]
+	'depends':[],
+	'autostart':False
 }
