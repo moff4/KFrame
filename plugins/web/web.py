@@ -269,8 +269,8 @@ class Web(Plugin):
 				raise RuntimeError('unknown method %s'%(req['method']))
 
 			# cookies import :D
-			if 'cookies' in self:
-				req['cookies'] = self['cookies'](self.parent,'cookies',args={req})
+			if 'cookies' in self.parent.plugin_t:
+				req['cookies'] = self.parent.init_plugin(key='cookies',kwargs={'req':req})
 
 			site_extensions = []
 			if 'Host' in req['headers']:
