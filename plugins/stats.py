@@ -108,5 +108,5 @@ DEFAULT_LOAD_SCHEME = {
 	"arg":(),
 	"kwargs":{},
 	"dependes":[],
-	"autostart":False
+	"autostart":True
 }
