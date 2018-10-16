@@ -453,9 +453,9 @@ class Web(Plugin):
 		try:
 			self._threads = []
 			if self.cfg['use_ssl']:
-				self._threads.append([Thread(target=self.__alt_run,args=[self.socket,self.cfg['https_port'],True]),self.cfg['https_port']])
+				self._threads.append([th.Thread(target=self.__alt_run,args=[self.socket,self.cfg['https_port'],True]),self.cfg['https_port']])
 				self._threads[-1][0].start()
-				self._threads.append([Thread(target=self.__alt_run,args=[self.raw_socket,self.cfg['http_port'],False]),self.cfg['http_port']])
+				self._threads.append([th.Thread(target=self.__alt_run,args=[self.raw_socket,self.cfg['http_port'],False]),self.cfg['http_port']])
 				self._threads[-1][0].start()
 				while self._run:
 					time.sleep(1)
