@@ -72,7 +72,7 @@ class Eventer:
 	#
 	# True if key in queue else False
 	#
-	def __in__(self,key):
+	def __contains__(self,key):
 		return key in self.i_c
 
 	#
