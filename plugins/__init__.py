@@ -10,5 +10,6 @@ __all__ = [
 	".crypto",
 	".stats",
 	".art",
-	".ssp"
+	".ssp",
+	".eventer"
 ]
