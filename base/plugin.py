@@ -6,6 +6,7 @@ class Plugin:
 	def __init__(self,parent,plugin_name,args,kwargs):
 		try:
 			self.parent = parent
+			self.P = self.parent
 			self.name = plugin_name
 			
 			self._params = {}

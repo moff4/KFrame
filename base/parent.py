@@ -145,12 +145,14 @@ class Parent:
 				if export:
 					return obj
 				self.modules[key] = obj
+				setattr(self,key,obj)
 				return True , "loaded successfully - %s"%(plugin_name)
 			else:
 				obj = self.plugin_t[plugin_name]['target'](self,plugin_name,args,kwargs)
 				if export:
 					return obj
 				self.plugins[key] = obj
+				setattr(self,key,obj)
 				return not self.plugins[key].FATAL , self.plugins[key].errmsg
 		except Exception as e:
 			e = Trace()

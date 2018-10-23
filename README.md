@@ -27,11 +27,12 @@
 
 Простой пример:  
 
-`from kframe.base.parent import Parent  `  
-`from kframe.plugins.web import Web  `  
-`p = Parent()  `  
-`p.add_plugin(key="web", target=Web, kwargs={'site_directory':'.'})  `  
-`p.init_plugins()  `  
-`p.start()  `  
-
-Версия 1.2   
+```python
+from kframe.base.parent import Parent    
+from kframe.plugins.web import Web    
+p = Parent()    
+p.add_plugin(key="web", target=Web, kwargs={'site_directory':'.'})    
+p.init_plugins()    
+p.start()  
+```
+Версия 1.5   
