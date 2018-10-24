@@ -2,8 +2,8 @@
 
 from ..base.plugin import Plugin
 
-POSSIBLE_TYPES 	= set(['inc','single','aver','collect','set'])
-SIMPLE_TYPES 	= set(['inc','single','collect'])
+POSSIBLE_TYPES 	= set(['inc','single','aver','collect','set','sum'])
+SIMPLE_TYPES 	= set(['inc','single','collect','sum'])
 
 class Stats(Plugin):
 	def init(self):
@@ -30,7 +30,7 @@ class Stats(Plugin):
 	# params:
 	#   <must be>
 	#     key - internal name of stat
-	#     type - type of stats possible: aver / collect / set / single / inc
+	#     type - type of stats possible: aver / collect / set / single / inc / sum
 	#   <optional>
 	#     default - default value for any type
 	#     count - number of elements saved for type "aver" and "collect"
@@ -56,6 +56,8 @@ class Stats(Plugin):
 				default = []
 			elif d['type'] == 'single':
 				default = None
+			elif d['type'] == sum:
+				default = 0.0
 			else:
 				default = set()
 		d['data'] = default
@@ -83,6 +85,8 @@ class Stats(Plugin):
 			self._stats[key]['data'] = value
 		elif self._stats[key]['type'] == 'set':
 			self._stats[key]['data'].add(value)
+		elif self._stats[key]['type'] == 'sum'
+			self._stats[key]['data'] += value
 		else:
 			return False
 		return True
