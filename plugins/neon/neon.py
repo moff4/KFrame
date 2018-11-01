@@ -3,13 +3,16 @@ import os
 import ssl
 import sys
 import time
+import random
 import socket
 import signal
+import binascii
 import threading as th
 from traceback import format_exc as Trace
 
 
 from ...base.plugin import Plugin
+from ...plugins import crypto
 from ..stats import DEFAULT_LOAD_SCHEME as stat_scheme
 from .request import Request
 from .response import Response
@@ -36,7 +39,7 @@ class Neon(Plugin):
 				'max_header_count' 	: MAX_HEADER_COUNT,
 				'max_header_length'	: MAX_HEADER_LEN,
 				'threading' 		: False,
-				'user_neon_server' 	: True,
+				'use_neon_server' 	: False,
 			}
 			self.cfg = {}
 			for i in defaults:
@@ -44,6 +47,7 @@ class Neon(Plugin):
 
 			self._run = True
 			self._th = None
+			self._rng = random.random() * 10**2
 		
 			self.Hosts = ['any']
 			self.Path = '/'
@@ -63,6 +67,8 @@ class Neon(Plugin):
 
 			if 'stats' not in self:
 				self.P.add_plugin(key="stats",**stat_scheme).init_plugin(key="stats",export=False)
+			if 'crypto' not in self:
+				self.P.add_module(key="crypto",target=crypto).init_plugin(key="crypto",export=False)
 
 			self.P.stats.init_stat(key="start-time"      ,type="single",default=time.time())
 			self.P.stats.init_stat(key="requests-success",type="inc")
@@ -79,6 +85,16 @@ class Neon(Plugin):
 	#========================================================================
 	#                                  UTILS
 	#========================================================================
+
+	def gen_id(self):
+		self._rng += 1
+		st = binascii.hexlify(self.P.crypto._hash(str(self._rng).encode('utf-8'))[:8]).decode()
+		az = []
+		while len(st) > 0:
+			az.append(st[:4])
+			az.append("-")
+			st = st[4:]
+		return "".join(az[:-1])
 
 	def open_port(self,use_ssl=False,port=80):
 		host = '' # here we can make some restrictions on connections
@@ -114,7 +130,7 @@ class Neon(Plugin):
 				headers = [CONTENT_HTML]
 			else:
 				data = open(path,'rb').read()
-				headers = [Content_type(req['url'])]
+				headers = [Content_type(req.url)]
 		except Exception as e:
 			self.Error(e)
 			data = NOT_FOUND 
@@ -126,7 +142,7 @@ class Neon(Plugin):
 		modules = sorted(map(lambda x:len(x.Path),filter(lambda x:request.headers['Host'] in x.Host and x.url.startswith(x.Path),self.cfg['cgi_modules'])),reverse=True)
 		if len(modules) > 0:
 			module = modules[0]
-		elif self.cfg['user_neon_server']:
+		elif self.cfg['use_neon_server']:
 			module = self
 		else:
 			module = None
@@ -135,8 +151,14 @@ class Neon(Plugin):
 			res = self.P.init_plugin(key="response",code=404,headers=[CONTENT_HTML],data=NOT_FOUND)
 		else:
 			self.Debug("Found handler: {name}".format(name=module.name))
-			res = module.handler(request)
+			try:
+				res = module.handler(request)
+			except Exception as e:
+				self.Error("cgi handler: {ex}".format(ex=e))
+				self.Debug("cgi handler: {ex}".format(ex=Trace()))
+				res = self.P.init_plugin(key="response",code=500,headers=[CONTENT_HTML],data=SMTH_HAPPENED)
 		request.send(res)
+		request.Notify("{code} - {url} ? {args}".format(**request.dict(),code=res.code))
 		request.after_handler()
 	
 	#========================================================================
@@ -159,20 +181,18 @@ class Neon(Plugin):
 
 	def __alt_run(self,sock,port,_ssl=False):
 		def another_deal(conn,addr):
-			print('-')
 			try:
 				self.P.stats.add(key="ip",value=addr[0])
 				conn = self.wrap_ssl(conn) if _ssl else conn # only if self.cfg['use_ssl'] == True
 				self.Debug("Gonna create Reqeust-Object")
-				request = self.P.init_plugin(key="request",conn=conn,addr=addr,cfg=self.cfg)\
+				request = self.P.init_plugin(key="request",conn=conn,addr=addr,cfg=self.cfg,id=self.gen_id())\
 					.set_ssl(_ssl)\
 					.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
 				self.Debug("Gonna choose module-handler")
 				self.choose_module(request)
 				if 'stats' in self:
 					self.P.stats.add('connections')
-				
-				#conn.close() ???
+				conn.close()
 
 			except Exception as e:
 				self.Debug('Another-Deal: (%s) %s'%(addr[0],Trace()))

@@ -8,7 +8,9 @@ http_code_msg = {
 	304:'Not Modified',
 	307:'Temporary Redirect',
 	308:'Permanent Rederict',
-	404:'Not found'
+	404:'Not found',
+	500:'Internal Server Error',
+	501:'Not Implemented'
 }
 
 ALLOWED_HTTP_METHODS = ['GET','POST','HEAD']
@@ -19,6 +21,14 @@ NOT_FOUND = '''
 </head><body>
 <h1>Not Found</h1>
 <p>The requested URL was not found on this kek-server.</p>
+</body></html>
+'''
+SMTH_HAPPENED = '''
+<html><head>
+<title>500 Smth happened</title>
+</head><body>
+<h1>Smth happened</h1>
+<p>The requested URL found error this kek-server.</p>
 </body></html>
 '''
 

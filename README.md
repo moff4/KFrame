@@ -17,6 +17,7 @@
 Комплект плагинов:  
 - SQL 		- протестирован  
 - WEB 		- протестирован  
+- Neon 		- протестирован  
 - Cookie 	- протестирован  
 - Firewall 	- протестирован  
 - Stats 	- протестирован  
@@ -29,10 +30,10 @@
 
 ```python
 from kframe.base.parent import Parent    
-from kframe.plugins.web import Web    
+from kframe.plugins.neon import Neon    
 p = Parent()    
-p.add_plugin(key="web", target=Web, kwargs={'site_directory':'.'})    
-p.init_plugins()    
+p.add_plugin(key="neon", target=Neon)    
+p.init_plugins(site_directory='.',use_neon_server=True)    
 p.start()  
 ```
-Версия 1.5   
+Версия 1.6   

@@ -6,6 +6,7 @@ from .utils import *
 
 class Request(Plugin):
 	def init(self,**kwargs):
+		self._id = kwargs['id'] if 'id' in kwargs else "0"
 		if any(map(lambda x:x not in kwargs,['cfg','addr','conn'])):
 			self.FATAL = True
 			self.errmsg = "missed kwargs argument"
@@ -19,9 +20,8 @@ class Request(Plugin):
 		self.secure = False
 		self._dict 	= {}
 		try:
-			print('.')
 			self._dict = parse_data(self.conn,kwargs['cfg'])
-			print(self._dict)
+			self._dict_keys = list(self._dict.keys())
 		except Exception as e:
 			self.FATAL = True
 			self.errmsg = "parse data: %s"%e
@@ -33,6 +33,12 @@ class Request(Plugin):
 		self.resp = self.P.init_plugin(key="response")
 		self._send = False
 	
+	#
+	# local log function
+	#
+	def __call__(self,st="",_type="notify"):
+		self.log(st="[{id}] {st}".format(id=self._id,st=st),_type=_type)
+
 	def set_ssl(self,ssl):
 		self.ssl = ssl
 		return self
@@ -43,9 +49,8 @@ class Request(Plugin):
 
 	def dict(self):
 		d = {}
-		for i in ["conn","addr","ip","port","ssl"]:
+		for i in ["conn","addr","ip","port","ssl"] + self._dict_keys:
 			d[i] = getattr(self,i)
-		d.update(self._dict)
 		return d
 
 	def after_handler(self):
