@@ -139,6 +139,11 @@ class Parent:
 	# 	return True on success , extra msg (errmsg) 
 	#
 	def __init_plugin(self,key,plugin_name,args,kwargs,export=False):
+		if key not in self.plugin_t:
+			if export:
+				raise ValueError("Plugin %s not added"%key)
+			else:
+				return False , "%s: Plugin %s not added"%(plugin_name,key)
 		try:
 			if self.plugin_t[key]['module']:
 				obj = self.plugin_t[plugin_name]['target']

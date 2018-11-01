@@ -2,6 +2,7 @@
 
 __all__ = [
 	".web",
+	".neon",
 	".cookie",
 	".firewall",
 	".sql",

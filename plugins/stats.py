@@ -85,7 +85,7 @@ class Stats(Plugin):
 			self._stats[key]['data'] = value
 		elif self._stats[key]['type'] == 'set':
 			self._stats[key]['data'].add(value)
-		elif self._stats[key]['type'] == 'sum'
+		elif self._stats[key]['type'] == 'sum':
 			self._stats[key]['data'] += value
 		else:
 			return False

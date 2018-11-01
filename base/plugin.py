@@ -34,6 +34,29 @@ class Plugin:
 	#                            USER API
 	#==========================================================================
 
+	#
+	# debug log function
+	#
+	def Debug(self,st):
+		self.log(st=st,_type="debug")
+
+	#
+	# debug log function
+	#
+	def Error(self,st):
+		self.log(st=st,_type="error")
+
+	#
+	# debug log function
+	#
+	def Warring(self,st):
+		self.log(st=st,_type="warring")
+
+	#
+	# debug log function
+	#
+	def Notify(self,st):
+		self.log(st=st,_type="notify")
 
 	#
 	# local log function
