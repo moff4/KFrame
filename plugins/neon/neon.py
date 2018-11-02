@@ -147,19 +147,24 @@ class Neon(Plugin):
 		else:
 			module = None
 		if module is None:
-			self.Debug("{ip}: Handler not found ({url})".format(**request.dict()))
+			request.Debug("{ip}: Handler not found ({url})".format(**request.dict()))
 			res = self.P.init_plugin(key="response",code=404,headers=[CONTENT_HTML],data=NOT_FOUND)
 		else:
-			self.Debug("Found handler: {name}".format(name=module.name))
+			request.Debug("Found handler: {name}".format(name=module.name))
 			try:
 				res = module.handler(request)
 			except Exception as e:
-				self.Error("cgi handler: {ex}".format(ex=e))
-				self.Debug("cgi handler: {ex}".format(ex=Trace()))
+				request.Error("cgi handler: {ex}".format(ex=e))
+				request.Debug("cgi handler: {ex}".format(ex=Trace()))
 				res = self.P.init_plugin(key="response",code=500,headers=[CONTENT_HTML],data=SMTH_HAPPENED)
 		request.send(res)
 		request.Notify("{code} - {url} ? {args}".format(**request.dict(),code=res.code))
-		request.after_handler()
+		try:
+			request.after_handler()
+		except Exception as e:
+			request.Error("cgi after-handler: {ex}".format(ex=e))
+			request.Debug("cgi handler: {ex}".format(ex=Trace()))
+	
 	
 	#========================================================================
 	#                              DEMON TOOLS
