@@ -139,24 +139,29 @@ class Neon(Plugin):
 		return self.P.init_plugin(key="response",data=data,headers=headers,code=code)
 
 	def choose_module(self,request):
-		modules = sorted(map(lambda x:len(x.Path),filter(lambda x:request.headers['Host'] in x.Host and x.url.startswith(x.Path),self.cfg['cgi_modules'])),reverse=True)
-		if len(modules) > 0:
-			module = modules[0]
-		elif self.cfg['use_neon_server']:
-			module = self
+		res = None
+		if "Host" not in request.headers:
+			request.Debug("{ip}: No Host passed ({url})".format(**request.dict()))
 		else:
-			module = None
-		if module is None:
-			request.Debug("{ip}: Handler not found ({url})".format(**request.dict()))
+			modules = sorted(list(filter(lambda x:(request.headers['Host'] in x.Host or "any" in x.Host) and request.url.startswith(x.Path),self.cfg['cgi_modules'])),reverse=True,key=lambda x:len(x.Path))
+			if len(modules) > 0:
+				module = modules[0]
+			elif self.cfg['use_neon_server']:
+				module = self
+			else:
+				module = None
+			if module is None:
+				request.Debug("{ip}: Handler not found ({url})".format(**request.dict()))
+			else:
+				request.Debug("Found handler: {name}".format(name=module.name))
+				try:
+					res = module.handler(request)
+				except Exception as e:
+					request.Error("cgi handler: {ex}".format(ex=e))
+					request.Debug("cgi handler: {ex}".format(ex=Trace()))
+					res = self.P.init_plugin(key="response",code=500,headers=[CONTENT_HTML],data=SMTH_HAPPENED)
+		if res is None:
 			res = self.P.init_plugin(key="response",code=404,headers=[CONTENT_HTML],data=NOT_FOUND)
-		else:
-			request.Debug("Found handler: {name}".format(name=module.name))
-			try:
-				res = module.handler(request)
-			except Exception as e:
-				request.Error("cgi handler: {ex}".format(ex=e))
-				request.Debug("cgi handler: {ex}".format(ex=Trace()))
-				res = self.P.init_plugin(key="response",code=500,headers=[CONTENT_HTML],data=SMTH_HAPPENED)
 		request.send(res)
 		request.Notify("{code} - {url} ? {args}".format(**request.dict(),code=res.code))
 		try:
