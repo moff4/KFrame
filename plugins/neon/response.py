@@ -16,7 +16,7 @@ class Response(Plugin):
 	def add_header(self,header):
 		self.headers.append(header)
 		return self
-	def add_header(self,headers):
+	def add_headers(self,headers):
 		self.headers += headers
 		return self
 	def set_data(self,data):
@@ -29,7 +29,7 @@ class Response(Plugin):
 	def export(self):
 		st = []
 		st.append("{http_version} {code} {code_msg}\r\n".format(http_version=self.http_version,code=self.code,code_msg=http_code_msg[self.code]))
-		st.append("".join(["".join([i,"\r\n"]) for i in self.headers]))
+		st.append("".join(["".join([i,"\r\n"]) for i in filter(lambda x:x != None and len(x) > 0,self.headers)]))
 		st.append("\r\n")
 		st = "".join(st).encode() 
 		return st + (self.data if type(self.data) == bytes else self.data.encode())

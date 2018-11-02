@@ -58,6 +58,11 @@ STANDART_HEADERS = [
 	"Connection: close"
 ]
 
+
+MAX_DATA_LEN 		= 4*2**10
+MAX_HEADER_COUNT	= 32
+MAX_HEADER_LEN 		= 2*2**10
+
 def readln(conn,max_len=2048):
 	q = b' '
 	st = b''

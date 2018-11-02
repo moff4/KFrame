@@ -1,31 +1,56 @@
 #!/usr/bin/env python3
 
+import os
+
 from ...base.plugin import Plugin
 from .parser import parse_data
 from .utils import *
 
+#
+# class for each request
+# must be args:
+# 	addr - tuple (ip,port)
+# 	conn - socket
+# kwargs:
+#	max_header_length 	- int - max length of each header
+#	max_header_count	- int - max number of passed headers
+#	max_data_length 	- int - max length of data
+#	cache_min 			- int - seconds for HTTP header "Cache-Control: max-age"
+#
 class Request(Plugin):
 	def init(self,**kwargs):
-		self._id = kwargs['id'] if 'id' in kwargs else "0"
-		if any(map(lambda x:x not in kwargs,['cfg','addr','conn'])):
+		if any(map(lambda x:x not in kwargs,['addr','conn'])):
 			self.FATAL = True
 			self.errmsg = "missed kwargs argument"
 			self.Error(self.errmsg)
 			return
+
+		defaults = {
+			"id" 				: 0,
+			"cache_min" 		: 120,
+			"max_header_length"	: MAX_HEADER_LEN,
+			"max_header_count"	: MAX_HEADER_COUNT,
+			"max_data_length"	: MAX_DATA_LEN,
+		}
+		self.cfg = {}
+		for i in defaults:
+			self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
+		
 		self.conn 	= kwargs['conn']
 		self.addr 	= kwargs['addr']
 		self.ip 	= self.addr[0]
 		self.port 	= self.addr[1]
 		self.ssl 	= False
 		self.secure = False
+		
 		self._dict 	= {}
 		try:
-			self._dict = parse_data(self.conn,kwargs['cfg'])
+			self._dict = parse_data(self.conn,cfg=self.cfg)
 			self._dict_keys = list(self._dict.keys())
 		except Exception as e:
 			self.FATAL = True
 			self.errmsg = "parse data: %s"%e
-			self.Debug(self.errmsg)
+			self.Error(self.errmsg)
 			return
 		for i in self._dict:
 			setattr(self,i,self._dict[i])
@@ -37,7 +62,11 @@ class Request(Plugin):
 	# local log function
 	#
 	def __call__(self,st="",_type="notify"):
-		self.log(st="[{id}] {st}".format(id=self._id,st=st),_type=_type)
+		self.log(st="[{id}] {st}".format(id=self.cfg['id'],st=st),_type=_type)
+
+	#==========================================================================
+	#                             USER API
+	#==========================================================================
 
 	def set_ssl(self,ssl):
 		self.ssl = ssl
@@ -53,10 +82,28 @@ class Request(Plugin):
 			d[i] = getattr(self,i)
 		return d
 
+	# this will be called after main handler done
+	# u can override it
 	def after_handler(self):
-		pass # this will be called after main handler done
+		pass
 
 	def send(self,resp=None):
 		if not self._send:
 			self.conn.send(self.resp.export() if resp is None else resp.export())
 			self._send = True
+
+	#
+	# init response with static file
+	# afterward method will be ready to send()
+	#
+	def static_file(self,filename):
+		if os.path.isfile(filename):
+			self.resp.set_data(open(filename,'rb').read())
+			self.resp.add_header(Content_type(self.url))
+			self.resp.add_header("Cache-Control: max-age={cache_min}".format(cache_min=self.cfg['cache_min']))
+			self.resp.set_code(200)
+		else:
+			self.resp.set_data(NOT_FOUND )
+			self.resp.add_header(CONTENT_HTML)
+			self.resp.add_header("Connection: close")
+			self.resp.set_code(404)

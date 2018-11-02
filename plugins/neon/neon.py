@@ -18,10 +18,6 @@ from .request import Request
 from .response import Response
 from .utils import *
 
-MAX_DATA_LEN 		= 4*2**10
-MAX_HEADER_COUNT	= 32
-MAX_HEADER_LEN 		= 2*2**10
-
 class Neon(Plugin):
 	def init(self,**kwargs):
 		try:
@@ -88,7 +84,7 @@ class Neon(Plugin):
 
 	def gen_id(self):
 		self._rng += 1
-		st = binascii.hexlify(self.P.crypto._hash(str(self._rng).encode('utf-8'))[:8]).decode()
+		st = binascii.hexlify(self.P.crypto._hash(str(self._rng).encode('utf-8'))[:2]).decode()
 		az = []
 		while len(st) > 0:
 			az.append(st[:4])
@@ -129,17 +125,21 @@ class Neon(Plugin):
 				data = dirs(path)
 				headers = [CONTENT_HTML]
 			else:
-				data = open(path,'rb').read()
-				headers = [Content_type(req.url)]
+				req.static_file(path)
 		except Exception as e:
 			self.Error(e)
 			data = NOT_FOUND 
 			headers = [CONTENT_HTML,"Connection: close"] 
 			code = 404
-		return self.P.init_plugin(key="response",data=data,headers=headers,code=code)
+
+		req.resp.set_data(data)
+		req.resp.set_headers(headers)
+		req.resp.set_code(code)
+		return req.resp
 
 	def choose_module(self,request):
 		res = None
+		print(dir(request))
 		if "Host" not in request.headers:
 			request.Debug("{ip}: No Host passed ({url})".format(**request.dict()))
 		else:
@@ -195,7 +195,7 @@ class Neon(Plugin):
 				self.P.stats.add(key="ip",value=addr[0])
 				conn = self.wrap_ssl(conn) if _ssl else conn # only if self.cfg['use_ssl'] == True
 				self.Debug("Gonna create Reqeust-Object")
-				request = self.P.init_plugin(key="request",conn=conn,addr=addr,cfg=self.cfg,id=self.gen_id())\
+				request = self.P.init_plugin(key="request",conn=conn,addr=addr,id=self.gen_id(),**self.cfg)\
 					.set_ssl(_ssl)\
 					.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
 				self.Debug("Gonna choose module-handler")
@@ -205,6 +205,7 @@ class Neon(Plugin):
 				conn.close()
 
 			except Exception as e:
+				self.Warring('Another-Deal: (%s) %s'%(addr[0],e))
 				self.Debug('Another-Deal: (%s) %s'%(addr[0],Trace()))
 				conn.close()
 		self('Starting my work on port %s!'%port)

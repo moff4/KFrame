@@ -28,12 +28,18 @@
 
 Простой пример:  
 
+main.py:  
 ```python
+#!/usr/bin/env python3
 from kframe.base.parent import Parent    
 from kframe.plugins.neon import Neon    
 p = Parent()    
 p.add_plugin(key="neon", target=Neon)    
-p.init_plugins(site_directory='.',use_neon_server=True)    
+p.init_plugin(key="neon", export=False, site_directory='.', use_neon_server=True, http_port=8080)    
 p.start()  
+# open http://127.0.0.1:8080
 ```
-Версия 1.6   
+
+запуск: `$ ./main.py --stdout --debug`  
+
+Версия 1.6.1  
