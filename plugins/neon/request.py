@@ -89,7 +89,9 @@ class Request(Plugin):
 
 	def send(self,resp=None):
 		if not self._send:
-			self.conn.send(self.resp.export() if resp is None else resp.export())
+			resp = self.resp if resp is None else resp 
+			self.conn.send(resp.export())
+			self.P.stats.init_stat(key="requests-success" if 200 <= resp.code < 300 else "requests-failed")
 			self._send = True
 
 	#

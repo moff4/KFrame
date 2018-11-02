@@ -193,15 +193,12 @@ class Neon(Plugin):
 		def another_deal(conn,addr):
 			try:
 				self.P.stats.add(key="ip",value=addr[0])
+				self.P.stats.add(key="connections")
 				conn = self.wrap_ssl(conn) if _ssl else conn # only if self.cfg['use_ssl'] == True
-				self.Debug("Gonna create Reqeust-Object")
-				request = self.P.init_plugin(key="request",conn=conn,addr=addr,id=self.gen_id(),**self.cfg)\
-					.set_ssl(_ssl)\
-					.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
-				self.Debug("Gonna choose module-handler")
+				request = self.P.init_plugin(key="request",conn=conn,addr=addr,id=self.gen_id(),**self.cfg)
+				request.set_ssl(_ssl)
+				request.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
 				self.choose_module(request)
-				if 'stats' in self:
-					self.P.stats.add('connections')
 				conn.close()
 
 			except Exception as e:
