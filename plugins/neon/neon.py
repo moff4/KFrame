@@ -113,7 +113,7 @@ class Neon(Plugin):
 	# handler of original connection
 	# return Response Object
 	#
-	def handler(self,req):
+	def get(self,req):
 		def dirs(path):
 			if not req.url.endswith("/"):
 				req.url += "/"
@@ -140,7 +140,9 @@ class Neon(Plugin):
 	def choose_module(self,request):
 		res = None
 		print(dir(request))
-		if "Host" not in request.headers:
+		if request.method not in HTTP_METHODS:
+			request.Debug('{ip}: Unallowed method "{method}" ({url})'.format(**request.dict()))
+		elif "Host" not in request.headers:
 			request.Debug("{ip}: No Host passed ({url})".format(**request.dict()))
 		else:
 			modules = sorted(list(filter(lambda x:(request.headers['Host'] in x.Host or "any" in x.Host) and request.url.startswith(x.Path),self.cfg['cgi_modules'])),reverse=True,key=lambda x:len(x.Path))
@@ -155,7 +157,8 @@ class Neon(Plugin):
 			else:
 				request.Debug("Found handler: {name}".format(name=module.name))
 				try:
-					res = module.handler(request)
+					res = getattr(module,request.method.lower())(request)
+					#res = module.handler(request)
 				except Exception as e:
 					request.Error("cgi handler: {ex}".format(ex=e))
 					request.Debug("cgi handler: {ex}".format(ex=Trace()))
@@ -296,6 +299,17 @@ class Neon(Plugin):
 
 	#
 	# add new cgi_modules
+	# Module - Module/Object that has special interface:
+	# 	Path - str - begginig of all urls that this module handle
+	#	Host - list/set of all possible values of Host HTTP-header that associates with this module (or ["any"] for all Hosts)
+	#	get(request) 		- handler for GET requests 		; if not presented -> send 404 by default
+	# 	post(requests) 		- handler for POST requests 	; if not presented -> send 404 by default
+	# 	head(requests) 		- handler for HEAD requests 	; if not presented -> send 404 by default
+	# 	put(requests) 		- handler for PUT requests 		; if not presented -> send 404 by default
+	# 	delete(requests) 	- handler for DELETE requests 	; if not presented -> send 404 by default
+	# 	trace(requests) 	- handler for TRACE requests 	; if not presented -> send 404 by default
+	# 	connect(requests) 	- handler for CONNECT requests 	; if not presented -> send 404 by default
+	# 	options(requests) 	- handler for OPTIONS requests 	; if not presented -> send 404 by default
 	#
 	def add_site_module(self,module):
 		self.cfg['cgi_modules'].append(module)

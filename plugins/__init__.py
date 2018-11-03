@@ -12,5 +12,6 @@ __all__ = [
 	".stats",
 	".art",
 	".ssp",
-	".eventer"
+	".eventer",
+	".jscheme"
 ]

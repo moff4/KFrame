@@ -13,7 +13,16 @@ http_code_msg = {
 	501:'Not Implemented'
 }
 
-ALLOWED_HTTP_METHODS = ['GET','POST','HEAD']
+HTTP_METHODS = [
+	'GET',
+	'POST',
+	'HEAD',
+	'PUT',
+	'DELETE',
+	'TRACE',
+	'CONNECT',
+	'OPTIONS'
+]
 
 NOT_FOUND = '''
 <html><head>
