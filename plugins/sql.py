@@ -14,13 +14,26 @@ from ..base.plugin import Plugin
 #         username	-  str
 #         password	-  str
 #         scheme	-  str
-#         DDL  		-  list of tuple ( str - tablename , str - script for creating )
-#         }
+#         DDL  		-  dict : str - tablename => str - DDL script for creating
+#     }
 #
 class SQL(Plugin):
-	def init(self,cfg):
+	def init(self,cfg=None,**kwargs):
 		try:
-			self.cfg = cfg
+			if cfg != None:
+				self.cfg = cfg
+			else:
+				self.cfg = {}
+				defaults = {
+					'host'		: '127.0.0.1'
+					'port'		: 3306
+					'username'	: 'root'
+					'password'	: 'password'
+					'scheme'	: 'scheme'
+					'ddl'		: {}
+				}
+				for i in defaults:
+					self.cfg = kwargs[i] if i in kwargs else defaults[i]
 			self.conn = None
 			self.lock = False
 
@@ -79,6 +92,10 @@ class SQL(Plugin):
 		except Exception as e:
 			self('reconnect-error',_type="error")
 
+	#==========================================================================
+	#                                USER API
+	#==========================================================================
+
 	#
 	# TESTED
 	# exec query
@@ -101,12 +118,12 @@ class SQL(Plugin):
 				res = []
 				try:
 					res = cu.fetchall()
-				except:
+				except Exception as e:
 					pass
 				if commit:
 					try:
 						self.conn.commit()
-					except:
+					except Exception:
 						pass
 			else:
 				boo = False
@@ -117,10 +134,6 @@ class SQL(Plugin):
 		self.lock = False
 		return boo , res
 
-	#==========================================================================
-	#                                USER API
-	#==========================================================================
-
 	#
 	# TESTED
 	# create all tables according to there DDL
@@ -130,10 +143,10 @@ class SQL(Plugin):
 		try:
 			if 'ddl' in self.cfg:
 				for i in self.cfg['ddl']:	
-					self("%s execute create table script: %s"%(i[0],self.execute(i[1],commit=True)[0]),_type="debug")
+					self.Debug("{name} execute create table script: {result}".format(name=i,result=self.execute(self.cfg['ddl'][i],commit=True)[0]))
 			return True, None
 		except Exception as e:
-			self("create-table: %s"%(e),_type="error")
+			self.Error("create-table: %s"%(e))
 			return False , e
 
 	#
