@@ -20,9 +20,10 @@ class Mchunk(Plugin):
 		self._masked = False
 		self._mask = urandom(len(data))
 		self._data = data
+		return self
 
 	#
-	# unmask data
+	# mask data
 	#
 	def mask(self):
 		if not self._masked:
@@ -31,6 +32,7 @@ class Mchunk(Plugin):
 			self._masked = True
 			for i in range(len(data)):
 				self._data += bytes([data[i] ^ self._mask[i]])
+		return self
 	#
 	# unmask data
 	#
@@ -41,6 +43,7 @@ class Mchunk(Plugin):
 			self._masked = False
 			for i in range(len(data)):
 				self._data += bytes([data[i] ^ self._mask[i]])
+		return self
 
 	#
 	# return data as is
