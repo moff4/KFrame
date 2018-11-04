@@ -25,12 +25,12 @@ class SQL(Plugin):
 			else:
 				self.cfg = {}
 				defaults = {
-					'host'		: '127.0.0.1'
-					'port'		: 3306
-					'username'	: 'root'
-					'password'	: 'password'
-					'scheme'	: 'scheme'
-					'ddl'		: {}
+					'host'		: '127.0.0.1',
+					'port'		: 3306,
+					'username'	: 'root',
+					'password'	: 'password',
+					'scheme'	: 'scheme',
+					'ddl'		: {},
 				}
 				for i in defaults:
 					self.cfg = kwargs[i] if i in kwargs else defaults[i]

@@ -28,11 +28,14 @@ def apply_json_scheme(obj,scheme,key=None):
 		if _t != dict:
 			raise ValueError('expected type "{type}" {extra} ; got {src_type}'.format(src_type=_t,type=scheme['type'],extra=extra))
 		for i in scheme['value']:
+			boo = True
 			if i not in obj and 'default' in scheme['value'][i]:
 				obj[i] = default(scheme['value'][i]['default'])
+				boo = False
 			if i not in obj:
 				raise ValueError('expected value "{value}" {extra}'.format(value=scheme['type'],extra=extra+".{key}".format(key=i)))
-			apply_json_scheme(obj=obj[i],scheme=scheme['value'][i],key=i)
+			if boo:
+				apply_json_scheme(obj=obj[i],scheme=scheme['value'][i],key=i)
 	elif scheme['type'] in [str,"string"]:
 		if _t != str:
 			raise ValueError('expected type "{type}" {extra} ; got {src_type}'.format(src_type=_t,type=scheme['type'],extra=extra))
