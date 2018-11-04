@@ -5,7 +5,7 @@ from collections import deque
 
 
 class Eventer:
-	def __init__(self,timeout):
+	def init(self,timeout):
 		self.timeout = timeout
 		self.queue 	= deque() 	# item = ( key , timestamp )
 		self.i_c 	= {} 		# key => count
@@ -55,7 +55,6 @@ class Eventer:
 			if timestamp - _t <= self.timeout:
 				return az
 			else:
-				print("pop: %s"%key)
 				key , _ = self.queue.popleft()
 				if key in self.pop_b and self.pop_b[key] > 0:
 					self.pop_b[key] -= 1

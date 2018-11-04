@@ -29,24 +29,20 @@ class Stats(Plugin):
 	# initialize new stat
 	# params:
 	#   <must be>
-	#     key - internal name of stat
-	#     type - type of stats possible: aver / collect / set / single / inc / sum
+	#     key - (hashable) internal name of stat
+	#     type - (str) type of stat possible: aver / collect / set / single / inc / sum
 	#   <optional>
-	#     default - default value for any type
+	#     default - initial value
 	#     count - number of elements saved for type "aver" and "collect"
 	#       default: 500
 	#     increment - increment for signle call for type "inc"
 	#       default: 1
-	# return tuple ( flag of success , errmsg in case of error )
 	#
 	def init_stat(self,key,type,**kwargs):
-		if 'key' not in kwargs:
-			return False, "Expected key 'key'"
-		if 'type' not in kwargs:
-			return False , "No type of stat"
-		if kwargs['type'] not in POSSIBLE_TYPES:
-			return False , "Unknown type of stat"
+		if type not in POSSIBLE_TYPES:
+			raise ValueError("Unknown type of stat")
 		d = dict(kwargs)
+		d['type'] = type
 		if 'default' in d:
 			default = d['default']
 		else:
@@ -61,8 +57,7 @@ class Stats(Plugin):
 			else:
 				default = set()
 		d['data'] = default
-		self._stats[d['key']] = d
-		return True , "Success"
+		self._stats[key] = d
 
 	#
 	# add stat data
