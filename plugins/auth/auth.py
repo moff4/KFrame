@@ -4,11 +4,11 @@ import time
 from traceback import format_exc as Trace
 
 from ...base.plugin import Plugin
-from ...plugins import jscheme
-from ...plugins import crypto
-from ...plugins import art
-from ..mchunk import DEFAULT_LOAD_SCHEME as mchunk_scheme
-from ..stats import DEFAULT_LOAD_SCHEME as stat_scheme
+from ...modules import jscheme
+from ...modules import crypto
+from ...modules import art
+from ..mchunk import mchunk_scheme
+from ..stats import stats_scheme
 
 #
 # This module is to work with sessions, cookies and SQL-storing

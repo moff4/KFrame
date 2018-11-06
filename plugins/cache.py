@@ -148,7 +148,7 @@ class Cache(Plugin):
 		else:
 			return 0
 
-DEFAULT_LOAD_SCHEME = {
+cache_scheme = {
 	"target":Cache,
 	"module":False,
 	"arg":(),

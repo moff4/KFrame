@@ -11,31 +11,28 @@ from ..base.plugin import Plugin
 #   - object/module that has field SQL - dict {
 #         host		-  str
 #         port		-  int
-#         username	-  str
-#         password	-  str
+#         user		-  str
+#         passwd	-  str
 #         scheme	-  str
 #         DDL  		-  dict : str - tablename => str - DDL script for creating
 #     }
 #
 class SQL(Plugin):
-	def init(self,cfg=None,**kwargs):
-		try:
-			if cfg != None:
-				self.cfg = cfg
-			else:
-				self.cfg = {}
-				defaults = {
-					'host'		: '127.0.0.1',
-					'port'		: 3306,
-					'username'	: 'root',
-					'password'	: 'password',
-					'scheme'	: 'scheme',
-					'ddl'		: {},
-				}
-				for i in defaults:
-					self.cfg = kwargs[i] if i in kwargs else defaults[i]
+	def init(self,host,port,user,passwd,**kwargs):
+		try:	
+			self.cfg = {
+				'host'		: host,
+				'port'		: port,
+				'user'		: user,
+				'passwd'	: passwd,
+			}
+			defaults = {
+				'ddl'		: {},
+			}
+			for i in defaults:
+				self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
 			self.conn = None
-			self.lock = False
+			self._lock = 0
 
 			self.FATAL = not self.connect()
 			if self.FATAL:
@@ -64,6 +61,7 @@ class SQL(Plugin):
 			if 'scheme' in self.cfg:
 				params['db'] = self.cfg['scheme']
 			self.conn = sql.connect(**params)
+			self._lock += 1
 			return True
 		except Exception as e:
 			self('connect-error: ({user}@{host}:{port}/{scheme}): {ex}'.format(user=self.cfg['user'],host=self.cfg['host'],port=self.cfg['port'],scheme=self.cfg['scheme'] if 'scheme' in self.cfg else "",ex=e),_type="error")
@@ -74,10 +72,13 @@ class SQL(Plugin):
 	# close connection
 	#
 	def close(self):
-		try:
-			self.conn.close()
-		except Exception:
-			pass
+		self._lock -=1 
+		if self._lock <= 0:
+			self._lock = 0
+			try:
+				self.conn.close()
+			except Exception:
+				pass
 
 	#
 	# TESTED
@@ -87,27 +88,35 @@ class SQL(Plugin):
 		try:
 			self.close()
 			self.connect()
-			# if not self.conn.is_connected():
-			# 	self.conn.reconnect(2,1)
 		except Exception as e:
 			self('reconnect-error',_type="error")
+	
+	#
+	# TESTED
+	# create all tables according to there DDL
+	# return tuple ( True in case of success or False , None or Exception)
+	#
+	def create_table(self):
+		try:
+			if 'ddl' in self.cfg:
+				for i in self.cfg['ddl']:	
+					self.Debug("{name} execute create table script: {result}".format(name=i,result=self.execute(self.cfg['ddl'][i],commit=True)[0]))
+			return True, None
+		except Exception as e:
+			self.Error("create-table: %s"%(e))
+			return False , e
 
 	#==========================================================================
 	#                                USER API
 	#==========================================================================
 
 	#
-	# TESTED
+	# universal method: select/create/insert/update/...
 	# exec query
 	# return tuple( flag of success , data as list of tuples )
 	#
 	def execute(self,query,commit=False,multi=False):
 		i = 0.1
-		while self.lock:
-			time.sleep(min(i,1.5))
-			i *= 2
-		self.lock = True
-
 		res = []
 		boo = True
 		try:
@@ -128,26 +137,45 @@ class SQL(Plugin):
 			else:
 				boo = False
 		except Exception as e:
-			self('exec-query: {}'.format(e),_type="error")
+			self.Error('exec-query: {ex}'.format(ex=e))
 			boo = False
-		self.close()
-		self.lock = False
 		return boo , res
 
 	#
-	# TESTED
-	# create all tables according to there DDL
-	# return tuple ( True in case of success or False , None or Exception)
+	# method specialy for select
+	# return list of tuples (rows) in case of success
+	# or None in case of error
 	#
-	def create_table(self):
+	def select_all(self,query):
 		try:
-			if 'ddl' in self.cfg:
-				for i in self.cfg['ddl']:	
-					self.Debug("{name} execute create table script: {result}".format(name=i,result=self.execute(self.cfg['ddl'][i],commit=True)[0]))
-			return True, None
+			if self.conn is None or not self.conn.is_connected():
+				self.reconnect()
+			cu = self.conn.cursor()
+			cu.execute(query)
+			return cu.fetchall()
 		except Exception as e:
-			self.Error("create-table: %s"%(e))
-			return False , e
+			self.Error('select-all: {ex}'.format(ex=e))
+			return None
+
+	#
+	# method specialy for select
+	# return generator that returns tuples (row) in case of success
+	# or raise Exception in case of error
+	#
+	def select(self,query):
+		try:
+			if self.conn is None or not self.conn.is_connected():
+				self.reconnect()
+			cu = self.conn.cursor()
+			cu.execute(query)
+			while True:
+				res = cu.fetchone()
+				if res is None:
+					return None
+				yield res
+		except Exception as e:
+			self.Error('select-one: {ex}'.format(ex=e))
+			raise
 
 	#
 	# need for integration
@@ -161,7 +189,7 @@ class SQL(Plugin):
 	def stop(self,wait=True):
 		pass
 
-DEFAULT_LOAD_SCHEME = {
+sql_scheme = {
 	"target":SQL,
 	"module":False,
 	"arg":(),

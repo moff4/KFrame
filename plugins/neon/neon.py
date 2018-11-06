@@ -12,8 +12,8 @@ from traceback import format_exc as Trace
 
 
 from ...base.plugin import Plugin
-from ...plugins import crypto
-from ..stats import DEFAULT_LOAD_SCHEME as stat_scheme
+from ...modules import crypto
+from ..stats import stats_scheme
 from .request import Request
 from .response import Response
 from .utils import *

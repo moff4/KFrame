@@ -101,7 +101,7 @@ class Stats(Plugin):
 			d[key] = self._export(key)
 		return d
 
-DEFAULT_LOAD_SCHEME = {
+stats_scheme = {
 	"target":Stats,
 	"module":False,
 	"arg":(),

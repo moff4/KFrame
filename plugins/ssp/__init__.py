@@ -2,7 +2,7 @@
 
 from .ssp import SSP 
 
-DEFAULT_LOAD_SCHEME = {
+ssp_scheme = {
 	"target":SSP,
 	"module":False,
 	"arg":(),
