@@ -62,7 +62,7 @@ class Neon(Plugin):
 			self.P.add_plugin(key="response",target=Response,autostart=False,module=False)
 
 			if 'stats' not in self:
-				self.P.add_plugin(key="stats",**stat_scheme).init_plugin(key="stats",export=False)
+				self.P.add_plugin(key="stats",**stats_scheme).init_plugin(key="stats",export=False)
 			if 'crypto' not in self:
 				self.P.add_module(key="crypto",target=crypto).init_plugin(key="crypto",export=False)
 
@@ -142,6 +142,8 @@ class Neon(Plugin):
 		print(dir(request))
 		if request.method not in HTTP_METHODS:
 			request.Debug('{ip}: Unallowed method "{method}" ({url})'.format(**request.dict()))
+		elif request.http_version not in HTTP_VERSIONS:
+			request.Debug('{ip}: Unallowed version "{method}" ({url})'.format(**request.dict()))
 		elif "Host" not in request.headers:
 			request.Debug("{ip}: No Host passed ({url})".format(**request.dict()))
 		else:

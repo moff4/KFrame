@@ -23,6 +23,9 @@ HTTP_METHODS = [
 	'CONNECT',
 	'OPTIONS'
 ]
+HTTP_VERSIONS = [
+	'HTTP/1.1'
+]
 
 NOT_FOUND = '''
 <html><head>
@@ -86,22 +89,17 @@ def readln(conn,max_len=2048):
 	return st
 
 #
-# takes list of headers-lines and return extended string
+# takes list of headers-lines and return extended list of str
 #
 def apply_standart_headers(headers):
 	for i in STANDART_HEADERS:
-		# if True not in list(map(lambda x:x.startswith(i.split(':')[0]),headers)):
-		# 	headers.append(i)
 		key = i.split(':')[0]
 		boo = False
 		for j in headers:
 			boo = boo or j.startswith(key)
 		if not boo:
 			headers.append(i)
-	st = ''
-	for i in headers:
-		st += "%s\r\n"%(i)
-	return st
+	return headers
 
 #
 # get smth like b'A%66C'

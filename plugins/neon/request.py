@@ -19,7 +19,7 @@ from .utils import *
 #
 class Request(Plugin):
 	def init(self,**kwargs):
-		if any(map(lambda x:x not in kwargs,['addr','conn'])):
+		if any(map(lambda x:x not in kwargs,['addr','conn'])) and 'kweb' not in kwargs:
 			self.FATAL = True
 			self.errmsg = "missed kwargs argument"
 			self.Error(self.errmsg)
@@ -36,25 +36,24 @@ class Request(Plugin):
 		for i in defaults:
 			self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
 		
-		self.conn 	= kwargs['conn']
-		self.addr 	= kwargs['addr']
+		if 'kweb' in kwargs and len(kwargs['kweb']) > 0:
+			self._dict = kwargs['kweb']
+		else:
+			self._dict 	= {}
+			try:
+				self._dict = parse_data(self.conn,cfg=self.cfg)
+				self._dict_keys = list(self._dict.keys())
+			except Exception as e:
+				self.FATAL = True
+				self.errmsg = "parse data: %s"%e
+				self.Error(self.errmsg)
+				return
+		for i in self._dict:
+			setattr(self,i,self._dict[i])
 		self.ip 	= self.addr[0]
 		self.port 	= self.addr[1]
 		self.ssl 	= False
 		self.secure = False
-		
-		self._dict 	= {}
-		try:
-			self._dict = parse_data(self.conn,cfg=self.cfg)
-			self._dict_keys = list(self._dict.keys())
-		except Exception as e:
-			self.FATAL = True
-			self.errmsg = "parse data: %s"%e
-			self.Error(self.errmsg)
-			return
-		for i in self._dict:
-			setattr(self,i,self._dict[i])
-
 		self.resp = self.P.init_plugin(key="response")
 		self._send = False
 	

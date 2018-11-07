@@ -255,6 +255,7 @@ class Parent:
 	# just for easier use
 	#
 	def init(self):
+		self.parse_argv()
 		self.init_plugins()
 		return self
 

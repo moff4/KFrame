@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import time
+import binascii
 from traceback import format_exc as Trace
 
 from ...base.plugin import Plugin
@@ -23,7 +24,7 @@ class Auth(Plugin):
 			self.P.add_plugin(key="mchunk",**mchunk_scheme)
 		self.secret = self.P.init_plugin(key="mchunk",export=True).set(secret).mask()
 		if 'stats' not in self:
-			self.P.add_plugin(key="stats",**stat_scheme).init_plugin(key="stats",export=False)
+			self.P.add_plugin(key="stats",**stats_scheme).init_plugin(key="stats",export=False)
 		
 		self.mask_1 = kwargs['mask_1'] if 'mask_1' in kwargs else None
 		self.mask_2 = kwargs['mask_2'] if 'mask_2' in kwargs else None
@@ -65,7 +66,7 @@ class Auth(Plugin):
 
 			data = art.unmarshal(data=c.decrypt(data=data['d'],iv=data['i']),mask=self.mask_2)
 
-			return jscheme.apply_json_scheme(obj=data,scheme=self.cookie_scheme,key="cookie")
+			return jscheme.apply(obj=data,scheme=self.cookie_scheme,key="cookie")
 		except Exception as e:
 			self.Warring("decode cookie: {ex}".format(ex=e))
 			self.Warring("decode cookie: {ex}".format(ex=Trace()))
@@ -111,7 +112,7 @@ class Auth(Plugin):
 			"d":data,
 			"i":iv
 		}, mask=self.mask_1, random=True)
-
+		res = binascii.hexlify(res).decode()
 		self.P.stats.add("cookie-created")
 		return res
 	
@@ -120,6 +121,7 @@ class Auth(Plugin):
 	# or None if cookie is not valid
 	#
 	def valid_cookie(self,cookie,ip=None):
+		cookie = binascii.unhexlify(cookie)
 		cookie = self.decode_cookie(cookie)
 		if cookie is None or (cookie['exp'] is not None and (cookie['create'] + cookie['exp']) < time.time()) or (cookie['ip'] != ip):
 			return None

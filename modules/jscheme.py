@@ -11,7 +11,7 @@
 # 	default : default value if this object does not exists
 # }
 #
-def apply_json_scheme(obj,scheme,key=None):
+def apply(obj,scheme,key=None):
 	def default(value):
 		return value() if '__call__' in dir(value) else value
 	_key = key if key is not None else "Top-level"
@@ -23,7 +23,7 @@ def apply_json_scheme(obj,scheme,key=None):
 		if _t != list:
 			raise ValueError('expected type "{type}" {extra} ; got {src_type}'.format(src_type=_t,type=scheme['type'],extra=extra))
 		for i in obj:
-			apply_json_scheme(i,scheme['value'],key=_key)
+			apply(i,scheme['value'],key=_key)
 	elif scheme['type'] in [dict,'object','dict']:
 		if _t != dict:
 			raise ValueError('expected type "{type}" {extra} ; got {src_type}'.format(src_type=_t,type=scheme['type'],extra=extra))
@@ -35,7 +35,7 @@ def apply_json_scheme(obj,scheme,key=None):
 			if i not in obj:
 				raise ValueError('expected value "{value}" {extra}'.format(value=scheme['type'],extra=extra+".{key}".format(key=i)))
 			if boo:
-				apply_json_scheme(obj=obj[i],scheme=scheme['value'][i],key=i)
+				apply(obj=obj[i],scheme=scheme['value'][i],key=i)
 	elif scheme['type'] in [str,"string"]:
 		if _t != str:
 			raise ValueError('expected type "{type}" {extra} ; got {src_type}'.format(src_type=_t,type=scheme['type'],extra=extra))
@@ -79,7 +79,7 @@ def test():
 			}
 		}
 	}
-	print(apply_json_scheme(obj,scheme))
+	print(apply(obj,scheme))
 
 if __name__ == '__main__':
 	test()
