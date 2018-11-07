@@ -25,7 +25,8 @@ class Auth(Plugin):
 		if 'stats' not in self:
 			self.P.add_plugin(key="stats",**stat_scheme).init_plugin(key="stats",export=False)
 		
-		self.mask = kwargs['mask'] if 'mask' in kwargs else None
+		self.mask_1 = kwargs['mask_1'] if 'mask_1' in kwargs else None
+		self.mask_2 = kwargs['mask_2'] if 'mask_2' in kwargs else None
 
 		self.P.stats.init_stat(key="cookie-created"  ,type="inc")
 		
@@ -56,13 +57,13 @@ class Auth(Plugin):
 	#
 	def decode_cookie(self,cookie):
 		try:
-			data = art.unmarshal(data=cookie,mask=self.mask)
+			data = art.unmarshal(data=cookie,mask=self.mask_1)
 			
 			self.secret.unmask()
 			c = crypto.Cipher(key=self.secret.get())
 			self.secret.mask()
 
-			data = art.unmarshal(data=c.decrypt(data=data['d'],iv=data['i']),mask=self.mask)
+			data = art.unmarshal(data=c.decrypt(data=data['d'],iv=data['i']),mask=self.mask_2)
 
 			return jscheme.apply_json_scheme(obj=data,scheme=self.cookie_scheme,key="cookie")
 		except Exception as e:
@@ -97,7 +98,7 @@ class Auth(Plugin):
 		}
 		for i in filter(lambda x:x in kwargs,params.keys()):
 			data[params[i]] = kwargs[i]
-		data = art.marshal(data, mask=self.mask, random=True)
+		data = art.marshal(data, mask=self.mask_2, random=True)
 
 		self.secret.unmask()
 		c = crypto.Cipher(key=self.secret.get())
@@ -109,7 +110,7 @@ class Auth(Plugin):
 		res = art.marshal({
 			"d":data,
 			"i":iv
-		}, mask=self.mask, random=True)
+		}, mask=self.mask_1, random=True)
 
 		self.P.stats.add("cookie-created")
 		return res
