@@ -48,6 +48,9 @@ class Neon(Plugin):
 			self.Hosts = ['any']
 			self.Path = '/'
 
+			if self.cfg['site_directory'].endswith("/"):
+				self.cfg['site_directory'] = self.cfg['site_directory'][:-1]
+
 			if self.cfg['use_ssl']:
 				self.raw_socket = self.open_port(use_ssl=False,port=self.cfg['http_port'])
 				self.socket = self.open_port(use_ssl=True,port=self.cfg['https_port'])
@@ -139,7 +142,6 @@ class Neon(Plugin):
 
 	def choose_module(self,request):
 		res = None
-		print(dir(request))
 		if request.method not in HTTP_METHODS:
 			request.Debug('{ip}: Unallowed method "{method}" ({url})'.format(**request.dict()))
 		elif request.http_version not in HTTP_VERSIONS:
@@ -165,8 +167,6 @@ class Neon(Plugin):
 					request.Error("cgi handler: {ex}".format(ex=e))
 					request.Debug("cgi handler: {ex}".format(ex=Trace()))
 					res = self.P.init_plugin(key="response",code=500,headers=[CONTENT_HTML],data=SMTH_HAPPENED)
-		if res is None:
-			res = self.P.init_plugin(key="response",code=404,headers=[CONTENT_HTML],data=NOT_FOUND)
 		request.send(res)
 		request.Notify("{code} - {url} ? {args}".format(**request.dict(),code=res.code))
 		try:
@@ -201,9 +201,12 @@ class Neon(Plugin):
 				self.P.stats.add(key="connections")
 				conn = self.wrap_ssl(conn) if _ssl else conn # only if self.cfg['use_ssl'] == True
 				request = self.P.init_plugin(key="request",conn=conn,addr=addr,id=self.gen_id(),**self.cfg)
-				request.set_ssl(_ssl)
-				request.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
-				self.choose_module(request)
+				if request.FATAL:
+					self.Error("request-init: {}".format(request.errmsg))
+				else:
+					request.set_ssl(_ssl)
+					request.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
+					self.choose_module(request)
 				conn.close()
 
 			except Exception as e:

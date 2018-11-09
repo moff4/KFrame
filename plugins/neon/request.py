@@ -41,13 +41,14 @@ class Request(Plugin):
 		else:
 			self._dict 	= {}
 			try:
-				self._dict = parse_data(self.conn,cfg=self.cfg)
-				self._dict_keys = list(self._dict.keys())
+				self._dict = parse_data(kwargs['conn'],cfg=self.cfg)
 			except Exception as e:
 				self.FATAL = True
 				self.errmsg = "parse data: %s"%e
 				self.Error(self.errmsg)
 				return
+		self._dict.update(kwargs)
+		self._dict_keys = list(self._dict.keys())
 		for i in self._dict:
 			setattr(self,i,self._dict[i])
 		self.ip 	= self.addr[0]
@@ -90,7 +91,7 @@ class Request(Plugin):
 		if not self._send:
 			resp = self.resp if resp is None else resp 
 			self.conn.send(resp.export())
-			self.P.stats.init_stat(key="requests-success" if 200 <= resp.code < 300 else "requests-failed")
+			self.P.stats.add(key="requests-success" if 200 <= resp.code < 300 else "requests-failed")
 			self._send = True
 
 	#
@@ -99,11 +100,14 @@ class Request(Plugin):
 	#
 	def static_file(self,filename):
 		if os.path.isfile(filename):
-			self.resp.set_data(open(filename,'rb').read())
+			self.Debug("gonna send file: {}".format(filename))
+			with open(filename,"rb") as f:
+				self.resp.set_data(f.read())
 			self.resp.add_header(Content_type(self.url))
 			self.resp.add_header("Cache-Control: max-age={cache_min}".format(cache_min=self.cfg['cache_min']))
 			self.resp.set_code(200)
 		else:
+			self.Debug("File not found: {}".format(filename))
 			self.resp.set_data(NOT_FOUND )
 			self.resp.add_header(CONTENT_HTML)
 			self.resp.add_header("Connection: close")
