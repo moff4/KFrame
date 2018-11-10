@@ -32,6 +32,7 @@ class Stats(Plugin):
 	#     key - (hashable) internal name of stat
 	#     type - (str) type of stat possible: aver / collect / set / single / inc / sum
 	#   <optional>
+	# 	  desc - str - description
 	#     default - initial value
 	#     count - number of elements saved for type "aver" and "collect"
 	#       default: 500
@@ -95,10 +96,17 @@ class Stats(Plugin):
 	#
 	# return dict containing all stats
 	#
-	def export(self):
+	def export(self,extension=False):
 		d = {}
-		for key in self._stats:
-			d[key] = self._export(key)
+		if extension:
+			for key in self._stats:
+				d[key] = {
+					'desc': self._stats[key]['desc'] if 'desc' in self._stats else key,
+					'data': self._export(key)
+				}
+		else:
+			for key in self._stats:
+				d[key] = self._export(key) 
 		return d
 
 stats_scheme = {
