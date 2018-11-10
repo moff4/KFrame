@@ -69,11 +69,11 @@ class Neon(Plugin):
 			if 'crypto' not in self:
 				self.P.add_module(key="crypto",target=crypto).init_plugin(key="crypto",export=False)
 
-			self.P.stats.init_stat(key="start-time"      ,type="single",default=time.time())
-			self.P.stats.init_stat(key="requests-success",type="inc")
-			self.P.stats.init_stat(key="requests-failed" ,type="inc")
-			self.P.stats.init_stat(key="connections"     ,type="inc")
-			self.P.stats.init_stat(key="ip"              ,type="set")
+			self.P.stats.init_stat(key="start-time"      ,type="single",default=time.strftime("%H:%M:%S %d %b %Y") , desc="Время запуска сервера")
+			self.P.stats.init_stat(key="requests-success",type="inc" , desc="Кол-во успешных запросов")
+			self.P.stats.init_stat(key="requests-failed" ,type="inc" , desc="Кол-во ошибочных запросов")
+			self.P.stats.init_stat(key="connections"     ,type="inc" , desc="Кол-во соединений")
+			self.P.stats.init_stat(key="ip"              ,type="set" , desc="Уникальные IP")
 
 			self.FATAL = False
 			self.errmsg = '%s initialized successfully'%(self.name)

@@ -29,7 +29,7 @@ class Auth(Plugin):
 		self.mask_1 = kwargs['mask_1'] if 'mask_1' in kwargs else None
 		self.mask_2 = kwargs['mask_2'] if 'mask_2' in kwargs else None
 
-		self.P.stats.init_stat(key="cookie-created"  ,type="inc")
+		self.P.stats.init_stat(key="cookie-created"  ,type="inc" , desc="Выдано Куки-файлов")
 		
 		self.cookie_scheme = {
 			"type":dict,

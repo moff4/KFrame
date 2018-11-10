@@ -101,7 +101,7 @@ class Stats(Plugin):
 		if extension:
 			for key in self._stats:
 				d[key] = {
-					'desc': self._stats[key]['desc'] if 'desc' in self._stats else key,
+					'desc': self._stats[key]['desc'] if 'desc' in self._stats[key] else key,
 					'data': self._export(key)
 				}
 		else:
