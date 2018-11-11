@@ -258,7 +258,7 @@ class Neon(Plugin):
 		try:
 			if not thread and obj != None:
 				os.kill(obj.pid,signal.SIGINT)
-		except:
+		except Exception:
 			pass
 	def _open(self):
 		def open(port):
@@ -267,7 +267,7 @@ class Neon(Plugin):
 				sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 				sock.connect(("0.0.0.0",port))
 				sock.close()
-			except:
+			except Exception:
 				pass
 		if self.cfg['use_ssl']:
 			open(self.cfg['https_port'])
@@ -294,7 +294,7 @@ class Neon(Plugin):
 			self('web: socket closed')
 			self._open()
 			for i in self._threads:
-				self.beep(i[0])
+				#self.beep(i[0])
 				i[0].join()
 		self('Finishing my work!')		
 
