@@ -20,7 +20,7 @@ class Response(Plugin):
 		self.headers += headers
 		return self
 	def set_data(self,data):
-		self.data = data
+		self.data = data.encode() if type(data) == str else data
 		return self
 	def set_http_verion(self,http_verion):
 		self.http_version = http_version
@@ -32,4 +32,4 @@ class Response(Plugin):
 		st.append("".join(["".join([i,"\r\n"]) for i in filter(lambda x:x != None and len(x) > 0,apply_standart_headers(self.headers + ["Content-Length: {length}".format(length=len(self.data))]))]))
 		st.append("\r\n")
 		st = "".join(st).encode() 
-		return st + (self.data if type(self.data) == bytes else self.data.encode())
+		return st + self.data

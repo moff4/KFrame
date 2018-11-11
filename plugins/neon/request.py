@@ -97,12 +97,16 @@ class Request(Plugin):
 	#
 	# init response with static file
 	# afterward method will be ready to send()
+	# extra_modifier(Request,data,*args,**kwargs) - some handler that will be called with data from file if passed
 	#
-	def static_file(self,filename):
+	def static_file(self,filename,extra_modifier=None,*args,**kwargs):
 		if os.path.isfile(filename):
 			self.Debug("gonna send file: {}".format(filename))
 			with open(filename,"rb") as f:
-				self.resp.set_data(f.read())
+				data = f.read()
+			if extra_modifier is not None:
+				data = extra_modifier(self,data,*args,**kwargs)
+			self.resp.set_data(data)
 			self.resp.add_header(Content_type(self.url))
 			self.resp.add_header("Cache-Control: max-age={cache_min}".format(cache_min=self.cfg['cache_min']))
 			self.resp.set_code(200)
