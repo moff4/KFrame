@@ -29,6 +29,7 @@ class Neon(Plugin):
 				'ca_cert'			: "./ca.cert",
 				'keyfile'			: "./key.pem",
 				'certfile'			: "./cert.pem",
+				'keypassword' 		: None,
 				'site_directory'	: './var',
 				'cgi_modules'		: [],
 				'max_data_length'	: MAX_DATA_LEN,
@@ -55,7 +56,7 @@ class Neon(Plugin):
 				self.raw_socket = self.open_port(use_ssl=False,port=self.cfg['http_port'])
 				self.socket = self.open_port(use_ssl=True,port=self.cfg['https_port'])
 				self.context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH,cafile=self.cfg['ca_cert'])
-				self.context.load_cert_chain(certfile=self.cfg['certfile'], keyfile=self.cfg['keyfile'])
+				self.context.load_cert_chain(certfile=self.cfg['certfile'], keyfile=self.cfg['keyfile'],password=self.cfg['keypassword'])
 			else:
 				self.socket = self.open_port(use_ssl=False,port=self.cfg['http_port'])
 				self.context = None
@@ -162,11 +163,12 @@ class Neon(Plugin):
 				request.Debug("Found handler: {name}".format(name=module.name))
 				try:
 					res = getattr(module,request.method.lower())(request)
-					#res = module.handler(request)
 				except Exception as e:
 					request.Error("cgi handler: {ex}".format(ex=e))
 					request.Debug("cgi handler: {ex}".format(ex=Trace()))
 					res = self.P.init_plugin(key="response",code=500,headers=[CONTENT_HTML],data=SMTH_HAPPENED)
+		if res is None:
+			res = request.resp
 		request.send(res)
 		request.Notify("{code} - {url} ? {args}".format(**request.dict(),code=res.code))
 		try:
