@@ -167,6 +167,7 @@ class Neon(Plugin):
 					request.Error("cgi handler: {ex}".format(ex=e))
 					request.Debug("cgi handler: {ex}".format(ex=Trace()))
 					res = self.P.init_plugin(key="response",code=500,headers=[CONTENT_HTML],data=SMTH_HAPPENED)
+		res = request.resp if res is None else res
 		request.send(res)
 		request.Notify("{code} - {url} ? {args}".format(**request.dict(),code=res.code))
 		try:
@@ -191,7 +192,9 @@ class Neon(Plugin):
 
 	def wrap_ssl(self,conn):
 		if self.context != None:
+			self.Debug("Gonna wrap")
 			conn = self.context.wrap_socket(conn, server_side=True)
+			self.Debug("Done wrap")
 		return conn
 
 	def __alt_run(self,sock,port,_ssl=False):

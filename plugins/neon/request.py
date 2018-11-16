@@ -41,7 +41,9 @@ class Request(Plugin):
 		else:
 			self._dict 	= {}
 			try:
+				self.Debug("Gonna read")
 				self._dict = parse_data(kwargs['conn'],cfg=self.cfg)
+				self.Debug("Done read")
 			except Exception as e:
 				self.FATAL = True
 				self.errmsg = "parse data: %s"%e
