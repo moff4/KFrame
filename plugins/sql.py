@@ -49,18 +49,21 @@ class SQL(Plugin):
 	#                                INTERNAL METHODS
 	#==========================================================================
 
+	def __connect(self):
+		params = {}
+		for i in ['user','passwd','host','port']:
+			params[i] = self.cfg[i]
+		if 'scheme' in self.cfg:
+			params['db'] = self.cfg['scheme']
+		return sql.connect(**params)
+
 	#
 	# TESTED
 	# open connection
 	#
 	def connect(self):
 		try:
-			params = {}
-			for i in ['user','passwd','host','port']:
-				params[i] = self.cfg[i]
-			if 'scheme' in self.cfg:
-				params['db'] = self.cfg['scheme']
-			self.conn = sql.connect(**params)
+			self.conn = self.__connect()
 			self._lock += 1
 			return True
 		except Exception as e:
@@ -115,14 +118,18 @@ class SQL(Plugin):
 	# exec query
 	# return tuple( flag of success , data as list of tuples )
 	#
-	def execute(self,query,commit=False,multi=False):
+	def execute(self,query,commit=False,multi=False,unique_cursor=False):
 		i = 0.1
 		res = []
 		boo = True
 		try:
-			self.reconnect()
-			if self.conn != None and self.conn.is_connected():
-				cu = self.conn.cursor()
+			if not unique_cursor:
+				self.reconnect()
+				conn = self.conn
+			else:
+				conn = conn = self.__connect()
+			if conn != None and conn.is_connected():
+				cu = conn.cursor()
 				cu.execute(query,multi=multi)
 				res = []
 				try:
