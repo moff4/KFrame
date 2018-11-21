@@ -169,11 +169,14 @@ class SQL(Plugin):
 	# return generator that returns tuples (row) in case of success
 	# or raise Exception in case of error
 	#
-	def select(self,query):
+	def select(self,query,unique_cursor=True):
 		try:
-			if self.conn is None or not self.conn.is_connected():
+			if unique_cursor:
+				conn = self.__connect()
+			else:
 				self.reconnect()
-			cu = self.conn.cursor()
+				conn = self.conn
+			cu = conn.cursor()
 			cu.execute(query)
 			while True:
 				res = cu.fetchone()
