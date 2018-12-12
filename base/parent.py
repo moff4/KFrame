@@ -73,7 +73,6 @@ class Parent:
 	#
 	def parse_argv(self):
 		self.collect_argv()
-		l = list(filter(lambda x:self._argv_rules[x]['critical'],self._argv_rules.keys()))
 		for arg in sys.argv[1:]:
 			if '=' in arg:
 				key = arg.split('=')
@@ -83,9 +82,13 @@ class Parent:
 				key = arg
 				value = True
 			self._argv_p[key] = value
-			if key in l:
-				l.pop(l.index(l))
-		if len(l) > 0:
+	
+	#
+	# check if all critical argv were passed
+	# set FATAL True if not all passed
+	#
+	def check_critiacal_argv(self):
+		if len(list(filter(lambda x:self._argv_rules[x]['critical'] and x in self._argv_p,self._argv_rules.keys()))) > 0:
 			self.FATAL = True
 			self.errmsg = ["Parent: parse-argv: not all critical params were passed : %s"%l]
 
@@ -379,11 +382,12 @@ class Parent:
 			self.print_help()
 			return self
 		self.print_errmsg()
+		self.parse_argv()
+		self.check_critiacal_argv()
 		if self.FATAL:
 			return self
 		else:
 			try:
-				self.parse_argv()
 				self.RUN_FLAG = wait
 				self.run() 
 			except Exception as e:
