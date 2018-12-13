@@ -87,9 +87,9 @@ class Parent:
 	# set FATAL True if not all passed
 	#
 	def check_critiacal_argv(self):
-		if len(list(filter(lambda x:self._argv_rules[x]['critical'] and x in self._argv_p,self._argv_rules.keys()))) > 0:
+		if len(list(filter(lambda x:self._argv_rules[x]['critical'] and x not in self._argv_p,self._argv_rules.keys()))) > 0:
 			self.FATAL = True
-			self.errmsg = ["Parent: parse-argv: not all critical params were passed : %s"%l]
+			self.errmsg += ["Parent: parse-argv: not all critical params were passed"]
 
 	#
 	# initialize plugins and modules
