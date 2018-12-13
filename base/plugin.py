@@ -37,26 +37,26 @@ class Plugin:
 	#
 	# debug log function
 	#
-	def Debug(self,st):
-		self(st=st,_type="debug")
+	def Debug(self, st, *args, **kwargs):
+		self(st=st.format(*args, **kwargs), _type="debug")
+
+	#
+	# error log function
+	#
+	def Error(self, st, *args, **kwargs):
+		self(st=st.format(*args, **kwargs), _type="error")
+	
+	#
+	# debug log function
+	#
+	def Warring(self, st, *args, **kwargs):
+		self(st=st.format(*args, **kwargs),_type="warring")
 
 	#
 	# debug log function
 	#
-	def Error(self,st):
-		self(st=st,_type="error")
-
-	#
-	# debug log function
-	#
-	def Warring(self,st):
-		self(st=st,_type="warring")
-
-	#
-	# debug log function
-	#
-	def Notify(self,st):
-		self(st=st,_type="notify")
+	def Notify(self, st, *args, **kwargs):
+		self(st=st.format(*args, **kwargs),_type="notify")
 
 	#
 	# local log function

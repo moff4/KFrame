@@ -43,11 +43,10 @@ class Parent:
 			self.log('---------------------------------------------')
 
 			self.plugin_t = {} if plugins is None else plugins
-			for pl in self.plugin_t:
-				for i in ['target','module']:
-					if i not in self.plugin_t[pl]:
-						raise RuntimeError("%s plugin does not has propery %s"%(pl,i))
-				
+
+			if any(map(lambda pl: any(map(lambda x: x not in pl, ['target','module'])), self.plugin_t.values())):
+				raise ValueError('Plugin does not has important propery')
+
 			self.FATAL = False
 			self.errmsg = []
 		except Exception as e:
@@ -364,9 +363,8 @@ class Parent:
 		if '--stdout' in sys.argv[1:]:
 			print(st)
 		if '--no-log' not in sys.argv[1:]:
-			f = open(LOG_FILE,'ab')
-			f.write(st.encode('utf-8') + b'\n')
-			f.close()
+			with open(LOG_FILE,'ab') as f:
+				f.write(st.encode('utf-8') + b'\n')
 		return self
 	#
 	# same as log()

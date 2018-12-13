@@ -13,5 +13,6 @@ __all__ = [
 	".art",
 	".ssp",
 	".eventer",
-	".jscheme"
+	".jscheme",
+	".planner"
 ]
