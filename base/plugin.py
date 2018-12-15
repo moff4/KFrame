@@ -33,6 +33,12 @@ class Plugin:
 	#==========================================================================
 	#                            USER API
 	#==========================================================================
+	#
+	# CAN BE OVERLOADED
+	# constructor, will be called from __init__()
+	#
+	def init(self):
+		pass
 
 	#
 	# debug log function

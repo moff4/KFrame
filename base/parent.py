@@ -332,7 +332,7 @@ class Parent:
 	# critical as bool - True if this param/flag is critical (default: False)
 	# description as str - some descrition for human (default: "")
 	#
-	def expect_argv(self,key,critical=False,description=""):
+	def expect_argv(self, key, critical=False, description=""):
 		self._params[key] = {
 			'critical':critical,
 			'description':description,
@@ -376,11 +376,11 @@ class Parent:
 	# start program
 	#
 	def start(self,wait=True):
+		self.parse_argv()
 		if '-h' in sys.argv[1:] or '-?' in sys.argv[1:] or '--help' in sys.argv[1:]:
 			self.print_help()
 			return self
 		self.print_errmsg()
-		self.parse_argv()
 		self.check_critiacal_argv()
 		if self.FATAL:
 			return self

@@ -16,8 +16,9 @@ task - dict = {
 		sec - 0..59 , def 0
 		offset - int , def 0
 		args - list/tuple , def []
-		kwargs - dict , def {}
-		threading - bool , def False
+		kwargs - dict , def {} 
+		threading - bool , def False - run in new thread
+		after - int , def None - do not run before this unix timestamp 
 }
 '''
 class Planner(Plugin):
@@ -34,11 +35,19 @@ class Planner(Plugin):
 	# return ( next task as dict , delay as int )
 	# 
 	def next_task(self):
-		if len(self.tasks) < 0:
+		if len(list(filter(lambda x: x['after'] is None or x['after'] <= time.time(), self.tasks))) <= 0:
 			return None, 10.0
 		t = time.localtime()
 		t = int((t.tm_hour * 60 + t.tm_min) * 60 + t.tm_sec)
-		return sorted([ (task,((task['hours'] * 60 + task['min']) * 60 + task['sec']) - ((t - task['offset']) % ((task['hours'] * 60 + task['min']) * 60 + task['sec']))) for task in self.tasks], key=lambda x:x[0])[0]
+		return sorted(
+			[ 
+				(task,((task['hours'] * 60 + task['min']) * 60 + task['sec']) - ((t - task['offset']) % ((task['hours'] * 60 + task['min']) * 60 + task['sec']))) 
+				for task in filter(
+					lambda x: x['after'] is None or x['after'] <= time.time(), 
+					self.tasks
+				)
+			], key=lambda x:x[0]
+		)[0]
 
 	#
 	# pop dead threads
@@ -99,10 +108,21 @@ class Planner(Plugin):
 			'offset': 0,
 			'args': [],
 			'kwargs': {},
-			'threading': False
+			'threading': False,
+			'after': None
 		}
 		self.tasks.append({key: task[key] if key in task else defaults[key] for key in (list(defaults.keys()) + must)})
 		return True
+
+	def update_task(self, key, **task):
+		if len(task) <= 0:
+			return False
+		i = 0
+		while i < len(self.tasks):
+			if self.tasks[i]['key'] == key:
+				self.tasks[i].update(task)
+				return True
+		return self.registrate(key=key, **task)
 
 	def start(self):
 		self._run = True
