@@ -103,9 +103,7 @@ class Parent:
 			l = len(bz)
 			while i < l and len(bz) > 0:
 				for j in list(d.keys()):
-					if not d[j]['autostart']:
-						d.pop(j)
-					elif d[j]['module']:
+					if d[j]['module']:
 						d.pop(j)
 						az.append(j)
 						if j in bz:
@@ -201,7 +199,8 @@ class Parent:
 	def run(self):
 		self("PARENT: start plugins",_type="debug")
 		for i in self.plugins:
-			self.plugins[i].start()
+			if self.plugin_t[i]['autostart']:
+				self.plugins[i].start()
 		while self.RUN_FLAG:
 			try:
 				time.sleep(1.0)
