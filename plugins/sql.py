@@ -18,7 +18,7 @@ from ..base.plugin import Plugin
 #     }
 #
 class SQL(Plugin):
-	def init(self,host,port,user,passwd,**kwargs):
+	def init(self, host, port, user, passwd, **kwargs):
 		try:	
 			self.cfg = {
 				'host'		: host,
@@ -118,7 +118,7 @@ class SQL(Plugin):
 	# exec query
 	# return tuple( flag of success , data as list of tuples )
 	#
-	def execute(self,query,commit=False,multi=False,unique_cursor=False):
+	def execute(self, query, commit=False, multi=False, unique_cursor=False):
 		i = 0.1
 		res = []
 		boo = True
@@ -144,7 +144,7 @@ class SQL(Plugin):
 			else:
 				boo = False
 		except Exception as e:
-			self.Error('exec-query: {ex}'.format(ex=e))
+			self.Error('exec-query: {ex}', ex=e)
 			boo = False
 		return boo , res
 
@@ -153,7 +153,7 @@ class SQL(Plugin):
 	# return list of tuples (rows) in case of success
 	# or None in case of error
 	#
-	def select_all(self,query):
+	def select_all(self, query):
 		try:
 			if self.conn is None or not self.conn.is_connected():
 				self.reconnect()
@@ -161,7 +161,7 @@ class SQL(Plugin):
 			cu.execute(query)
 			return cu.fetchall()
 		except Exception as e:
-			self.Error('select-all: {ex}'.format(ex=e))
+			self.Error('select-all: {ex}', ex=e)
 			return None
 
 	#
@@ -169,7 +169,7 @@ class SQL(Plugin):
 	# return generator that returns tuples (row) in case of success
 	# or raise Exception in case of error
 	#
-	def select(self,query,unique_cursor=True):
+	def select(self, query, unique_cursor=True):
 		try:
 			if unique_cursor:
 				conn = self.__connect()
@@ -184,7 +184,7 @@ class SQL(Plugin):
 					return None
 				yield res
 		except Exception as e:
-			self.Error('select-one: {ex}'.format(ex=e))
+			self.Error('select-one: {ex}', ex=e)
 			raise
 
 	#
@@ -196,7 +196,7 @@ class SQL(Plugin):
 	#
 	# need for integration
 	#
-	def stop(self,wait=True):
+	def stop(self, wait=True):
 		pass
 
 sql_scheme = {

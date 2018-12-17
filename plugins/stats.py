@@ -9,7 +9,7 @@ class Stats(Plugin):
 	def init(self):
 		self._stats = {}
 
-	def _export(self,key):
+	def _export(self, key):
 		if key not in self._stats:
 			return None
 		if self._stats[key]['type'] in SIMPLE_TYPES:
@@ -39,7 +39,7 @@ class Stats(Plugin):
 	#     increment - increment for signle call for type "inc"
 	#       default: 1
 	#
-	def init_stat(self,key,type,**kwargs):
+	def init_stat(self, key, type, **kwargs):
 		if type not in POSSIBLE_TYPES:
 			raise ValueError("Unknown type of stat")
 		d = dict(kwargs)
@@ -65,7 +65,7 @@ class Stats(Plugin):
 	# return True in case of success
 	# or False in case of error
 	#
-	def add(self,key,value=None):
+	def add(self, key, value=None):
 		if key not in self._stats:
 			return False
 		if self._stats[key]['type'] == 'aver':
@@ -94,9 +94,12 @@ class Stats(Plugin):
 		return self._stats[key]['data'] if key in self._stats else None
 
 	#
+	# extansion - flag to export more or less information
+	# extension - False => return dict : 'key' : value
+	# extension - True => return dict : 'key' : { 'desc' : description , 'data' : value }
 	# return dict containing all stats
 	#
-	def export(self,extension=False):
+	def export(self, extension=False):
 		d = {}
 		if extension:
 			for key in self._stats:

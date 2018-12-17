@@ -11,14 +11,15 @@ task - dict = {
 		key - str
 		target - function
 	OPTIONAL:
-		hours - 0..23 , def 0
-		min - 0..59 , def 0
-		sec - 0..59 , def 0
+		hours - int , def 0
+		min - int , def 0
+		sec - int , def 0
 		offset - int , def 0
 		args - list/tuple , def []
 		kwargs - dict , def {} 
 		threading - bool , def False - run in new thread
 		after - int , def None - do not run before this unix timestamp 
+		times - int , def None - number of runs
 }
 '''
 class Planner(Plugin):
@@ -26,28 +27,32 @@ class Planner(Plugin):
 		self._run = True
 		self._m_thead = None
 		self._threads = []
-		self.tasks = []
+		self.tasks = {}
 		if not all(map(self.registrate, [] if tasks is None else tasks)):
 			self.FATAL = True
 			self.errmsg = "Some tasks badly configured"
 
 	#
-	# return ( next task as dict , delay as int )
+	# return ( key , delay as int )
 	# 
 	def next_task(self):
-		if len(list(filter(lambda x: x['after'] is None or x['after'] <= time.time(), self.tasks))) <= 0:
+		tasks = []
+		for i in self.tasks:
+			if self.tasks[i]['after'] is None or self.tasks[i]['after'] <= time.time() and (task['times'] is None or task['times'] > 0):
+				tasks.append((i, self.tasks[i]))
+		if len(tasks) <= 0:
 			return None, 10.0
 		t = time.localtime()
 		t = int((t.tm_hour * 60 + t.tm_min) * 60 + t.tm_sec)
-		return sorted(
-			[ 
-				(task,((task['hours'] * 60 + task['min']) * 60 + task['sec']) - ((t - task['offset']) % ((task['hours'] * 60 + task['min']) * 60 + task['sec']))) 
-				for task in filter(
-					lambda x: x['after'] is None or x['after'] <= time.time(), 
-					self.tasks
-				)
-			], key=lambda x:x[0]
-		)[0]
+
+		az = [] # key , sec left
+		for key, task in tasks:
+			_t = (task['hours'] * 60 + task['min']) * 60 + task['sec']
+			_t - ((t - task['offset']) % (_t))
+			az.append(key, _t)
+
+		return sorted(az, key=lambda x:x[0])[0]
+		
 
 	#
 	# pop dead threads
@@ -64,30 +69,32 @@ class Planner(Plugin):
 	#
 	# run single task
 	#
-	def _do(self, task):
+	def _do(self, key):
 		try:
 			_t = time.time()
-			task['target'](*task['args'], **task['kwargs'])
-			self.Debug('{key} done in {t} sec'.format(t='%.2f'%(time.time() - _t), **task))
+			if self.tasks[key]['times'] is not None:
+				self.tasks[key]['times'] -= 1
+			self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
+			self.Debug('{key} done in {t} sec'.format(t='%.2f'%(time.time() - _t), key=key))
 		except Exception as e:
-			self.Error("{key} - ex: {e}".format(e=e, **task))
+			self.Error("{key} - ex: {e}".format(e=e, key=key))
 
 	#
 	# main loop
 	#
 	def _loop(self, loops=None):
 		while self._run and (loops is None or loops > 0):
-			task , delay = self.next_task()
-			if delay > 5.0 or task is None:
+			key , delay = self.next_task()
+			if delay > 5.0 or key is None:
 				time.sleep(5.0)
 			else:
 				time.sleep(delay)
-				if task['threading']:
-					t = Thread(target=self._do, args=[task])
+				if self.tasks[key]['threading']:
+					t = Thread(target=self._do, args=[key])
 					t.start()
 					self._threads.append(t)
 				else:
-					self._do(task)
+					self._do(key)
 				self.check_threads()
 			if loops is not None and loops > 0:
 				loops -= 1
@@ -99,7 +106,7 @@ class Planner(Plugin):
 
 	def registrate(self,**task):
 		must = ['key', 'target']
-		if any(map(lambda x:x not in task, must)):
+		if any(map(lambda x:x not in task, must)) or key in self.tasks:
 			return False
 		defaults = {
 			'hours': 0,
@@ -109,20 +116,23 @@ class Planner(Plugin):
 			'args': [],
 			'kwargs': {},
 			'threading': False,
-			'after': None
+			'after': None,
+			'times': None
 		}
-		self.tasks.append({key: task[key] if key in task else defaults[key] for key in (list(defaults.keys()) + must)})
+		self.tasks[key] = {key: task[key] if key in task else defaults[key] for key in (list(defaults.keys()) + must)}
 		return True
 
 	def update_task(self, key, **task):
-		if len(task) <= 0:
-			return False
-		i = 0
-		while i < len(self.tasks):
-			if self.tasks[i]['key'] == key:
-				self.tasks[i].update(task)
-				return True
+		
+		if key in self.tasks:
+			self.tasks[key].update(task)
+			return True
 		return self.registrate(key=key, **task)
+
+	def delete_task(self, key):
+		if key in self.tasks:
+			self.tasks.pop(key)
+
 
 	def start(self):
 		self._run = True
