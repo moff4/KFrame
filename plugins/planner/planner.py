@@ -49,7 +49,7 @@ class Planner(Plugin):
 		for key, task in tasks:
 			_t = (task['hours'] * 60 + task['min']) * 60 + task['sec']
 			_t - ((t - task['offset']) % (_t))
-			az.append(key, _t)
+			az.append((key, _t))
 
 		return sorted(az, key=lambda x:x[0])[0]
 		
@@ -104,9 +104,8 @@ class Planner(Plugin):
 	#                                  USER API
 	#==========================================================================
 
-	def registrate(self,**task):
-		must = ['key', 'target']
-		if any(map(lambda x:x not in task, must)) or key in self.tasks:
+	def registrate(self, key, target, **task):
+		if key in self.tasks:
 			return False
 		defaults = {
 			'hours': 0,
@@ -119,7 +118,9 @@ class Planner(Plugin):
 			'after': None,
 			'times': None
 		}
-		self.tasks[key] = {key: task[key] if key in task else defaults[key] for key in (list(defaults.keys()) + must)}
+		task['key'] = key
+		task['target'] = target
+		self.tasks[key] = {key: task[key] if key in task else defaults[key] for key in (list(defaults.keys()) + ['key','target'])}
 		return True
 
 	def update_task(self, key, **task):
