@@ -48,7 +48,7 @@ class Planner(Plugin):
 		az = [] # key , sec left
 		for key, task in tasks:
 			_t = (task['hours'] * 60 + task['min']) * 60 + task['sec']
-			_t - ((t - task['offset']) % (_t))
+			_t = _t - ((t - task['offset']) % (_t))
 			az.append((key, _t))
 
 		return sorted(az, key=lambda x:x[0])[0]
