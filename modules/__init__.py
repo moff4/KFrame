@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __all__ = [
-	".crypto",
-	".jscheme",
-	".art"
+    ".crypto",
+    ".jscheme",
+    ".art"
 ]

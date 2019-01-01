@@ -3,4 +3,8 @@
 from .base.parent import *
 from .base.plugin import *
 
-__all__ = ['.base.parent','.base.plugin','.plugins']
+__all__ = [
+    '.base.parent',
+    '.base.plugin',
+    '.plugins'
+]

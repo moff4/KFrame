@@ -3,4 +3,7 @@
 from .parent import Parent
 from .plugin import Plugin
 
-__all__ = ['.parent','.plugin']
+__all__ = [
+    '.parent',
+    '.plugin'
+]
