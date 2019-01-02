@@ -39,10 +39,10 @@ class Planner(Plugin):
     def next_task(self):
         tasks = []
         for i in self.tasks:
-            if all(
+            if all([
                 self.tasks[i]['after'] is None or self.tasks[i]['after'] <= time.time(),
                 self.tasks[i]['times'] is None or self.tasks[i]['times'] > 0
-            ):
+            ]):
                 tasks.append((i, self.tasks[i]))
         if len(tasks) <= 0:
             return None, 10.0
@@ -88,6 +88,8 @@ class Planner(Plugin):
     def _loop(self, loops=None):
         while self._run and (loops is None or loops > 0):
             key, delay = self.next_task()
+            if self.P.get_param('--debug-planner', False):
+                self.Debug('next {key} in {delay} sec', key=key, delay=delay)
             if delay > 5.0 or key is None:
                 time.sleep(5.0)
             else:
