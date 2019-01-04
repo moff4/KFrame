@@ -54,8 +54,10 @@ class Planner(Plugin):
             _t = (task['hours'] * 60 + task['min']) * 60 + task['sec']
             _t = _t - ((t - task['offset']) % (_t))
             az.append((key, _t))
-
-        return sorted(az, key=lambda x: x[0])[0]
+        if self.P.get_param('--debug-planner', False):
+            for key, delay in az:
+                self.Debug('shedule: next {key} in {delay} sec', key=key, delay=delay)
+        return sorted(az, key=lambda x: x[1])[0]
 
     #
     # pop dead threads
