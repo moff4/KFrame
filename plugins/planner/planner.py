@@ -29,6 +29,7 @@ class Planner(Plugin):
         self._m_thead = None
         self._threads = []
         self.tasks = {}
+        self._last_task = None
         if not all(map(self.registrate, [] if tasks is None else tasks)):
             self.FATAL = True
             self.errmsg = "Some tasks badly configured"
@@ -77,10 +78,13 @@ class Planner(Plugin):
     def _do(self, key):
         try:
             _t = time.time()
-            if self.tasks[key]['times'] is not None:
-                self.tasks[key]['times'] -= 1
-            self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
-            self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
+            run_id = "{}^@^{}".format(key, int(_t))
+            if self._last_task != run_id:
+                self._last_task = run_id
+                if self.tasks[key]['times'] is not None:
+                    self.tasks[key]['times'] -= 1
+                self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
+                self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
         except Exception as e:
             self.Error("{key} - ex: {e}".format(e=e, key=key))
 
