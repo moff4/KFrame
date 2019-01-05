@@ -3,9 +3,9 @@
 from .neon import Neon
 
 neon_scheme = {
-	"target":Neon,
-	"module":False,
-	"autostart":True,
-	"args":(),
-	"kwargs":{},
+    "target": Neon,
+    "module": False,
+    "autostart": True,
+    "args": (),
+    "kwargs": {},
 }
