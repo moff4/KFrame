@@ -52,8 +52,6 @@ class Neon(Plugin):
                 self.cfg['site_directory'] = self.cfg['site_directory'][:-1]
 
             if self.cfg['use_ssl']:
-                self.raw_socket = self.open_port(use_ssl=False, port=self.cfg['http_port'])
-                self.socket = self.open_port(use_ssl=True, port=self.cfg['https_port'])
                 self.context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH, cafile=self.cfg['ca_cert'])
                 self.context.load_cert_chain(
                     certfile=self.cfg['certfile'],
@@ -61,7 +59,6 @@ class Neon(Plugin):
                     password=self.cfg['keypassword']
                 )
             else:
-                self.socket = self.open_port(use_ssl=False, port=self.cfg['http_port'])
                 self.context = None
 
             self.P.add_plugin(key="request", target=Request, autostart=False, module=False)
@@ -321,7 +318,7 @@ class Neon(Plugin):
                         th.Thread(
                             target=self.__alt_run,
                             args=[
-                                self.socket,
+                                self.self.open_port(use_ssl=True, port=self.cfg['https_port']),
                                 self.cfg['https_port'],
                                 True
                             ]
@@ -334,7 +331,7 @@ class Neon(Plugin):
                     [
                         th.Thread(
                             target=self.__alt_run, args=[
-                                self.raw_socket,
+                                self.self.open_port(use_ssl=False, port=self.cfg['http_port']),
                                 self.cfg['http_port'],
                                 False
                             ]
@@ -346,7 +343,14 @@ class Neon(Plugin):
                 while self._run:
                     time.sleep(1)
             else:
-                self.__alt_run(self.socket, _ssl=False, port=self.cfg['http_port'])
+                self.__alt_run(
+                    sock=self.open_port(
+                        use_ssl=False,
+                        port=self.cfg['http_port']
+                    ),
+                    _ssl=False,
+                    port=self.cfg['http_port']
+                )
         except Exception as e:
             self.Error('run: Exception: {}', e)
         except KeyboardInterrupt:
