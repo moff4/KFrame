@@ -55,4 +55,4 @@ class Response(Plugin):
         )
         st.append("\r\n")
         st = "".join(st).encode()
-        return st + self.data
+        return st + (self.data.encode() if type(self.data) == str else self.data)

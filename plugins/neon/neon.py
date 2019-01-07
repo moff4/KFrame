@@ -145,14 +145,15 @@ class Neon(Plugin):
                 headers = [CONTENT_HTML]
             else:
                 req.static_file(path)
+                data = None
         except Exception as e:
             self.Error(e)
             data = NOT_FOUND
             headers = [CONTENT_HTML, "Connection: close"]
             code = 404
-
-        req.resp.set_data(data)
-        req.resp.set_headers(headers)
+        if data is not None:
+            req.resp.set_data(data)
+            req.resp.add_headers(headers)
         req.resp.set_code(code)
         return req.resp
 
