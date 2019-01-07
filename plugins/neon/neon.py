@@ -318,7 +318,7 @@ class Neon(Plugin):
                         th.Thread(
                             target=self.__alt_run,
                             args=[
-                                self.self.open_port(use_ssl=True, port=self.cfg['https_port']),
+                                self.open_port(use_ssl=True, port=self.cfg['https_port']),
                                 self.cfg['https_port'],
                                 True
                             ]
@@ -331,7 +331,7 @@ class Neon(Plugin):
                     [
                         th.Thread(
                             target=self.__alt_run, args=[
-                                self.self.open_port(use_ssl=False, port=self.cfg['http_port']),
+                                self.open_port(use_ssl=False, port=self.cfg['http_port']),
                                 self.cfg['http_port'],
                                 False
                             ]
