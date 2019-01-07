@@ -16,18 +16,17 @@ def apply(obj, scheme, key=None):
         return value() if '__call__' in dir(value) else value
     _key = key if key is not None else "Top-level"
     extra = "" if key is None else "".join(["for ", key])
-    if type(scheme) != dict:
+    if not isinstance(scheme, dict):
         raise ValueError(
             "scheme must be dict {extra}".format(
                 extra=extra
             )
         )
-    _t = type(obj)
     if scheme['type'] in [list, "list", "array"]:
-        if _t != list:
+        if not isinstance(obj, list):
             raise ValueError(
                 'expected type "{type}" {extra} ; got {src_type}'.format(
-                    src_type=_t,
+                    src_type=type(obj),
                     type=scheme['type'],
                     extra=extra
                 )
@@ -35,10 +34,10 @@ def apply(obj, scheme, key=None):
         for i in obj:
             apply(i, scheme['value'], key=_key)
     elif scheme['type'] in [dict, 'object', 'dict']:
-        if _t != dict:
+        if not isinstance(obj, dict):
             raise ValueError(
                 'expected type "{type}" {extra} ; got {src_type}'.format(
-                    src_type=_t,
+                    src_type=type(obj),
                     type=scheme['type'],
                     extra=extra
                 )
@@ -64,28 +63,28 @@ def apply(obj, scheme, key=None):
                     key=i
                 )
     elif scheme['type'] in [str, "string"]:
-        if _t != str:
+        if not isinstance(obj, str):
             raise ValueError(
                 'expected type "{type}" {extra} ; got {src_type}'.format(
-                    src_type=_t,
+                    src_type=type(obj),
                     type=scheme['type'],
                     extra=extra
                 )
             )
     elif scheme['type'] in [int, "int", "integer"]:
-        if _t != int:
+        if not isinstance(obj, int):
             raise ValueError(
                 'expected type "{type}" {extra} ; got {src_type}'.format(
-                    src_type=_t,
+                    src_type=type(obj),
                     type=scheme['type'],
                     extra=extra
                 )
             )
     elif scheme['type'] in [float, "float"]:
-        if _t != float:
+        if not isinstance(obj, float):
             raise ValueError(
                 'expected type "{type}" {extra} ; got {src_type}'.format(
-                    src_type=_t,
+                    src_type=type(obj),
                     type=scheme['type'],
                     extra=extra
                 )

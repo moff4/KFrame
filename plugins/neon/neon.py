@@ -25,7 +25,7 @@ class Neon(Plugin):
                 'http_port': 8080,
                 'https_port': 8081,
                 'use_ssl': False,
-                'ca_cert': "./ca.cert",
+                'ca_cert': None,
                 'keyfile': "./key.pem",
                 'certfile': "./cert.pem",
                 'keypassword': None,
