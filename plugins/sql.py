@@ -180,7 +180,13 @@ class SQL(Plugin):
                 raise RuntimeError('Have no connection')
             cu = conn.cursor()
             cu.execute(query)
-            return cu.fetchall()
+            res = cu.fetchall()
+            if unique_cursor:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            return res
         except Exception as e:
             self.Error('select-all: {ex}', ex=e)
             return None
@@ -202,11 +208,16 @@ class SQL(Plugin):
             while True:
                 res = cu.fetchone()
                 if res is None:
-                    return None
+                    break
                 yield res
         except Exception as e:
             self.Error('select-one: {ex}', ex=e)
             raise
+        if unique_cursor:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
     #
     # need for integration
