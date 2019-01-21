@@ -47,7 +47,7 @@ class Request(Plugin):
                 self.Debug("Done read")
             except Exception as e:
                 self.FATAL = True
-                self.errmsg = "parse data: {}" % e
+                self.errmsg = "parse data: %s" % e
                 self.Error(self.errmsg)
                 return
         self._dict.update(kwargs)
