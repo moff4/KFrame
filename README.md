@@ -35,9 +35,9 @@ SQL - Обертка над драйвером MySQL
 
 Интерфейс класса:
 ```python
-def execute(self,query,commit=False,multi=False)  
-def select_all(self,query)  
-def select(self,query)  
+def execute(self, query, commit=False, multi=False)  
+def select_all(self, query, unique_cursor=False)  
+def select(self, query, unique_cursor=False)  
 ```
 Метод execute - универсальный метод обращений с БД.  
 Возвращает кортеж : Флаг успеха и список кортежей (записей), если запрос подразумевает результат.  
@@ -55,7 +55,7 @@ Neon - Веб-сервер
 
 Пользовательский интерфейс объекта этого класса:
 ```python
-def add_site_module(self,module)  
+def add_site_module(self, module)  
 ```
 Метод добавляет module в список возможных обработчиков запросов.  
 Модулем может быть любой объект, класс или модуль, удовлетворяющий определенном интерфейсу.  
@@ -87,7 +87,7 @@ Auth - Для авторизации и поддержки сессий
 Класс имеет пользовательский интерфейс в виде двух методов:  
 ```python
 def generate_cookie(self, user_id, **kwargs)  
-def valid_cookie(self,cookie,ip=None)  
+def valid_cookie(self, cookie, ip=None)  
 ```
 
 Первый метод создает значение куки-файла ивозвращает байтовую строку.  
@@ -107,10 +107,10 @@ Stats - Сбор статистики
 
 Имеется пользовательский интерфейс в виде четырех методов:  
 ```python
-def init_stat(self,key,type,**kwargs)  
-def add(self,key,value=None)  
-def get(self,key)  
-def export(self,extension=False)  
+def init_stat(self, key, type, **kwargs)  
+def add(self, key, value=None)  
+def get(self, key)  
+def export(self, extension=False)  
 ```
 
 init_stat - объявляет о начале сбора статистики с ключом key и типа type  
@@ -182,10 +182,11 @@ Planner - Запускает задачи по расписанию
 * threading (bool), default = False . если True, запустит функцию в новом потоке  
 * after (int), default = None . временная метка, раньше которой функция запущена не будет (None - без ограничения)  
 * times (int), default = None . кол-во раз, которое будет запущена функция (None - без ограничения)  
+* max_parallel_copies (int), default = None - максиальное кол-во одновременных исполнений задачи (None - без ограничения)  
 
 Интерфейс плагина имеет три метода:
 ```python
-def registrate(self,**task)
+def registrate(self, **task)
 def update_task(self, key, **task)
 def delete_task(self, key):
 ```
@@ -210,8 +211,8 @@ Art - Язык описания данных экономичнее JSON
 
 Интерфейс модуля:
 ```python
-def marshal(data,mask=None,random=True)  
-def unmarshal(data=None,fd=None,mask=None)  
+def marshal(data, mask=None, random=True)  
+def unmarshal(data=None, fd=None, mask=None)  
 ```
 
 Метод marshal - маршализирует объект в байтовую строку.  
@@ -227,7 +228,7 @@ def unmarshal(data=None,fd=None,mask=None)
 JScheme - Проверка и дополнения объектов.  
 Содержит всего одну функцию:  
 ```python  
-def apply(obj,scheme)  
+def apply(obj, scheme)  
 ```  
 obj - имеющийся объект, который необходимо проверить и по возможности дополнить согласно правилам  
 scheme - правила, по которым проверяется объект.  
@@ -255,4 +256,4 @@ p.start()
 * pygost - Криптографическая библиотека  
 * mysql-connector - драйвер MySQL  
 
-Версия 2.2.2  
+Версия 2.2.3  

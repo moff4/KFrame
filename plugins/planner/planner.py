@@ -21,6 +21,7 @@ from kframe.base import Plugin
 #         threading - bool , def False - run in new thread
 #         after - int , def None - do not run before this unix timestamp
 #         times - int , def None - number of runs
+#         max_parallel_copies - int , def None - allowed number of parallel tasks run (None - no restrictions)
 # }
 #
 class Planner(Plugin):
@@ -28,6 +29,7 @@ class Planner(Plugin):
         self._run = True
         self._m_thead = None
         self._threads = []
+        self._running_tasks = []  # [ .. ,( key, thread), ..]
         self.tasks = {}
         self._last_task = None
         if not all(map(self.registrate, [] if tasks is None else tasks)):
@@ -65,12 +67,12 @@ class Planner(Plugin):
     #
     def check_threads(self):
         az = []
-        for i in self._threads:
-            if i.is_alive():
+        for i in self._running_tasks:
+            if i[1].is_alive():
                 az.append(i)
             else:
-                i.join()
-        self._threads = az
+                i[1].join()
+        self._running_tasks = az
 
     #
     # run single task
@@ -78,13 +80,21 @@ class Planner(Plugin):
     def _do(self, key):
         try:
             _t = time.time()
-            run_id = "{}^@^{}".format(key, int(_t))
-            if self._last_task != run_id:
-                self._last_task = run_id
-                if self.tasks[key]['times'] is not None:
-                    self.tasks[key]['times'] -= 1
-                self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
-                self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
+            if self.tasks[key]['max_parallel_copies'] is None or len(
+                filter(
+                    lambda x: x[0] == key,
+                    self._running_tasks
+                )
+            ) > self.tasks[key]['max_parallel_copies']:
+                run_id = "{}^@^{}".format(key, int(_t))
+                if self._last_task != run_id:
+                    self._last_task = run_id
+                    if self.tasks[key]['times'] is not None:
+                        self.tasks[key]['times'] -= 1
+                    self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
+                    self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
+            else:
+                self.Notify('too many running copies of task "{key}"')
         except Exception as e:
             self.Error("{key} - ex: {e}".format(e=e, key=key))
 
@@ -103,7 +113,7 @@ class Planner(Plugin):
                 if self.tasks[key]['threading']:
                     t = Thread(target=self._do, args=[key])
                     t.start()
-                    self._threads.append(t)
+                    self._running_tasks.append((key, t))
                 else:
                     self._do(key)
                 self.check_threads()
@@ -127,7 +137,8 @@ class Planner(Plugin):
             'kwargs': {},
             'threading': False,
             'after': None,
-            'times': None
+            'times': None,
+            'max_parallel_copies': None,
         }
         task['key'] = key
         task['target'] = target
