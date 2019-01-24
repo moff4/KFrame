@@ -15,6 +15,7 @@ http_code_msg = {
     307: 'Temporary Redirect',
     308: 'Permanent Rederict',
     404: 'Not found',
+    424: 'Failed Dependency',
     500: 'Internal Server Error',
     501: 'Not Implemented'
 }
@@ -25,8 +26,6 @@ HTTP_METHODS = [
     'HEAD',
     'PUT',
     'DELETE',
-    'TRACE',
-    'CONNECT',
     'OPTIONS'
 ]
 HTTP_VERSIONS = [

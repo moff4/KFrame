@@ -68,8 +68,6 @@ def add_site_module(self, module)
 * head(requests) - обработчик запросов метода HEAD.  
 * put(requests) - обработчик запросов метода PUT.  
 * delete(requests) - обработчик запросов метода DELETE.  
-* trace(requests) - обработчик запросов метода TRACE.  
-* connect(requests) - обработчик запросов метода CONNECT.  
 * options(requests) - обработчик запросов метода OPTIONS.  
 
 Модуль выбирается, если запрос содержит заголовок Host или слово "any", имеются в поле модуля Hosts, и имеет самое длинное поле Path, среди всех модулей, у которых Path является началом запрошенной url.  

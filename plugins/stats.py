@@ -101,17 +101,15 @@ class Stats(Plugin):
     # return dict containing all stats
     #
     def export(self, extension=False):
-        d = {}
-        if extension:
-            for key in self._stats:
-                d[key] = {
-                    'desc': self._stats[key]['desc'] if 'desc' in self._stats[key] else key,
-                    'data': self._export(key)
-                }
-        else:
-            for key in self._stats:
-                d[key] = self._export(key)
-        return d
+        return {
+            key: {
+                'desc': self._stats[key]['desc'] if 'desc' in self._stats[key] else key,
+                'data': self._export(key)
+            }
+            for key in self._stats
+        } if extension else {
+            key: self._export(key) for key in self._stats
+        }
 
 
 stats_scheme = {

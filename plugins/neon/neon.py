@@ -75,6 +75,17 @@ class Neon(Plugin):
                 default=time.strftime("%H:%M:%S %d %b %Y"),
                 desc="Время запуска сервера"
             )
+            self.P.stats.init_stat(
+                key="start-timestamp",
+                type="single",
+                default=int(time.time()),
+                desc="Время запуска сервера"
+            )
+            # FIXME
+            # need refactor
+            # Add aver response time
+            # Delete ip-set
+            # Add module calling stats
             self.P.stats.init_stat(key="requests-success", type="inc", desc="Кол-во успешных запросов")
             self.P.stats.init_stat(key="requests-failed", type="inc", desc="Кол-во ошибочных запросов")
             self.P.stats.init_stat(key="connections", type="inc", desc="Кол-во соединений")
@@ -143,6 +154,7 @@ class Neon(Plugin):
             else:
                 req.static_file(path)
                 data = None
+            code = req.resp.code
         except Exception as e:
             self.Error(e)
             data = NOT_FOUND
@@ -378,8 +390,6 @@ class Neon(Plugin):
     #   head(requests)      - handler for HEAD requests     ; if not presented -> send 404 by default
     #   put(requests)       - handler for PUT requests      ; if not presented -> send 404 by default
     #   delete(requests)    - handler for DELETE requests   ; if not presented -> send 404 by default
-    #   trace(requests)     - handler for TRACE requests    ; if not presented -> send 404 by default
-    #   connect(requests)   - handler for CONNECT requests  ; if not presented -> send 404 by default
     #   options(requests)   - handler for OPTIONS requests  ; if not presented -> send 404 by default
     #
     def add_site_module(self, module):

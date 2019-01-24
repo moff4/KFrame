@@ -23,8 +23,11 @@ class Response(Plugin):
         self.headers += headers
         return self
 
-    def set_data(self, data):
-        self.data = data.encode() if type(data) == str else data
+    def set_data(self, data=None):
+        if data is None:
+            self.data = b''
+        else:
+            self.data = data.encode() if type(data) == str else data
         return self
 
     def set_http_verion(self, http_verion):
@@ -43,7 +46,7 @@ class Response(Plugin):
                 [
                     "".join([i, "\r\n"])
                     for i in filter(
-                        lambda x:x is not None and len(x) > 0,
+                        lambda x: x is not None and len(x) > 0,
                         apply_standart_headers(self.headers + [
                             "Content-Length: {length}".format(
                                 length=len(self.data)
