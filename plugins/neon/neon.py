@@ -167,6 +167,7 @@ class Neon(Plugin):
         return req.resp
 
     def choose_module(self, request):
+        _t = time.time()
         res = None
         module = None
         if request.method not in HTTP_METHODS:
@@ -218,6 +219,10 @@ class Neon(Plugin):
         request.send(res)
         request.Notify('[{ip}] {code} : {method} {url} {args}', code=res.code, **request.dict())
         self.P.stats.init_and_add('module_{name}_answer_{code}'.format(name=module.name, code=res.code), type='inc')
+        _t = time.time() - _t
+        self.p.stats.add(key="aver-response-time", value=_t)
+        if 200 <= res.code < 300:
+            self.p.stats.init_and_add(key="{name}-aver-response-time", type="aver", value=_t)
         try:
             request.after_handler()
         except Exception as e:
@@ -247,7 +252,6 @@ class Neon(Plugin):
     def __alt_run(self, sock, port, _ssl=False):
         def another_deal(conn, addr):
             try:
-                self.P.stats.add(key='ip', value=addr[0])
                 self.P.stats.add(key='connections')
                 conn = self.wrap_ssl(conn) if _ssl else conn
                 request = self.P.init_plugin(key='request', conn=conn, addr=addr, id=self.gen_id(), **self.cfg)
