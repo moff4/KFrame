@@ -60,11 +60,11 @@ class Neon(Plugin):
                         keyfile=cfg['keyfile'],
                         password=cfg['keypassword']
                     )
-                if all(filter(lambda x: x in self.cfg, {'certfile', 'keyfile', 'keypassword'})):
+                if all(filter(lambda x: x in self.cfg, {'certfile', 'keyfile'})):
                     self.context.load_cert_chain(
                         certfile=self.cfg['certfile'],
                         keyfile=self.cfg['keyfile'],
-                        password=self.cfg['keypassword']
+                        password=self.cfg.get('keypassword')
                     )
             else:
                 self.context = None
