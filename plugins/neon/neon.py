@@ -26,9 +26,7 @@ class Neon(Plugin):
                 'https_port': 8081,
                 'use_ssl': False,
                 'ca_cert': None,
-                'keyfile': './key.pem',
-                'certfile': './cert.pem',
-                'keypassword': None,
+                'ssl_cert': {},
                 'site_directory': './var',
                 'cgi_modules': [],
                 'max_data_length': MAX_DATA_LEN,
@@ -50,21 +48,19 @@ class Neon(Plugin):
 
             if self.cfg['site_directory'].endswith('/'):
                 self.cfg['site_directory'] = self.cfg['site_directory'][:-1]
-
             if self.cfg['use_ssl']:
                 self.context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH, cafile=self.cfg['ca_cert'])
-                self.context.load_cert_chain()
-                for cfg in self.cfg.get('ssl_certs', []):
+                if self.cfg['ssl_cert']:
                     self.context.load_cert_chain(
-                        certfile=cfg['certfile'],
-                        keyfile=cfg['keyfile'],
-                        password=cfg['keypassword']
+                        certfile=self.cfg['ssl_cert']['certfile'],
+                        keyfile=self.cfg['ssl_cert']['keyfile'],
+                        password=self.cfg['ssl_cert'].get('keypassword')
                     )
-                if all(filter(lambda x: x in self.cfg, {'certfile', 'keyfile'})):
+                if all(map(lambda x: x in self.cfg, {'certfile', 'keyfile'})):
                     self.context.load_cert_chain(
                         certfile=self.cfg['certfile'],
                         keyfile=self.cfg['keyfile'],
-                        password=self.cfg.get('keypassword')
+                        password=self.cfg.get('keypassword'),
                     )
             else:
                 self.context = None
@@ -100,6 +96,7 @@ class Neon(Plugin):
             # self.P.stats.init_stat(key='ip', type='set', desc='Уникальные IP')
 
         except Exception as e:
+            print(e)
             self.FATAL = True
             self.errmsg = '{}: {}'.format(self.name, str(e))
 
