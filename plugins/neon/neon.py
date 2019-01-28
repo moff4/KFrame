@@ -53,11 +53,19 @@ class Neon(Plugin):
 
             if self.cfg['use_ssl']:
                 self.context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH, cafile=self.cfg['ca_cert'])
-                self.context.load_cert_chain(
-                    certfile=self.cfg['certfile'],
-                    keyfile=self.cfg['keyfile'],
-                    password=self.cfg['keypassword']
-                )
+                self.context.load_cert_chain()
+                for cfg in self.cfg.get('ssl_certs', []):
+                    self.context.load_cert_chain(
+                        certfile=cfg['certfile'],
+                        keyfile=cfg['keyfile'],
+                        password=cfg['keypassword']
+                    )
+                if all(filter(lambda x: x in self.cfg, {'certfile', 'keyfile', 'keypassword'})):
+                    self.context.load_cert_chain(
+                        certfile=self.cfg['certfile'],
+                        keyfile=self.cfg['keyfile'],
+                        password=self.cfg['keypassword']
+                    )
             else:
                 self.context = None
 
