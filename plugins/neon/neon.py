@@ -26,8 +26,8 @@ class Neon(Plugin):
                 'https_port': 8081,
                 'use_ssl': False,
                 'ca_cert': None,
-                'keyfile': "./key.pem",
-                'certfile': "./cert.pem",
+                'keyfile': './key.pem',
+                'certfile': './cert.pem',
                 'keypassword': None,
                 'site_directory': './var',
                 'cgi_modules': [],
@@ -48,7 +48,7 @@ class Neon(Plugin):
             self.Hosts = ['any']
             self.Path = '/'
 
-            if self.cfg['site_directory'].endswith("/"):
+            if self.cfg['site_directory'].endswith('/'):
                 self.cfg['site_directory'] = self.cfg['site_directory'][:-1]
 
             if self.cfg['use_ssl']:
@@ -61,39 +61,39 @@ class Neon(Plugin):
             else:
                 self.context = None
 
-            self.P.add_plugin(key="request", target=Request, autostart=False, module=False)
-            self.P.add_plugin(key="response", target=Response, autostart=False, module=False)
+            self.P.add_plugin(key='request', target=Request, autostart=False, module=False)
+            self.P.add_plugin(key='response', target=Response, autostart=False, module=False)
 
             if 'stats' not in self:
-                self.P.add_plugin(key="stats", **stats_scheme).init_plugin(key="stats", export=False)
+                self.P.add_plugin(key='stats', **stats_scheme).init_plugin(key='stats', export=False)
             if 'crypto' not in self:
-                self.P.add_module(key="crypto", target=crypto).init_plugin(key="crypto", export=False)
+                self.P.add_module(key='crypto', target=crypto).init_plugin(key='crypto', export=False)
 
             self.P.stats.init_stat(
-                key="start-time",
-                type="single",
-                default=time.strftime("%H:%M:%S %d %b %Y"),
-                desc="Время запуска сервера"
+                key='start-time',
+                type='single',
+                default=time.strftime('%H:%M:%S %d %b %Y'),
+                desc='Время запуска сервера'
             )
             self.P.stats.init_stat(
-                key="start-timestamp",
-                type="single",
+                key='start-timestamp',
+                type='single',
                 default=int(time.time()),
-                desc="Время запуска сервера"
+                desc='Время запуска сервера'
             )
             # FIXME
             # need refactor
             # Add aver response time
-            # Delete ip-set
             # Add module calling stats
-            self.P.stats.init_stat(key="requests-success", type="inc", desc="Кол-во успешных запросов")
-            self.P.stats.init_stat(key="requests-failed", type="inc", desc="Кол-во ошибочных запросов")
-            self.P.stats.init_stat(key="connections", type="inc", desc="Кол-во соединений")
-            self.P.stats.init_stat(key="ip", type="set", desc="Уникальные IP")
+            self.P.stats.init_stat(key='requests-success', type='inc', desc='Кол-во успешных запросов')
+            self.P.stats.init_stat(key='requests-failed', type='inc', desc='Кол-во ошибочных запросов')
+            self.P.stats.init_stat(key='connections', type='inc', desc='Кол-во соединений')
+            self.P.stats.init_stat(key='aver-response-time', type='aver', desc='Среднее время ответа')
+            # self.P.stats.init_stat(key='ip', type='set', desc='Уникальные IP')
 
         except Exception as e:
             self.FATAL = True
-            self.errmsg = "{}: {}".format(self.name, str(e))
+            self.errmsg = '{}: {}'.format(self.name, str(e))
 
     # ========================================================================
     #                                  UTILS
@@ -105,9 +105,9 @@ class Neon(Plugin):
         az = []
         while len(st) > 0:
             az.append(st[:4])
-            az.append("-")
+            az.append('-')
             st = st[4:]
-        return "".join(az[:-1])
+        return ''.join(az[:-1])
 
     def open_port(self, use_ssl=False, port=80):
         j = 1
@@ -121,9 +121,9 @@ class Neon(Plugin):
                 return sock
             except Exception as e:
                 time.sleep(j * 5)
-                self.Debug("open-port {} : {}", port, e)
+                self.Debug('open-port {} : {}', port, e)
             j += 1
-        raise RuntimeError("Could not open port (%s)" % (port))
+        raise RuntimeError('Could not open port (%s)' % (port))
 
     #
     # handler of original connection
@@ -131,10 +131,10 @@ class Neon(Plugin):
     #
     def get(self, req):
         def dirs(path):
-            if not req.url.endswith("/"):
-                req.url += "/"
+            if not req.url.endswith('/'):
+                req.url += '/'
             return DIR_TEMPLATE.format(
-                cells="".join(
+                cells=''.join(
                     [
                         DIR_CELL_TEMPLATE.format(
                             filename=file,
@@ -158,7 +158,7 @@ class Neon(Plugin):
         except Exception as e:
             self.Error(e)
             data = NOT_FOUND
-            headers = [CONTENT_HTML, "Connection: close"]
+            headers = [CONTENT_HTML, 'Connection: close']
             code = 404
         if data is not None:
             req.resp.set_data(data)
@@ -172,14 +172,14 @@ class Neon(Plugin):
             request.Debug('{ip}: Unallowed method "{method}" ({url})'.format(**request.dict()))
         elif request.http_version not in HTTP_VERSIONS:
             request.Debug('{ip}: Unallowed version "{method}" ({url})'.format(**request.dict()))
-        elif "Host" not in request.headers:
-            request.Debug("{ip}: No Host passed ({url})".format(**request.dict()))
+        elif 'Host' not in request.headers:
+            request.Debug('{ip}: No Host passed ({url})'.format(**request.dict()))
         else:
             modules = sorted(
                 list(
                     filter(
                         lambda x: (
-                            request.headers['Host'] in x.Host or "any" in x.Host
+                            request.headers['Host'] in x.Host or 'any' in x.Host
                         ) and request.url.startswith(x.Path),
                         self.cfg['cgi_modules']
                     )
@@ -194,32 +194,34 @@ class Neon(Plugin):
             else:
                 module = None
             if module is None:
-                request.Debug("{ip}: Handler not found ({url})".format(**request.dict()))
+                request.Debug('{ip}: Handler not found ({url})'.format(**request.dict()))
             else:
-                request.Debug("Found handler: {name}".format(name=module.name))
+                request.Debug('Found handler: {name}'.format(name=module.name))
+                self.P.stats.init_and_add('choose_module_{name}'.format(name=module.name), type='inc')
                 try:
                     res = getattr(
                         module,
                         request.method.lower()
                     )(request)
                 except Exception as e:
-                    request.Error("cgi handler: {ex}".format(ex=e))
-                    request.Debug("cgi handler: {ex}".format(ex=Trace()))
+                    request.Error('cgi handler: {ex}'.format(ex=e))
+                    request.Debug('cgi handler: {ex}'.format(ex=Trace()))
                     res = self.P.init_plugin(
-                        key="response",
+                        key='response',
                         code=500,
                         headers=[CONTENT_HTML],
-                        data=SMTH_HAPPENED
+                        data=SMTH_HAPPENED,
                     )
         if res is None:
             res = request.resp
         request.send(res)
-        request.Notify("{code} - {url} ? {args}", code=res.code, **request.dict())
+        request.Notify('[{ip}] {code} : {method} {url} {args}', code=res.code, **request.dict())
+        self.P.stats.init_and_add('module_{name}_answer_{code}'.format(name=module.name, code=res.code), type='inc')
         try:
             request.after_handler()
         except Exception as e:
-            request.Error("cgi after-handler: {ex}".format(ex=e))
-            request.Debug("cgi handler: {ex}".format(ex=Trace()))
+            request.Error('cgi after-handler: {ex}'.format(ex=e))
+            request.Debug('cgi after-handler: {ex}'.format(ex=Trace()))
 
     # ========================================================================
     #                              DEMON TOOLS
@@ -236,20 +238,20 @@ class Neon(Plugin):
 
     def wrap_ssl(self, conn):
         if self.context is not None:
-            self.Debug("Gonna wrap")
+            self.Debug('Gonna wrap')
             conn = self.context.wrap_socket(conn, server_side=True)
-            self.Debug("Done wrap")
+            self.Debug('Done wrap')
         return conn
 
     def __alt_run(self, sock, port, _ssl=False):
         def another_deal(conn, addr):
             try:
-                self.P.stats.add(key="ip", value=addr[0])
-                self.P.stats.add(key="connections")
+                self.P.stats.add(key='ip', value=addr[0])
+                self.P.stats.add(key='connections')
                 conn = self.wrap_ssl(conn) if _ssl else conn
-                request = self.P.init_plugin(key="request", conn=conn, addr=addr, id=self.gen_id(), **self.cfg)
+                request = self.P.init_plugin(key='request', conn=conn, addr=addr, id=self.gen_id(), **self.cfg)
                 if request.FATAL:
-                    self.Error("request-init: {}".format(request.errmsg))
+                    self.Error('request-init: {}'.format(request.errmsg))
                 else:
                     request.set_ssl(_ssl)
                     request.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
@@ -266,7 +268,7 @@ class Neon(Plugin):
             while self._run:
                 try:
                     conn, addr = sock.accept()
-                    self.Debug("New: {ip}:{port}", ip=addr[0], port=addr[1])
+                    self.Debug('New: {ip}:{port}', ip=addr[0], port=addr[1])
                 except socket.timeout as e:  # time to reopen port
                     try:
                         sock.close()
@@ -295,7 +297,7 @@ class Neon(Plugin):
                     else:
                         another_deal(conn, addr)
                 else:
-                    self.Debug("Not private_ip")
+                    self.Debug('Not private_ip')
                     conn.close()
                 time.sleep(0.1)
                 self.check_thread()
@@ -313,7 +315,7 @@ class Neon(Plugin):
             try:
                 # in Windows u cannot stop program while it's listening the port
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect(("0.0.0.0", port))
+                sock.connect(('0.0.0.0', port))
                 sock.close()
             except Exception:
                 pass
@@ -384,7 +386,7 @@ class Neon(Plugin):
     # Module - Module/Object that has special interface:
     #   Path - str - begginig of all urls that this module handle
     #   Host - list/set of all possible values of Host HTTP-header that
-    #          associates with this module (or ["any"] for all Hosts)
+    #          associates with this module (or {'any'} for all Hosts)
     #   get(request)        - handler for GET requests      ; if not presented -> send 404 by default
     #   post(requests)      - handler for POST requests     ; if not presented -> send 404 by default
     #   head(requests)      - handler for HEAD requests     ; if not presented -> send 404 by default
@@ -409,4 +411,4 @@ class Neon(Plugin):
         self._run = False
         self._open()
         if wait and self._th is not None:
-                self._th.join()
+            self._th.join()

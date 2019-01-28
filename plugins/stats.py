@@ -2,8 +2,8 @@
 
 from ..base.plugin import Plugin
 
-POSSIBLE_TYPES = set(['inc', 'single', 'aver', 'collect', 'set', 'sum'])
-SIMPLE_TYPES = set(['inc', 'single', 'collect', 'sum'])
+POSSIBLE_TYPES = {'inc', 'single', 'aver', 'collect', 'set', 'sum'}
+SIMPLE_TYPES = {'inc', 'single', 'collect', 'sum'}
 
 
 class Stats(Plugin):
@@ -40,9 +40,11 @@ class Stats(Plugin):
     #     increment - increment for signle call for type "inc"
     #       default: 1
     #
-    def init_stat(self, key, type, **kwargs):
+    def init_stat(self, key, type, rewrite=False, **kwargs):
         if type not in POSSIBLE_TYPES:
             raise ValueError("Unknown type of stat")
+        if key in self._stats and not rewrite:
+            return self
         d = dict(kwargs)
         d['type'] = type
         if 'default' in d:
@@ -60,6 +62,7 @@ class Stats(Plugin):
                 default = set()
         d['data'] = default
         self._stats[key] = d
+        return self
 
     #
     # add stat data
@@ -69,12 +72,10 @@ class Stats(Plugin):
     def add(self, key, value=None):
         if key not in self._stats:
             return False
-        if self._stats[key]['type'] == 'aver':
+        if self._stats[key]['type'] in {'aver', 'collect'}:
             count = self._stats[key]['count'] if 'count' in self._stats[key] else 500
             while len(self._stats[key]['data']) > count:
                 self._stats[key]['data'].pop(0)
-            self._stats[key]['data'].append(value)
-        elif self._stats[key]['type'] == 'collect':
             self._stats[key]['data'].append(value)
         elif self._stats[key]['type'] == 'inc':
             self._stats[key]['data'] += self._stats[key]['increment'] if 'increment' in self._stats[key] else 1
@@ -87,6 +88,18 @@ class Stats(Plugin):
         else:
             return False
         return True
+
+    def init_and_add(self, key, type, value=None, **kwargs):
+        self.init_stat(
+            key=key,
+            type=type,
+            rewrite=False,
+            **kwargs
+        ).add(
+            key=key,
+            value=value
+        )
+        return self
 
     #
     # return saved data or None in case of error
