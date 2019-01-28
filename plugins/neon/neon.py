@@ -168,6 +168,7 @@ class Neon(Plugin):
 
     def choose_module(self, request):
         res = None
+        module = None
         if request.method not in HTTP_METHODS:
             request.Debug('{ip}: Unallowed method "{method}" ({url})'.format(**request.dict()))
         elif request.http_version not in HTTP_VERSIONS:

@@ -19,7 +19,7 @@ class Response(Plugin):
     #   headers - (list of str) Http headers
     #   header - (str) Http header (example: "Content-Type: text/html")
     #   http_version - (str) Version of protocol (example: "HTTP/1.1")
-    def set(sekf, **kwargs):
+    def set(self, **kwargs):
         for key in kwargs:
             if key not in PROPS:
                 raise AttributeError('no response property "{}"'.format(key))
