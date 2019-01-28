@@ -218,11 +218,23 @@ class Neon(Plugin):
             res = request.resp
         request.send(res)
         request.Notify('[{ip}] {code} : {method} {url} {args}', code=res.code, **request.dict())
-        self.P.stats.init_and_add('module_{name}_answer_{code}'.format(name=module.name, code=res.code), type='inc')
+        self.P.stats.init_and_add(
+            'module_{name}_answer_{code}'.format(
+                name='None' if module is None else module.name,
+                code=res.code
+            ),
+            type='inc'
+        )
         _t = time.time() - _t
         self.p.stats.add(key="aver-response-time", value=_t)
         if 200 <= res.code < 300:
-            self.p.stats.init_and_add(key="{name}-aver-response-time", type="aver", value=_t)
+            self.p.stats.init_and_add(
+                key="{name}-aver-response-time".format(
+                    name='None' if module is None else module.name
+                ),
+                type="aver",
+                value=_t
+            )
         try:
             request.after_handler()
         except Exception as e:
