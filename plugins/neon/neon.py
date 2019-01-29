@@ -85,15 +85,10 @@ class Neon(Plugin):
                 default=int(time.time()),
                 desc='Время запуска сервера'
             )
-            # FIXME
-            # need refactor
-            # Add aver response time
-            # Add module calling stats
             self.P.stats.init_stat(key='requests-success', type='inc', desc='Кол-во успешных запросов')
             self.P.stats.init_stat(key='requests-failed', type='inc', desc='Кол-во ошибочных запросов')
             self.P.stats.init_stat(key='connections', type='inc', desc='Кол-во соединений')
             self.P.stats.init_stat(key='aver-response-time', type='aver', desc='Среднее время ответа')
-            # self.P.stats.init_stat(key='ip', type='set', desc='Уникальные IP')
 
         except Exception as e:
             print(e)
