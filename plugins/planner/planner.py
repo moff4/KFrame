@@ -80,16 +80,6 @@ class Planner(Plugin):
     def _do(self, key):
         self.Debug('Start {}', key)
         try:
-            self.Debug(
-                'LIMIT={}, RUNNING={}',
-                self.tasks[key]['max_parallel_copies'],
-                len(
-                    filter(
-                        lambda x: x[0] == key,
-                        self._running_tasks
-                    )
-                )
-            )
             _t = time.time()
             run_id = "{}^@^{}".format(key, int(_t))
             if self._last_task != run_id:
@@ -117,7 +107,7 @@ class Planner(Plugin):
                 if self.tasks[key]['threading']:
                     if self.tasks[key]['max_parallel_copies'] is None or len(
                         list(filter(lambda x: x[0] == key, self._running_tasks))
-                    ) > self.tasks[key]['max_parallel_copies']:
+                    ) < self.tasks[key]['max_parallel_copies']:
                         t = Thread(target=self._do, args=[key])
                         t.start()
                         self._running_tasks.append((key, t))
