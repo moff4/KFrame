@@ -80,12 +80,6 @@ class Planner(Plugin):
     def _do(self, key):
         try:
             _t = time.time()
-            if self.tasks[key]['max_parallel_copies'] is None or len(
-                list(filter(
-                    lambda x: x[0] == key,
-                    self._running_tasks
-                ))
-            ) > self.tasks[key]['max_parallel_copies']:
                 run_id = "{}^@^{}".format(key, int(_t))
                 if self._last_task != run_id:
                     self._last_task = run_id
@@ -93,8 +87,6 @@ class Planner(Plugin):
                         self.tasks[key]['times'] -= 1
                     self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
                     self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
-            else:
-                self.Notify('too many running copies of task "{key}"', key=key)
         except Exception as e:
             self.Debug("{} - ex: {}".format(key, Trace()))
             self.Error("{} - ex: {}".format(key, e))
@@ -112,9 +104,14 @@ class Planner(Plugin):
             else:
                 time.sleep(delay)
                 if self.tasks[key]['threading']:
-                    t = Thread(target=self._do, args=[key])
-                    t.start()
-                    self._running_tasks.append((key, t))
+                    if self.tasks[key]['max_parallel_copies'] is None or len(
+                        list(filter(lambda x: x[0] == key, self._running_tasks))
+                    ) > self.tasks[key]['max_parallel_copies']:
+                        t = Thread(target=self._do, args=[key])
+                        t.start()
+                        self._running_tasks.append((key, t))
+                    else:
+                        self.Notify('too many running copies of task "{key}"', key=key)
                 else:
                     self._do(key)
                 self.check_threads()
