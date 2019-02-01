@@ -2,7 +2,7 @@
 
 import time
 from threading import Thread
-
+from traceback import format_exc as Trace
 from kframe.base import Plugin
 
 
@@ -81,10 +81,10 @@ class Planner(Plugin):
         try:
             _t = time.time()
             if self.tasks[key]['max_parallel_copies'] is None or len(
-                filter(
+                list(filter(
                     lambda x: x[0] == key,
                     self._running_tasks
-                )
+                ))
             ) > self.tasks[key]['max_parallel_copies']:
                 run_id = "{}^@^{}".format(key, int(_t))
                 if self._last_task != run_id:
@@ -94,9 +94,10 @@ class Planner(Plugin):
                     self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
                     self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
             else:
-                self.Notify('too many running copies of task "{key}"')
+                self.Notify('too many running copies of task "{key}"', key=key)
         except Exception as e:
-            self.Error("{key} - ex: {e}".format(e=e, key=key))
+            self.Debug("{} - ex: {}".format(key, Trace()))
+            self.Error("{} - ex: {}".format(key, e))
 
     #
     # main loop
