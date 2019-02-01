@@ -26,9 +26,7 @@ class Neon(Plugin):
                 'https_port': 8081,
                 'use_ssl': False,
                 'ca_cert': None,
-                'keyfile': './key.pem',
-                'certfile': './cert.pem',
-                'keypassword': None,
+                'ssl_cert': {},
                 'site_directory': './var',
                 'cgi_modules': [],
                 'max_data_length': MAX_DATA_LEN,
@@ -50,14 +48,20 @@ class Neon(Plugin):
 
             if self.cfg['site_directory'].endswith('/'):
                 self.cfg['site_directory'] = self.cfg['site_directory'][:-1]
-
             if self.cfg['use_ssl']:
                 self.context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH, cafile=self.cfg['ca_cert'])
-                self.context.load_cert_chain(
-                    certfile=self.cfg['certfile'],
-                    keyfile=self.cfg['keyfile'],
-                    password=self.cfg['keypassword']
-                )
+                if self.cfg['ssl_cert']:
+                    self.context.load_cert_chain(
+                        certfile=self.cfg['ssl_cert']['certfile'],
+                        keyfile=self.cfg['ssl_cert']['keyfile'],
+                        password=self.cfg['ssl_cert'].get('keypassword')
+                    )
+                if all(map(lambda x: x in self.cfg, {'certfile', 'keyfile'})):
+                    self.context.load_cert_chain(
+                        certfile=self.cfg['certfile'],
+                        keyfile=self.cfg['keyfile'],
+                        password=self.cfg.get('keypassword'),
+                    )
             else:
                 self.context = None
 
@@ -81,17 +85,13 @@ class Neon(Plugin):
                 default=int(time.time()),
                 desc='Время запуска сервера'
             )
-            # FIXME
-            # need refactor
-            # Add aver response time
-            # Add module calling stats
             self.P.stats.init_stat(key='requests-success', type='inc', desc='Кол-во успешных запросов')
             self.P.stats.init_stat(key='requests-failed', type='inc', desc='Кол-во ошибочных запросов')
             self.P.stats.init_stat(key='connections', type='inc', desc='Кол-во соединений')
             self.P.stats.init_stat(key='aver-response-time', type='aver', desc='Среднее время ответа')
-            # self.P.stats.init_stat(key='ip', type='set', desc='Уникальные IP')
 
         except Exception as e:
+            print(e)
             self.FATAL = True
             self.errmsg = '{}: {}'.format(self.name, str(e))
 
@@ -167,7 +167,9 @@ class Neon(Plugin):
         return req.resp
 
     def choose_module(self, request):
+        _t = time.time()
         res = None
+        module = None
         if request.method not in HTTP_METHODS:
             request.Debug('{ip}: Unallowed method "{method}" ({url})'.format(**request.dict()))
         elif request.http_version not in HTTP_VERSIONS:
@@ -216,7 +218,23 @@ class Neon(Plugin):
             res = request.resp
         request.send(res)
         request.Notify('[{ip}] {code} : {method} {url} {args}', code=res.code, **request.dict())
-        self.P.stats.init_and_add('module_{name}_answer_{code}'.format(name=module.name, code=res.code), type='inc')
+        self.P.stats.init_and_add(
+            'module_{name}_answer_{code}'.format(
+                name='None' if module is None else module.name,
+                code=res.code
+            ),
+            type='inc'
+        )
+        _t = time.time() - _t
+        self.P.stats.add(key="aver-response-time", value=_t)
+        if 200 <= res.code < 300:
+            self.P.stats.init_and_add(
+                key="{name}-aver-response-time".format(
+                    name='None' if module is None else module.name
+                ),
+                type="aver",
+                value=_t
+            )
         try:
             request.after_handler()
         except Exception as e:
@@ -246,7 +264,6 @@ class Neon(Plugin):
     def __alt_run(self, sock, port, _ssl=False):
         def another_deal(conn, addr):
             try:
-                self.P.stats.add(key='ip', value=addr[0])
                 self.P.stats.add(key='connections')
                 conn = self.wrap_ssl(conn) if _ssl else conn
                 request = self.P.init_plugin(key='request', conn=conn, addr=addr, id=self.gen_id(), **self.cfg)

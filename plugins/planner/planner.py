@@ -2,7 +2,7 @@
 
 import time
 from threading import Thread
-
+from traceback import format_exc as Trace
 from kframe.base import Plugin
 
 
@@ -78,6 +78,7 @@ class Planner(Plugin):
     # run single task
     #
     def _do(self, key):
+        self.Debug('Start {}', key)
         try:
             self.Debug(
                 'LIMIT={}, RUNNING={}',
@@ -90,23 +91,16 @@ class Planner(Plugin):
                 )
             )
             _t = time.time()
-            if self.tasks[key]['max_parallel_copies'] is None or len(
-                filter(
-                    lambda x: x[0] == key,
-                    self._running_tasks
-                )
-            ) > self.tasks[key]['max_parallel_copies']:
-                run_id = "{}^@^{}".format(key, int(_t))
-                if self._last_task != run_id:
-                    self._last_task = run_id
-                    if self.tasks[key]['times'] is not None:
-                        self.tasks[key]['times'] -= 1
-                    self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
-                    self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
-            else:
-                self.Notify('too many running copies of task "{key}"')
+            run_id = "{}^@^{}".format(key, int(_t))
+            if self._last_task != run_id:
+                self._last_task = run_id
+                if self.tasks[key]['times'] is not None:
+                    self.tasks[key]['times'] -= 1
+                self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
+                self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
         except Exception as e:
-            self.Error("{key} - ex: {e}".format(e=e, key=key))
+            self.Debug("{} - ex: {}".format(key, Trace()))
+            self.Error("{} - ex: {}".format(key, e))
 
     #
     # main loop
@@ -121,9 +115,14 @@ class Planner(Plugin):
             else:
                 time.sleep(delay)
                 if self.tasks[key]['threading']:
-                    t = Thread(target=self._do, args=[key])
-                    t.start()
-                    self._running_tasks.append((key, t))
+                    if self.tasks[key]['max_parallel_copies'] is None or len(
+                        list(filter(lambda x: x[0] == key, self._running_tasks))
+                    ) > self.tasks[key]['max_parallel_copies']:
+                        t = Thread(target=self._do, args=[key])
+                        t.start()
+                        self._running_tasks.append((key, t))
+                    else:
+                        self.Notify('too many running copies of task "{key}"', key=key)
                 else:
                     self._do(key)
                 self.check_threads()
