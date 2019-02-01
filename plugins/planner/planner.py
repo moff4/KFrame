@@ -78,6 +78,7 @@ class Planner(Plugin):
     # run single task
     #
     def _do(self, key):
+        self.Debug('Start {}', key)
         try:
             _t = time.time()
                 run_id = "{}^@^{}".format(key, int(_t))
