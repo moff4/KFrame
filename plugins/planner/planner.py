@@ -81,13 +81,13 @@ class Planner(Plugin):
         self.Debug('Start {}', key)
         try:
             _t = time.time()
-                run_id = "{}^@^{}".format(key, int(_t))
-                if self._last_task != run_id:
-                    self._last_task = run_id
-                    if self.tasks[key]['times'] is not None:
-                        self.tasks[key]['times'] -= 1
-                    self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
-                    self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
+            run_id = "{}^@^{}".format(key, int(_t))
+            if self._last_task != run_id:
+                self._last_task = run_id
+                if self.tasks[key]['times'] is not None:
+                    self.tasks[key]['times'] -= 1
+                self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
+                self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
         except Exception as e:
             self.Debug("{} - ex: {}".format(key, Trace()))
             self.Error("{} - ex: {}".format(key, e))
