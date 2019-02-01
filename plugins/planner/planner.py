@@ -32,7 +32,7 @@ class Planner(Plugin):
         self._running_tasks = []  # [ .. ,( key, thread), ..]
         self.tasks = {}
         self._last_task = None
-        if not all(map(self.registrate, [] if tasks is None else tasks)):
+        if not all([self.registrate(**task) for task in ([] if tasks is None else tasks)]):
             self.FATAL = True
             self.errmsg = "Some tasks badly configured"
 
@@ -79,6 +79,16 @@ class Planner(Plugin):
     #
     def _do(self, key):
         try:
+            self.Debug(
+                'LIMIT={}, RUNNING={}',
+                self.tasks[key]['max_parallel_copies'],
+                len(
+                    filter(
+                        lambda x: x[0] == key,
+                        self._running_tasks
+                    )
+                )
+            )
             _t = time.time()
             if self.tasks[key]['max_parallel_copies'] is None or len(
                 filter(
