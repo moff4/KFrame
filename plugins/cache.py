@@ -11,12 +11,14 @@ from ..base.plugin import Plugin
 # kwargs:
 #   timeout - interval of checking nodes for old rows ; default: 1.0
 #   save_file - filename for temporary buffer ; default: cache.json
+#   autosave - save cached data to <save_file> every <timeout>
 #
 class Cache(Plugin):
     def init(self, **kwargs):
         defaults = {
             'timeout': 1.0,
             'save_file': 'cache.json',
+            'autosave': False,
         }
         self.cfg = {i: kwargs[i] if i in kwargs else defaults[i] for i in defaults}
         # nodename -> [
@@ -68,6 +70,8 @@ class Cache(Plugin):
         while self._run:
             time.sleep(self.cfg['timeout'])
             self._clean()
+            if self.cfg['autosave']:
+                self.save()
         self("stop loop", _type="debug")
 
 # ==========================================================================
