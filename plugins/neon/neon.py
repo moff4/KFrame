@@ -13,14 +13,16 @@ from ...base.plugin import Plugin
 from ...modules import crypto
 from ..stats import stats_scheme
 from .request import Request
-from .response import Response
+from .responses import Response, StaticResponse
 from .utils import *
+from .exceptions import ResponseError
 
 
 class Neon(Plugin):
     def init(self, **kwargs):
         try:
             defaults = {
+                'allowed_hosts': {'any'},
                 'only_local_hosts': False,
                 'http_port': 8080,
                 'https_port': 8081,
@@ -34,6 +36,7 @@ class Neon(Plugin):
                 'max_header_length': MAX_HEADER_LEN,
                 'threading': False,
                 'use_neon_server': False,
+                'extra_response_types': ['response'],
             }
             self.cfg = {}
             for i in defaults:
@@ -43,7 +46,6 @@ class Neon(Plugin):
             self._th = None
             self._rng = random.random() * 10**2
 
-            self.Hosts = ['any']
             self.Path = '/'
 
             if self.cfg['site_directory'].endswith('/'):
@@ -66,7 +68,10 @@ class Neon(Plugin):
                 self.context = None
 
             self.P.add_plugin(key='request', target=Request, autostart=False, module=False)
-            self.P.add_plugin(key='response', target=Response, autostart=False, module=False)
+            if 'response' in self.cfg['extra_response_types']:
+                self.P.add_plugin(key='response', target=Response, autostart=False, module=False)
+            if 'static_response' in self.cfg['extra_response_types']:
+                self.P.add_plugin(key='static_response', target=StaticResponse, autostart=False, module=False)
 
             if 'stats' not in self:
                 self.P.add_plugin(key='stats', **stats_scheme).init_plugin(key='stats', export=False)
@@ -171,18 +176,18 @@ class Neon(Plugin):
         res = None
         module = None
         if request.method not in HTTP_METHODS:
-            request.Debug('{ip}: Unallowed method "{method}" ({url})'.format(**request.dict()))
+            request.Debug('{ip}: Unallowed method "{method}" ({url})', **request.dict())
         elif request.http_version not in HTTP_VERSIONS:
-            request.Debug('{ip}: Unallowed version "{method}" ({url})'.format(**request.dict()))
+            request.Debug('{ip}: Unallowed version "{method}" ({url})', **request.dict())
         elif 'Host' not in request.headers:
-            request.Debug('{ip}: No Host passed ({url})'.format(**request.dict()))
+            request.Debug('{ip}: No Host passed ({url})', **request.dict())
+        elif request.headers['Host'] not in self.cfg['allowed_hosts'] or 'any' not in self.cfg['allowed_hosts']:
+            request.Debug('{ip}: Invalid Header-Host "{}"', request.headers['Host'], **request.dict())
         else:
             modules = sorted(
                 list(
                     filter(
-                        lambda x: (
-                            request.headers['Host'] in x.Host or 'any' in x.Host
-                        ) and request.url.startswith(x.Path),
+                        lambda x: request.url.startswith(x.Path),
                         self.cfg['cgi_modules']
                     )
                 ),
@@ -205,6 +210,13 @@ class Neon(Plugin):
                         module,
                         request.method.lower()
                     )(request)
+                except ResponseError as e:
+                    res = self.P.init_plugin(
+                        key='response',
+                        code=e.status,
+                        headers=e.headers,
+                        data=e.message,
+                    )
                 except Exception as e:
                     request.Error('cgi handler: {ex}'.format(ex=e))
                     request.Debug('cgi handler: {ex}'.format(ex=Trace()))
@@ -402,8 +414,6 @@ class Neon(Plugin):
     # add new cgi_modules
     # Module - Module/Object that has special interface:
     #   Path - str - begginig of all urls that this module handle
-    #   Host - list/set of all possible values of Host HTTP-header that
-    #          associates with this module (or {'any'} for all Hosts)
     #   get(request)        - handler for GET requests      ; if not presented -> send 404 by default
     #   post(requests)      - handler for POST requests     ; if not presented -> send 404 by default
     #   head(requests)      - handler for HEAD requests     ; if not presented -> send 404 by default
@@ -411,7 +421,9 @@ class Neon(Plugin):
     #   delete(requests)    - handler for DELETE requests   ; if not presented -> send 404 by default
     #   options(requests)   - handler for OPTIONS requests  ; if not presented -> send 404 by default
     #
-    def add_site_module(self, module):
+    def add_site_module(self, module, path=None):
+        if path is not None and getattr(module, 'Path') is None:
+            setattr(module, 'Path', path)
         self.cfg['cgi_modules'].append(module)
 
     #

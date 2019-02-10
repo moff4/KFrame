@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
 from .neon import Neon
+from .exceptions import ResponseError
 
-neon_scheme = {
-    "target": Neon,
-    "module": False,
-    "autostart": True,
-    "args": (),
-    "kwargs": {},
-}
+__all__ = [
+    'Neon',
+    'ResponseError',
+]

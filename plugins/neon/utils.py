@@ -1,11 +1,11 @@
 #!/usr/bin/etc python3
 
 private_ip = set(
-    [
-        '10.', '192.168.', '0.0.0.0', '127.0.0.'
-    ] + [
-        ("100.%s." % i) for i in range(64, 128)] + [("172.%s." % i) for i in range(16, 32)
-    ]
+    {'10.', '192.168.', '0.0.0.0', '127.0.0.'}.union(
+        {('100.%s.' % i) for i in range(64, 128)}
+    ).union(
+        {('172.%s.' % i) for i in range(16, 32)}
+    )
 )
 
 http_code_msg = {
@@ -17,7 +17,8 @@ http_code_msg = {
     404: 'Not found',
     424: 'Failed Dependency',
     500: 'Internal Server Error',
-    501: 'Not Implemented'
+    501: 'Not Implemented',
+    504: 'Gateway Timeout',
 }
 
 HTTP_METHODS = [
@@ -26,10 +27,10 @@ HTTP_METHODS = [
     'HEAD',
     'PUT',
     'DELETE',
-    'OPTIONS'
+    'OPTIONS',
 ]
 HTTP_VERSIONS = [
-    'HTTP/1.1'
+    'HTTP/1.1',
 ]
 
 NOT_FOUND = '''
@@ -70,9 +71,9 @@ CONTENT_JSON = 'Content-type: text/json'
 FUCK_U = NOT_FOUND, [CONTENT_HTML], 404
 
 STANDART_HEADERS = [
-    "Server: kek-server",
+    'Server: kek-server',
     'Content-type: text/html; charset=utf-8',
-    "Connection: close"
+    'Connection: close',
 ]
 
 
@@ -91,7 +92,7 @@ def readln(conn, max_len=2048):
         if q not in {b'\n', b'\r'}:
             st += q
         if len(q) >= max_len:
-            raise RuntimeError("Max-len reached")
+            raise RuntimeError('Max-len reached')
     return st
 
 
@@ -168,5 +169,5 @@ def Content_type(st):
         else:
             type_2 = 'webm'
     else:
-        return "Content-type: text/plain"
-    return "Content-type: {}/{}{}".format(type_1, type_2, extra)
+        return 'Content-type: text/plain'
+    return 'Content-type: {}/{}{}'.format(type_1, type_2, extra)
