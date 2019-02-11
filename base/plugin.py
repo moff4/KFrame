@@ -42,39 +42,45 @@ class Plugin:
         pass
 
     #
+    # save Traceback
+    #
+    def Trace(self, st, _type='debug', *args, **kwargs):
+        self(st='{}\n{}'.format(st.format(*args, **kwargs), Trace()), _type=_type)
+
+    #
     # debug log function
     #
     def Debug(self, st, *args, **kwargs):
-        self(st=st.format(*args, **kwargs), _type="debug")
+        self(st=st.format(*args, **kwargs), _type='debug')
 
     #
     # error log function
     #
     def Error(self, st, *args, **kwargs):
-        self(st=st.format(*args, **kwargs), _type="error")
+        self(st=st.format(*args, **kwargs), _type='error')
 
     #
     # debug log function
     #
     def Warring(self, st, *args, **kwargs):
-        self(st=st.format(*args, **kwargs), _type="warring")
+        self(st=st.format(*args, **kwargs), _type='warring')
 
     #
     # debug log function
     #
     def Notify(self, st, *args, **kwargs):
-        self(st=st.format(*args, **kwargs), _type="notify")
+        self(st=st.format(*args, **kwargs), _type='notify')
 
     #
     # local log function
     #
-    def log(self, st="", _type="notify"):
-        self.parent("%s: %s" % (self.name, st), _type=_type)
+    def log(self, st='', _type='notify'):
+        self.parent('%s: %s' % (self.name, st), _type=_type)
 
     #
     # local log function
     #
-    def __call__(self, st="", _type="notify"):
+    def __call__(self, st='', _type='notify'):
         self.log(st=st, _type=_type)
 
     #

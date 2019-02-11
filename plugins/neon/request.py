@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-
+from traceback import format_exc as Trace
 from ...base.plugin import Plugin
 from .parser import parse_data
 from .utils import *
@@ -30,16 +30,16 @@ class Request(Plugin):
         self.cfg = {}
         for i in defaults:
             self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
-
         self._dict = {}
         try:
             self.Debug('Gonna read')
-            self._dict = parse_data(kwargs['conn'], cfg=self.cfg)
+            self._dict = parse_data(conn, cfg=self.cfg)
             self.Debug('Done read')
         except Exception as e:
             self.FATAL = True
             self.errmsg = 'parse data: %s' % e
             self.Error(self.errmsg)
+            self.Debug(Trace())
             return
         self._dict.update(kwargs)
         self._dict_keys = list(self._dict.keys())

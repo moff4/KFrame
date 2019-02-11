@@ -6,8 +6,6 @@ import random
 import socket
 import binascii
 import threading as th
-from traceback import format_exc as Trace
-
 
 from ...base.plugin import Plugin
 from ...modules import crypto
@@ -16,6 +14,7 @@ from .request import Request
 from .responses import Response, StaticResponse
 from .utils import *
 from .exceptions import ResponseError
+from .parser import pop_zeros
 
 
 class Neon(Plugin):
@@ -171,18 +170,23 @@ class Neon(Plugin):
         req.resp.set_code(code)
         return req.resp
 
+    # return True if need to keep-alive socket
     def choose_module(self, request):
         _t = time.time()
         res = None
         module = None
         if request.method not in HTTP_METHODS:
             request.Debug('{ip}: Unallowed method "{method}" ({url})', **request.dict())
+            return False
         elif request.http_version not in HTTP_VERSIONS:
             request.Debug('{ip}: Unallowed version "{method}" ({url})', **request.dict())
+            return False
         elif 'Host' not in request.headers:
             request.Debug('{ip}: No Host passed ({url})', **request.dict())
-        elif request.headers['Host'] not in self.cfg['allowed_hosts'] or 'any' not in self.cfg['allowed_hosts']:
+            return False
+        elif request.headers['Host'] not in self.cfg['allowed_hosts'] and 'any' not in self.cfg['allowed_hosts']:
             request.Debug('{ip}: Invalid Header-Host "{}"', request.headers['Host'], **request.dict())
+            return False
         else:
             modules = sorted(
                 list(
@@ -219,7 +223,7 @@ class Neon(Plugin):
                     )
                 except Exception as e:
                     request.Error('cgi handler: {ex}'.format(ex=e))
-                    request.Debug('cgi handler: {ex}'.format(ex=Trace()))
+                    request.Trace('cgi handler:')
                     res = self.P.init_plugin(
                         key='response',
                         code=500,
@@ -251,7 +255,8 @@ class Neon(Plugin):
             request.after_handler()
         except Exception as e:
             request.Error('cgi after-handler: {ex}'.format(ex=e))
-            request.Debug('cgi after-handler: {ex}'.format(ex=Trace()))
+            request.Trace('cgi after-handler:')
+        return request.headers.get('Connection') == 'keep-alive'
 
     # ========================================================================
     #                              DEMON TOOLS
@@ -274,6 +279,7 @@ class Neon(Plugin):
         return conn
 
     def __alt_run(self, sock, port, _ssl=False):
+        @recursion
         def another_deal(conn, addr):
             try:
                 self.P.stats.add(key='connections')
@@ -281,15 +287,22 @@ class Neon(Plugin):
                 request = self.P.init_plugin(key='request', conn=conn, addr=addr, id=self.gen_id(), **self.cfg)
                 if request.FATAL:
                     self.Error('request-init: {}'.format(request.errmsg))
+                    conn.close()
                 else:
                     request.set_ssl(_ssl)
                     request.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
-                    self.choose_module(request)
-                conn.close()
+                    if self.choose_module(request):
+                        try:
+                            pop_zeros(conn)
+                        except Exception as e:
+                            self.Trace('pop-zeros: {}', e, _type='warring')
+                        another_deal.call(conn, addr)
+                    else:
+                        conn.close()
 
             except Exception as e:
                 self.Warring('Another-Deal: ({}) {}', addr[0], e)
-                self.Debug('Another-Deal: ({}) {}', addr[0], Trace())
+                self.Trace('Another-Deal: ({}) {}', addr[0])
                 conn.close()
         self.Debug('Starting my work on port {}!', port)
         try:

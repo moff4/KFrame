@@ -16,6 +16,9 @@ from kframe.base import Plugin
 #         hours - int , def 0
 #         min - int , def 0
 #         sec - int , def 0
+#         shedule - list of tuples ('HH:MM:SS' str, 'HH:MM:SS' str), def ('00:00:00','23:59:59') - shedule (from, to)
+#         calendar - { 'allowed' or 'disallowed': { month as key [1..12] => set of days [1..31] }}
+#           def {} (allowed always) - match days, when it's allowed or disallowed to run function
 #         offset - int , def 0
 #         args - list/tuple , def []
 #         kwargs - dict , def {}
@@ -41,17 +44,40 @@ class Planner(Plugin):
     # return ( key , delay as int )
     #
     def next_task(self):
+        def calendar(t, allowed=None, disallowed=None):
+            def in_cal(t, cal):
+                return t.tm_mon in cal and t.tm_mday in cal[t.tm_mon]
+            if allowed is None and disallowed is None:
+                return True
+            elif allowed is None or disallowed is None:
+                if disallowed is not None and in_cal(t, disallowed):
+                    return False
+                elif allowed is not None and in_cal(t, allowed):
+                    return True
+            else:
+                raise ValueError('expected only "allowed" or "disallowed" in calendar property, not both of them')
+
+        def shedule(t, shed):
+            return any(
+                map(
+                    lambda x: x[0] <= t <= x[1],
+                    shed,
+                )
+            )
+
         tasks = []
+        _t = time.localtime()
+        t = int((_t.tm_hour * 60 + _t.tm_min) * 60 + _t.tm_sec)
         for i in self.tasks:
             if all([
                 self.tasks[i]['after'] is None or self.tasks[i]['after'] <= time.time(),
-                self.tasks[i]['times'] is None or self.tasks[i]['times'] > 0
+                self.tasks[i]['times'] is None or self.tasks[i]['times'] > 0,
+                calendar(_t, **self.tasks[i]['calendar']),
+                shedule(t, self.tasks[i]['shedule']),
             ]):
                 tasks.append((i, self.tasks[i]))
         if len(tasks) <= 0:
             return None, 10.0
-        t = time.localtime()
-        t = int((t.tm_hour * 60 + t.tm_min) * 60 + t.tm_sec)
 
         az = []  # key , sec left
         for key, task in tasks:
@@ -139,6 +165,8 @@ class Planner(Plugin):
             'min': 0,
             'sec': 0,
             'offset': 0,
+            'shedule': [('00:00:00', '23:59:59')],
+            'calendar': {},
             'args': [],
             'kwargs': {},
             'threading': False,
@@ -154,6 +182,18 @@ class Planner(Plugin):
                 list(defaults.keys()) + ['key', 'target']
             )
         }
+        bz = []
+        for i in self.tasks[key]['shedule']:
+            if len(i) != 2:
+                raise ValueError('invalid value of property "shedule"')
+            az = []
+            for j in i:
+                r = 0
+                for k in j.split(':'):
+                    r = r * 60 + int(k)
+                az.append(r)
+            bz.append(tuple(az))
+        self.tasks[key]['shedule'] = bz
         return True
 
     def update_task(self, key, **task):

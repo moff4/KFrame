@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+import sys
+
+if sys.platform == 'win32':
+    from socket import MSG_PEEK
+    PEEK_FLAGS = MSG_PEEK
+else:
+    from socket import MSG_PEEK, MSG_DONTWAIT
+    PEEK_FLAGS = MSG_PEEK | MSG_DONTWAIT
 
 from .utils import *
 
@@ -96,3 +104,11 @@ def parse_data(conn, cfg):
             raise RuntimeError("Too much data")
         request['data'] = conn.recv(_len)
     return request
+
+
+def pop_zeros(conn):
+    while True:
+        s = conn.recv(1, PEEK_FLAGS)
+        if len(s) <= 0 or ord(s) > 32:
+            return
+        conn.recv(1)

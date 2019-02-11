@@ -73,7 +73,6 @@ FUCK_U = NOT_FOUND, [CONTENT_HTML], 404
 STANDART_HEADERS = [
     'Server: kek-server',
     'Content-type: text/html; charset=utf-8',
-    'Connection: close',
 ]
 
 
@@ -171,3 +170,17 @@ def Content_type(st):
     else:
         return 'Content-type: text/plain'
     return 'Content-type: {}/{}{}'.format(type_1, type_2, extra)
+
+
+class recursion(object):
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, *args, **kwargs):
+        result = self.func(*args, **kwargs)
+        while callable(result):
+            result = result()
+        return result
+
+    def call(self, *args, **kwargs):
+        return lambda: self.func(*args, **kwargs)
