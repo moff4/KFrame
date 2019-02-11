@@ -2,6 +2,7 @@
 
 import time
 from threading import Thread
+from multiprocessing import Process
 from traceback import format_exc as Trace
 from kframe.base import Plugin
 
@@ -18,7 +19,7 @@ from kframe.base import Plugin
 #         offset - int , def 0
 #         args - list/tuple , def []
 #         kwargs - dict , def {}
-#         threading - bool , def False - run in new thread
+#         threading - bool or str , def False - no threadign; True - run in new thread; 'process' - run in new process;
 #         after - int , def None - do not run before this unix timestamp
 #         times - int , def None - number of runs
 #         max_parallel_copies - int , def None - allowed number of parallel tasks run (None - no restrictions)
@@ -108,7 +109,13 @@ class Planner(Plugin):
                     if self.tasks[key]['max_parallel_copies'] is None or len(
                         list(filter(lambda x: x[0] == key, self._running_tasks))
                     ) < self.tasks[key]['max_parallel_copies']:
-                        t = Thread(target=self._do, args=[key])
+                        if self.tasks[key]['threading'] in {'thread', 'threading', True}:
+                            cl = Thread
+                        elif self.tasks[key]['threading'] in {'process', 'processing'}:
+                            cl = Process
+                        else:
+                            raise ValueError('Wrong value for "threading" property: {}', self.tasks[key]['threading'])
+                        t = cl(target=self._do, args=[key])
                         t.start()
                         self._running_tasks.append((key, t))
                     else:
