@@ -1,7 +1,7 @@
 #!/use/bin/env python3
 
-from .basic_response import Response
-from ..utils import *
+from ..basic_response import Response
+from ...utils import *
 from .scripts import ScriptRunner
 BIN = 'binary'
 HTML = 'html'
@@ -62,7 +62,7 @@ class StaticResponse(Response):
                 while i[0] in self.data:
                     j = self.data.index(i[0])
                     self.data = self.data[:j] + i[1] + self.data[j + len(i[0]):]
-    return self
+        return self
 
     def run_scripts(self):
         if self.content_mod in {TEXT, HTML} and self.data:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from ...base.plugin import Plugin
-from .utils import *
+from ....base.plugin import Plugin
+from ..utils import *
 
 PROPS = {'data', 'code', 'headers', 'header', 'http_version'}
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from traceback import format_exc as Trace
-from ....base import Plugin
+from ......base import Plugin
 
 
 class ScriptRunner(Plugin):
