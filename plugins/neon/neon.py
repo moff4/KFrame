@@ -297,7 +297,7 @@ class Neon(Plugin):
                         try:
                             pop_zeros(conn)
                         except Exception as e:
-                            self.Trace('pop-zeros: {}', e, _type='warring')
+                            self.Warring('pop-zeros: {}', e)
                         another_deal.call(conn, addr)
                     else:
                         conn.close()
