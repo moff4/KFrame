@@ -303,9 +303,9 @@ class Neon(Plugin):
                         conn.close()
 
             except Exception as e:
-                self.Warring('Another-Deal: ({}) {}', addr[0], e)
-                self.Trace('Another-Deal: ({}) {}', addr[0])
                 conn.close()
+                self.Warring('Another-Deal: ({}) {}', addr[0], e)
+                self.Trace('Another-Deal: ({}) ', addr[0])
         self.Debug('Starting my work on port {}!', port)
         try:
             self.thread_list = []

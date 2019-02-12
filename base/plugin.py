@@ -44,8 +44,14 @@ class Plugin:
     #
     # save Traceback
     #
-    def Trace(self, st, _type='debug', *args, **kwargs):
-        self(st='{}\n{}'.format(st.format(*args, **kwargs), Trace()), _type=_type)
+    def Trace(self, st, *args, **kwargs):
+        self(
+            st='{}\n{}'.format(
+                st.format(*args, **kwargs),
+                Trace()
+            ),
+            _type=kwargs['_type'] if '_type' in kwargs else 'debug'
+        )
 
     #
     # debug log function
