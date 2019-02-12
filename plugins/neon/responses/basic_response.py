@@ -13,6 +13,9 @@ class Response(Plugin):
         self._code = code
         self._http_version = http_version
 
+    def _extra_prepare_data(self):
+        return self.data
+
     # kwargs can be:
     #   data - (bytes) Response data
     #   code - (int) HTTP CODE
@@ -71,7 +74,7 @@ class Response(Plugin):
         if data is None:
             self._data = b''
         else:
-            self._data = data.encode() if type(data) == str else data
+            self._data = data.encode() if isinstance(data, str) else data
         return self
 
     def set_http_verion(self, http_verion):
@@ -79,27 +82,27 @@ class Response(Plugin):
         return self
 
     def export(self):
-        st = []
-        st.append("{http_version} {code} {code_msg}\r\n".format(
-            http_version=self._http_version,
-            code=self._code,
-            code_msg=http_code_msg[self._code])
-        )
-        st.append(
-            "".join(
-                [
-                    "".join([i, "\r\n"])
-                    for i in filter(
-                        lambda x: x is not None and len(x) > 0,
-                        apply_standart_headers(self.headers + [
-                            "Content-Length: {length}".format(
-                                length=len(self._data)
-                            )]
+        data = self._extra_prepare_data()
+        return ''.join(
+            [
+                '{http_version} {code} {code_msg}\r\n'.format(
+                    http_version=self.http_version,
+                    code=self.code,
+                    code_msg=http_code_msg[self.code]
+                ),
+                ''.join(
+                    [
+                        "".join([i, "\r\n"])
+                        for i in filter(
+                            lambda x: x is not None and len(x) > 0,
+                            apply_standart_headers(
+                                self.headers + [
+                                    'Content-Length: {}'.format(len(data))
+                                ]
+                            )
                         )
-                    )
-                ]
-            )
-        )
-        st.append("\r\n")
-        st = "".join(st).encode()
-        return st + (self._data.encode() if type(self._data) == str else self._data)
+                    ]
+                ),
+                '\r\n',
+            ]
+        ).encode() + data

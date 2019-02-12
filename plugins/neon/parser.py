@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+from .utils import *
 
 if sys.platform == 'win32':
     from socket import MSG_PEEK
@@ -7,8 +8,6 @@ if sys.platform == 'win32':
 else:
     from socket import MSG_PEEK, MSG_DONTWAIT
     PEEK_FLAGS = MSG_PEEK | MSG_DONTWAIT
-
-from .utils import *
 
 
 #

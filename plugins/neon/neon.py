@@ -35,7 +35,7 @@ class Neon(Plugin):
                 'max_header_length': MAX_HEADER_LEN,
                 'threading': False,
                 'use_neon_server': False,
-                'extra_response_types': ['response'],
+                'extra_response_types': {'response'},
             }
             self.cfg = {}
             for i in defaults:
@@ -69,6 +69,8 @@ class Neon(Plugin):
             self.P.add_plugin(key='request', target=Request, autostart=False, module=False)
             if 'response' in self.cfg['extra_response_types']:
                 self.P.add_plugin(key='response', target=Response, autostart=False, module=False)
+            if 'rest_response' in self.cfg['extra_response_types']:
+                self.P.add_plugin(key='rest_response', target=RestResponse, autostart=False, module=False)
             if 'static_response' in self.cfg['extra_response_types']:
                 self.P.add_plugin(key='static_response', target=StaticResponse, autostart=False, module=False)
 

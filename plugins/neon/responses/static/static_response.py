@@ -12,6 +12,7 @@ class StaticResponse(Response):
 
     def init(self, *args, **kwargs):
         self.content_mod = None
+        self.vars = {}
         self.P.add_plugin(key='ScR', target=ScriptRunner, autostart=False, module=False)
         super().init(*args, **kwargs)
 
@@ -67,9 +68,8 @@ class StaticResponse(Response):
     def run_scripts(self):
         if self.content_mod in {TEXT, HTML} and self.data:
             sr = self.P.init_plugin(key='ScriptRunner', text=self.data)
-            sr.run()
+            sr.run(**self.vars)
             self.data = sr.export()
-
         return self
 
     # load static file
@@ -78,8 +78,7 @@ class StaticResponse(Response):
         if os.path.isfile(filename):
             self.Debug('gonna send file: {}'.format(filename))
             with open(filename, 'rb') as f:
-                data = f.read()
-            self.data = data
+                self.data = f.read()
             content_type, self.content_mod = self.Content_type(self.url)
             self.add_headers(
                 [
@@ -98,3 +97,7 @@ class StaticResponse(Response):
                 ],
             ).code = 404
             return False
+
+    def _extra_prepare_data(self):
+        self.run_scripts()
+        return self.data
