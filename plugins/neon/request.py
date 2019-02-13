@@ -73,10 +73,7 @@ class Request(Plugin):
         return self
 
     def dict(self):
-        d = {}
-        for i in ['conn', 'addr', 'ip', 'port', 'ssl'] + self._dict_keys:
-            d[i] = getattr(self, i)
-        return d
+        return {i: getattr(self, i) for i in ['conn', 'addr', 'ip', 'port', 'ssl'] + self._dict_keys}
 
     # this will be called after main handler done
     # u can override it
@@ -102,13 +99,15 @@ class Request(Plugin):
                 data = f.read()
             if extra_modifier is not None:
                 data = extra_modifier(self, data, *args, **kwargs)
-            self.resp.set_data(data)
+            self.resp.code = 200
+            self.resp.data = data
             self.resp.add_header(Content_type(self.url))
-            self.resp.add_header('Cache-Control: max-age={cache_min}'.format(cache_min=self.cfg['cache_min']))
-            self.resp.set_code(200)
+            self.resp.add_header('Cache-Control: max-age={cache_min}'.format(
+                cache_min=self.P.neon.cfg['response_settings']['cache_min']
+            ))
         else:
             self.Debug('File not found: {}'.format(filename))
-            self.resp.set_data(NOT_FOUND)
+            self.resp.code = 404
+            self.resp.data = NOT_FOUND
             self.resp.add_header(CONTENT_HTML)
             self.resp.add_header('Connection: close')
-            self.resp.set_code(404)

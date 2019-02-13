@@ -36,10 +36,17 @@ class Neon(Plugin):
                 'threading': False,
                 'use_neon_server': False,
                 'extra_response_types': {'response'},
+                'response_settings': {
+                    'cache_min': 120,
+                }
             }
             self.cfg = {}
             for i in defaults:
-                self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
+                if isinstance(defaults[i], dict):
+                    self.cfg[i] = dict(defaults[i])
+                    self.cfg[i].update(kwargs.get(i, {}))
+                else:
+                    self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
 
             self._run = True
             self._th = None
@@ -437,7 +444,7 @@ class Neon(Plugin):
     #   options(requests)   - handler for OPTIONS requests  ; if not presented -> send 404 by default
     #
     def add_site_module(self, module, path=None):
-        if path is not None and getattr(module, 'Path') is None:
+        if path is not None and not hasattr(module, 'Path'):
             setattr(module, 'Path', path)
         self.cfg['cgi_modules'].append(module)
 

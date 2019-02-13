@@ -1,5 +1,7 @@
 #!/use/bin/env python3
 
+import os
+
 from ..basic_response import Response
 from ...utils import *
 from .scripts import ScriptRunner
@@ -11,10 +13,11 @@ TEXT = 'text'
 class StaticResponse(Response):
 
     def init(self, *args, **kwargs):
+        super().init(*args, **kwargs)
         self.content_mod = None
+        self.req = kwargs['req'] if 'req' in kwargs else None
         self.vars = {}
         self.P.add_plugin(key='ScR', target=ScriptRunner, autostart=False, module=False)
-        super().init(*args, **kwargs)
 
     #
     # get filename and decide content-type header
@@ -67,8 +70,11 @@ class StaticResponse(Response):
 
     def run_scripts(self):
         if self.content_mod in {TEXT, HTML} and self.data:
-            sr = self.P.init_plugin(key='ScriptRunner', text=self.data)
-            sr.run(**self.vars)
+            sr = self.P.init_plugin(key='ScR', text=self.data)
+            vars = dict(self.vars)
+            if self.req is not None:
+                vars.update(self.req.args)
+            sr.run(args=vars)
             self.data = sr.export()
         return self
 
@@ -79,11 +85,13 @@ class StaticResponse(Response):
             self.Debug('gonna send file: {}'.format(filename))
             with open(filename, 'rb') as f:
                 self.data = f.read()
-            content_type, self.content_mod = self.Content_type(self.url)
+            content_type, self.content_mod = self.Content_type(filename)
             self.add_headers(
                 [
                     content_type,
-                    'Cache-Control: max-age={cache_min}'.format(cache_min=self.cfg['cache_min']),
+                    'Cache-Control: max-age={cache_min}'.format(
+                        cache_min=self.P.neon.cfg['response_settings']['cache_min']
+                    ),
                 ],
             ).code = 200
             return True

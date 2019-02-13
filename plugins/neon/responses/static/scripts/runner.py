@@ -16,21 +16,26 @@ class ScriptRunner(Plugin):
         local = {'result': ''}
         try:
             exec(text, args, local)
-            return locals['result']
+            return str(local['result'])
         except Exception as e:
             self.Error('Unexpectedly got: {}', e)
             self.Debug('Unexpectedly got: {}', Trace())
 
-    def run(self, **kwargs):
+    def run(self, args):
         text = self.text
+        k = 0
         for sci in self.scripts_info:
             while sci[0] in text and sci[1] in text:
                 i = text.index(sci[0])
                 j = text.index(sci[1])
                 pt1 = text[:i]
                 pt2 = text[j + len(sci[1]):]
-                result = sci[2](text[i + len(sci[0]):j], kwargs)
+                result = sci[2](text[i + len(sci[0]):j], args)
+                if result is None:
+                    raise RuntimeError('script #{} failed', k)
                 text = pt1 + result + pt2
+                k += 1
+        self.text = text
 
     def export(self):
         return self.text

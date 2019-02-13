@@ -7,7 +7,7 @@ PROPS = {'data', 'code', 'headers', 'header', 'http_version'}
 
 
 class Response(Plugin):
-    def init(self, data=None, headers=None, code=404, http_version="HTTP/1.1"):
+    def init(self, data=None, headers=None, code=404, http_version='HTTP/1.1', *args, **kwargs):
         self._data = b"" if data is None else data
         self.headers = [] if headers is None else headers
         self._code = code
@@ -83,6 +83,7 @@ class Response(Plugin):
 
     def export(self):
         data = self._extra_prepare_data()
+        data = data.encode() if isinstance(data, str) else data
         return ''.join(
             [
                 '{http_version} {code} {code_msg}\r\n'.format(
