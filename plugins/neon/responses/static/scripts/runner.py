@@ -8,23 +8,31 @@ class ScriptRunner(Plugin):
         self.text = text if isinstance(text, str) else text.decode()
         self.scripts_info = [
             ('<!--#@', '#@-->', self._run_1_0),
-            ('<!--##', '##-->', self._run_1_1),
+            ('<!--#', '#-->', self._run_1_1),
         ]
 
     def _run_1_1(self, text, args):
-        text = '\n'.join(filter(lambda x: len(x) > 0 and not x.isspace(), text.split('\n')))
-        local = {'result': ''}
+        text = '\n'.join(
+            map(
+                lambda x: x.strip(),
+                filter(
+                    lambda x: len(x) > 0 and not x.isspace(),
+                    text.split('\n'),
+                ),
+            )
+        )
         try:
-            exec(text, args, local)
-            return str(local['result'])
+            return str(eval(text, args, {}))
         except Exception as e:
             self.Error('Unexpectedly got: {}', e)
             self.Trace('Unexpectedly got: {}', _type='debug')
 
     def _run_1_0(self, text, args):
         text = '\n'.join(filter(lambda x: len(x) > 0 and not x.isspace(), text.split('\n')))
+        local = {'result': ''}
         try:
-            return str(eval(text, args, {}))
+            exec(text, args, local)
+            return str(local['result'])
         except Exception as e:
             self.Error('Unexpectedly got: {}', e)
             self.Trace('Unexpectedly got: {}', _type='debug')

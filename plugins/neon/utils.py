@@ -173,6 +173,15 @@ def Content_type(st):
     return 'Content-type: {}/{}{}'.format(type_1, type_2, extra)
 
 
+def is_local_ip(addr):
+    return any(
+        map(
+            lambda x: addr[0].startswith(x),
+            private_ip
+        )
+    )
+
+
 class recursion(object):
     def __init__(self, func):
         self.func = func
