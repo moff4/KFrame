@@ -71,10 +71,7 @@ class StaticResponse(Response):
     def run_scripts(self):
         if self.content_mod in {TEXT, HTML} and self.data:
             sr = self.P.init_plugin(key='ScR', text=self.data)
-            vars = dict(self.vars)
-            if self.req is not None:
-                vars.update(self.req.args)
-            sr.run(args=vars)
+            sr.run(args=self.vars)
             self.data = sr.export()
         return self
 

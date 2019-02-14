@@ -38,7 +38,8 @@ class Neon(Plugin):
                 'extra_response_types': {'response'},
                 'response_settings': {
                     'cache_min': 120,
-                }
+                },
+                'single_request_per_socket': True,
             }
             self.cfg = {}
             for i in defaults:
@@ -300,7 +301,7 @@ class Neon(Plugin):
                 else:
                     request.set_ssl(_ssl)
                     request.set_secure((self.cfg['use_ssl'] and _ssl) or (not self.cfg['use_ssl']))
-                    if self.choose_module(request):
+                    if self.choose_module(request) and not self.cfg['single_request_per_socket']:
                         try:
                             pop_zeros(conn)
                         except Exception as e:

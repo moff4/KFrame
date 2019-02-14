@@ -11,6 +11,7 @@ private_ip = set(
 http_code_msg = {
     200: 'OK',
     206: 'Partial Content',
+    301: 'Moved Permanently',
     304: 'Not Modified',
     307: 'Temporary Redirect',
     308: 'Permanent Rederict',
