@@ -9,6 +9,7 @@ class ScriptRunner(Plugin):
         self.scripts_info = [
             ('<!--#@', '#@-->', self._run_1_0),
             ('<!--#', '#-->', self._run_1_1),
+            ('/*#', '#*/', self._run_1_1),
         ]
 
     def _run_1_1(self, text, args):
