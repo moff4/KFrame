@@ -49,16 +49,18 @@ class ScriptRunner(Plugin):
                 script = text[i + len(sci[0]):j]
                 result = sci[2](script, args)
                 if result is None:
-                    raise RuntimeError(
+                    self.Error(
                         'script №{} ({}{}) failed'.format(
                             k,
                             script[:15],
                             '...' if len(script) >= 25 else ''
                         )
                     )
+                    return False
                 text = pt1 + result + pt2
                 k += 1
         self.text = text
+        return True
 
     def export(self):
         return self.text

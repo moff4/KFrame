@@ -71,8 +71,11 @@ class StaticResponse(Response):
     def run_scripts(self):
         if self.content_mod in {TEXT, HTML} and self.data:
             sr = self.P.init_plugin(key='ScR', text=self.data)
-            sr.run(args=self.vars)
-            self.data = sr.export()
+            if sr.run(args=self.vars):
+                self.data = sr.export()
+            else:
+                self.data = SMTH_HAPPENED
+                self.code = 500
         return self
 
     # load static file
