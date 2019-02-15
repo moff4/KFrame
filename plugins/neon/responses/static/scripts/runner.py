@@ -46,9 +46,16 @@ class ScriptRunner(Plugin):
                 j = text.index(sci[1])
                 pt1 = text[:i]
                 pt2 = text[j + len(sci[1]):]
-                result = sci[2](text[i + len(sci[0]):j], args)
+                script = text[i + len(sci[0]):j]
+                result = sci[2](script, args)
                 if result is None:
-                    raise RuntimeError('script №{} failed'.format(k))
+                    raise RuntimeError(
+                        'script №{} ({}{}) failed'.format(
+                            k,
+                            script[:15],
+                            '...' if len(script) >= 25 else ''
+                        )
+                    )
                 text = pt1 + result + pt2
                 k += 1
         self.text = text
