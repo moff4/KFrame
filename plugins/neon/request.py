@@ -111,3 +111,9 @@ class Request(Plugin):
             self.resp.data = NOT_FOUND
             self.resp.add_header(CONTENT_HTML)
             self.resp.add_header('Connection: close')
+
+    #
+    # return True if IP is private
+    #
+    def is_local(self):
+        return is_local_ip(self.addr)
