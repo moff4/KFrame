@@ -116,4 +116,4 @@ class Request(Plugin):
     # return True if IP is private
     #
     def is_local(self):
-        return is_local_ip(self.addr)
+        return is_local_ip(self.addr) or ('X-From-Y' in self.headers and is_local_ip(self.headers['X-From-Y']))
