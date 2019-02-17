@@ -23,6 +23,7 @@ class Neon(Plugin):
             defaults = {
                 'allowed_hosts': {'any'},
                 'only_local_hosts': False,
+                'believe_x_from_y': False,
                 'http_port': 8080,
                 'https_port': 8081,
                 'use_ssl': False,
@@ -65,6 +66,9 @@ class Neon(Plugin):
                         keyfile=self.cfg['ssl_cert']['keyfile'],
                         password=self.cfg['ssl_cert'].get('keypassword')
                     )
+
+                # this going to be deprecated
+                # use 'ssl_cert'
                 if all(map(lambda x: x in self.cfg, {'certfile', 'keyfile'})):
                     self.context.load_cert_chain(
                         certfile=self.cfg['certfile'],
@@ -220,10 +224,17 @@ class Neon(Plugin):
                 request.Debug('Found handler: {name}'.format(name=module.name))
                 self.P.stats.init_and_add('choose_module_{name}'.format(name=module.name), type='inc')
                 try:
-                    res = getattr(
+                    handler = getattr(
                         module,
-                        request.method.lower()
-                    )(request)
+                        request.method.lower(),
+                        None,
+                    )
+                    if handler is None:
+                        req.resp.code = 405
+                        req.resp.data = NOT_FOUND
+                        res = req.resp
+                    else:
+                        res = handler(request)
                 except ResponseError as e:
                     res = self.P.init_plugin(
                         key='response',
