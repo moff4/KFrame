@@ -13,16 +13,18 @@ class Response(Plugin):
         self._code = code
         self._http_version = http_version
 
-    def _extra_prepare_data(self):
+    def _extra_prepare_data(self) -> str:
         return self.data
 
-    # kwargs can be:
-    #   data - (bytes) Response data
-    #   code - (int) HTTP CODE
-    #   headers - (list of str) Http headers
-    #   header - (str) Http header (example: "Content-Type: text/html")
-    #   http_version - (str) Version of protocol (example: "HTTP/1.1")
     def set(self, **kwargs):
+        """
+            kwargs can be:
+              data - (bytes) Response data
+              code - (int) HTTP CODE
+              headers - (list of str) Http headers
+              header - (str) Http header (example: "Content-Type: text/html")
+              http_version - (str) Version of protocol (example: "HTTP/1.1")
+        """
         for key in kwargs:
             if key not in PROPS:
                 raise AttributeError('no response property "{}"'.format(key))
@@ -35,7 +37,7 @@ class Response(Plugin):
         return self
 
     @property
-    def code(self):
+    def code(self) -> int:
         return self._code
 
     @code.setter
@@ -43,7 +45,7 @@ class Response(Plugin):
         self._code = code
 
     @property
-    def http_version(self):
+    def http_version(self) -> str:
         return self._http_version
 
     @http_version.setter
@@ -51,7 +53,7 @@ class Response(Plugin):
         self.set_http_verion(http_verion)
 
     @property
-    def data(self):
+    def data(self) -> bytes:
         return self._data
 
     @data.setter
@@ -81,7 +83,7 @@ class Response(Plugin):
         self._http_version = http_version
         return self
 
-    def export(self):
+    def export(self) -> str:
         data = self._extra_prepare_data()
         data = data.encode() if isinstance(data, str) else data
         return ''.join(

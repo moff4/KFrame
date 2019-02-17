@@ -143,11 +143,11 @@ class Neon(Plugin):
             j += 1
         raise RuntimeError('Could not open port (%s)' % (port))
 
-    #
-    # handler of original connection
-    # return Response Object
-    #
     def get(self, req):
+        """
+            handler of original connection
+            return Response Object
+        """
         def dirs(path):
             if not req.url.endswith('/'):
                 req.url += '/'
@@ -184,8 +184,10 @@ class Neon(Plugin):
         req.resp.set_code(code)
         return req.resp
 
-    # return True if need to keep-alive socket
     def choose_module(self, request):
+        """
+            return True if need to keep-alive socket
+        """
         _t = time.time()
         res = None
         module = None
@@ -316,14 +318,14 @@ class Neon(Plugin):
                         try:
                             pop_zeros(conn)
                         except Exception as e:
-                            self.Warring('pop-zeros: {}', e)
+                            self.Warning('pop-zeros: {}', e)
                         another_deal.call(conn, addr)
                     else:
                         conn.close()
 
             except Exception as e:
                 conn.close()
-                self.Warring('Another-Deal: ({}) {}', addr[0], e)
+                self.Warning('Another-Deal: ({}) {}', addr[0], e)
                 self.Trace('Another-Deal: ({}) ', addr[0])
         self.Debug('Starting my work on port {}!', port)
         try:
@@ -441,33 +443,33 @@ class Neon(Plugin):
     #                                USER API
     # ========================================================================
 
-    #
-    # add new cgi_modules
-    # Module - Module/Object that has special interface:
-    #   Path - str - begginig of all urls that this module handle
-    #   get(request)        - handler for GET requests      ; if not presented -> send 404 by default
-    #   post(requests)      - handler for POST requests     ; if not presented -> send 404 by default
-    #   head(requests)      - handler for HEAD requests     ; if not presented -> send 404 by default
-    #   put(requests)       - handler for PUT requests      ; if not presented -> send 404 by default
-    #   delete(requests)    - handler for DELETE requests   ; if not presented -> send 404 by default
-    #   options(requests)   - handler for OPTIONS requests  ; if not presented -> send 404 by default
-    #
     def add_site_module(self, module, path=None):
+        """
+            add new cgi_modules
+            Module - Module/Object that has special interface:
+              Path - str - begginig of all urls that this module handle
+              get(request)        - handler for GET requests      ; if not presented -> send 404 by default
+              post(requests)      - handler for POST requests     ; if not presented -> send 404 by default
+              head(requests)      - handler for HEAD requests     ; if not presented -> send 404 by default
+              put(requests)       - handler for PUT requests      ; if not presented -> send 404 by default
+              delete(requests)    - handler for DELETE requests   ; if not presented -> send 404 by default
+              options(requests)   - handler for OPTIONS requests  ; if not presented -> send 404 by default
+        """
         if path is not None and not hasattr(module, 'Path'):
             setattr(module, 'Path', path)
         self.cfg['cgi_modules'].append(module)
 
-    #
-    # start web-server
-    #
     def start(self):
+        """
+            start web-server
+        """
         self._th = th.Thread(target=self._loop)
         self._th.start()
 
-    #
-    # stop web-server
-    #
     def stop(self, wait=True):
+        """
+            stop web-server
+        """
         self._run = False
         self._open()
         if wait and self._th is not None:

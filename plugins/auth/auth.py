@@ -2,25 +2,24 @@
 
 import time
 import binascii
-from traceback import format_exc as Trace
 
 from ...base.plugin import Plugin
 from ...modules import jscheme
 from ...modules import crypto
 from ...modules import art
-from ..mchunk import mchunk_scheme
-from ..stats import stats_scheme
+from ..mchunk import mchunk_scheme  # FIXME # init normaly
+from ..stats import stats_scheme  # FIXME # init normaly
 
 
-#
-# This module is to work with sessions, cookies and SQL-storing
-#
 class Auth(Plugin):
-    #
-    # sercret - secret key for crypto
-    #
-    def init(self, secret, **kwargs):
+    """
+        This module is to work with sessions, cookies and SQL-storing
+    """
 
+    def init(self, secret, **kwargs):
+        """
+            sercret - secret key for crypto
+        """
         if 'mchunk' not in self:
             self.P.add_plugin(key="mchunk", **mchunk_scheme)
         self.secret = self.P.init_plugin(key="mchunk", export=True).set(secret).mask()
@@ -33,31 +32,31 @@ class Auth(Plugin):
         self.P.stats.init_stat(key="cookie-created", type="inc", desc="Выдано Куки-файлов")
 
         self.cookie_scheme = {
-            "type": dict,
-            "value": {
-                "create": {
-                    "type": int
+            'type': dict,
+            'value': {
+                'create': {
+                    'type': int
                 },
-                "uid": {
-                    "type": int,
-                    "default": None
+                'uid': {
+                    'type': int,
+                    'default': None
                 },
-                "exp": {
-                    "type": int,
-                    "default": None
+                'exp': {
+                    'type': int,
+                    'default': None
                 },
-                "ip": {
-                    "type": str,
-                    "default": None
+                'ip': {
+                    'type': str,
+                    'default': None
                 },
             }
         }
 
-    #
-    # return decoded cookie as dict
-    # or None in case of error
-    #
     def decode_cookie(self, cookie):
+        """
+            return decoded cookie as dict
+            or None in case of error
+        """
         try:
             data = art.unmarshal(
                 data=cookie,
@@ -79,27 +78,27 @@ class Auth(Plugin):
             return jscheme.apply(
                 obj=data,
                 scheme=self.cookie_scheme,
-                key="cookie"
+                key='cookie'
             )
         except Exception as e:
-            self.Warring("decode cookie: {ex}".format(ex=e))
-            self.Warring("decode cookie: {ex}".format(ex=Trace()))
+            self.Warning('decode cookie: {}', e)
+            self.Trace('decode cookie: ')
             return None
 
 # ==========================================================================
 #                               USER API
 # ==========================================================================
 
-    #
-    # generate cookie
-    # must:
-    #   user_id     - int - user identificator
-    # optional:
-    #   expires     - int - num of seconds this cookie is valid
-    #   ip          - str - ip addr of client
-    # return bytes() as value of cookie
-    #
-    def generate_cookie(self, user_id, **kwargs):
+    def generate_cookie(self, user_id, **kwargs) -> bytes:
+        """
+            generate cookie
+            must:
+              user_id     - int - user identificator
+            optional:
+              expires     - int - num of seconds this cookie is valid
+              ip          - str - ip addr of client
+            return bytes() as value of cookie
+        """
         data = {
             'create': int(time.time()),
         }
@@ -129,14 +128,14 @@ class Auth(Plugin):
             "i": iv
         }, mask=self.mask_1, random=True)
         res = binascii.hexlify(res).decode()
-        self.P.stats.add("cookie-created")
+        self.P.stats.add('cookie-created')
         return res
 
-    #
-    # return user_id if cookie is valid
-    # or None if cookie is not valid
-    #
     def valid_cookie(self, cookie, ip=None):
+        """
+            return user_id if cookie is valid
+            or None if cookie is not valid
+        """
         cookie = binascii.unhexlify(cookie)
         cookie = self.decode_cookie(cookie)
         if any([

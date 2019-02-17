@@ -5,19 +5,13 @@ import mysql.connector as sql
 from ..base.plugin import Plugin
 
 
-#
-# Parent - any class/module that has:
-#   - method log(st,_type)
-#   - object/module that has field SQL - dict {
-#         host      -  str
-#         port      -  int
-#         user      -  str
-#         passwd    -  str
-#         scheme    -  str
-#         DDL       -  dict : str - tablename => str - DDL script for creating
-#     }
-#
 class SQL(Plugin):
+    """
+        kwargs:
+            scheme - str
+            DDL - dict : tablename(str) => DDL script for creating(str)
+    """
+
     def init(self, host, port, user, passwd, **kwargs):
         try:
             self.cfg = {
@@ -57,11 +51,10 @@ class SQL(Plugin):
             params['db'] = self.cfg['scheme']
         return sql.connect(**params)
 
-    #
-    # TESTED
-    # open connection
-    #
     def connect(self):
+        """
+            open connection
+        """
         try:
             self.conn = self.__connect()
             self._lock += 1
@@ -76,11 +69,10 @@ class SQL(Plugin):
             ))
             return False
 
-    #
-    # TESTED
-    # close connection
-    #
     def close(self, _all=False):
+        """
+            close connection
+        """
         if _all:
             self._lock = 0
         else:
@@ -92,23 +84,21 @@ class SQL(Plugin):
             except Exception:
                 pass
 
-    #
-    # TESTED
-    # reopen connection to database
-    #
     def reconnect(self):
+        """
+            reopen connection to database
+        """
         try:
             self.close()
             self.connect()
         except Exception as e:
             self.Error('reconnect-error')
 
-    #
-    # TESTED
-    # create all tables according to there DDL
-    # return tuple ( True in case of success or False , None or Exception)
-    #
     def create_table(self):
+        """
+            create all tables according to there DDL
+            return tuple ( True in case of success or False , None or Exception)
+        """
         try:
             if 'ddl' in self.cfg:
                 for i in self.cfg['ddl']:
@@ -130,12 +120,12 @@ class SQL(Plugin):
 #                                USER API
 # ==========================================================================
 
-    #
-    # universal method: select/create/insert/update/...
-    # exec query
-    # return tuple( flag of success , data as list of tuples )
-    #
     def execute(self, query, commit=False, multi=False, unique_cursor=False):
+        """
+            exec query
+            universal method: select/create/insert/update/...
+            return tuple( flag of success , data as list of tuples )
+        """
         res = []
         boo = True
         try:
@@ -164,12 +154,12 @@ class SQL(Plugin):
             boo = False
         return boo, res
 
-    #
-    # method specialy for select
-    # return list of tuples (rows) in case of success
-    # or None in case of error
-    #
     def select_all(self, query, unique_cursor=False):
+        """
+            method specialy for select
+            return list of tuples (rows) in case of success
+            or None in case of error
+        """
         try:
             if unique_cursor:
                 conn = self.__connect()
@@ -191,12 +181,12 @@ class SQL(Plugin):
             self.Error('select-all: {ex}', ex=e)
             return None
 
-    #
-    # method specialy for select
-    # return generator that returns tuples (row) in case of success
-    # or raise Exception in case of error
-    #
     def select(self, query, unique_cursor=True):
+        """
+            method specialy for select
+            return generator that returns tuples (row) in case of success
+            or raise Exception in case of error
+        """
         try:
             if unique_cursor:
                 conn = self.__connect()
@@ -219,23 +209,5 @@ class SQL(Plugin):
             except Exception:
                 pass
 
-    #
-    # need for integration
-    #
     def start(self):
         self.create_table()
-
-    #
-    # need for integration
-    #
-    def stop(self, wait=True):
-        pass
-
-
-sql_scheme = {
-    "target": SQL,
-    "module": False,
-    "arg": (),
-    "kwargs": {},
-    "dependes": []
-}

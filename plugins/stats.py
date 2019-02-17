@@ -17,7 +17,7 @@ class Stats(Plugin):
             return self._stats[key]['data']
         if self._stats[key]['type'] == 'aver':
             if len(self._stats[key]['data']) > 0:
-                return "%.4f" % (sum(self._stats[key]['data']) / len(self._stats[key]['data']))
+                return '%.4f' % (sum(self._stats[key]['data']) / len(self._stats[key]['data']))
             return 0.0
         if self._stats[key]['type'] == 'set':
             return list(self._stats[key]['data'])
@@ -26,21 +26,21 @@ class Stats(Plugin):
 #                                 USER API
 # ==========================================================================
 
-    #
-    # initialize new stat
-    # params:
-    #   <must be>
-    #     key - (hashable) internal name of stat
-    #     type - (str) type of stat possible: aver / collect / set / single / inc / sum
-    #   <optional>
-    #     desc - str - description
-    #     default - initial value
-    #     count - number of elements saved for type "aver" and "collect"
-    #       default: 500
-    #     increment - increment for signle call for type "inc"
-    #       default: 1
-    #
     def init_stat(self, key, type, rewrite=False, **kwargs):
+        """
+            initialize new stat
+            params:
+              <must be>
+                key - (hashable) internal name of stat
+                type - (str) type of stat possible: aver / collect / set / single / inc / sum
+              <optional>
+                desc - str - description
+                default - initial value
+                count - number of elements saved for type "aver" and "collect"
+                  default: 500
+                increment - increment for signle call for type "inc"
+                  default: 1
+        """
         if type not in POSSIBLE_TYPES:
             raise ValueError("Unknown type of stat")
         if key in self._stats and not rewrite:
@@ -64,12 +64,12 @@ class Stats(Plugin):
         self._stats[key] = d
         return self
 
-    #
-    # add stat data
-    # return True in case of success
-    # or False in case of error
-    #
     def add(self, key, value=None):
+        """
+            add stat data
+            return True in case of success
+            or False in case of error
+        """
         if key not in self._stats:
             return False
         if self._stats[key]['type'] in {'aver', 'collect'}:
@@ -90,6 +90,10 @@ class Stats(Plugin):
         return True
 
     def init_and_add(self, key, type, value=None, **kwargs):
+        """
+            add stat data
+            if stat is not initialized => init it!
+        """
         self.init_stat(
             key=key,
             type=type,
@@ -101,19 +105,19 @@ class Stats(Plugin):
         )
         return self
 
-    #
-    # return saved data or None in case of error
-    #
     def get(self, key):
+        """
+        return saved data or None in case of error
+        """
         return self._stats[key]['data'] if key in self._stats else None
 
-    #
-    # extansion - flag to export more or less information
-    # extension - False => return dict : 'key' : value
-    # extension - True => return dict : 'key' : { 'desc' : description , 'data' : value }
-    # return dict containing all stats
-    #
     def export(self, extension=False):
+        """
+            extansion - flag to export more or less information
+            extension - False => return dict : 'key' : value
+            extension - True => return dict : 'key' : { 'desc' : description , 'data' : value }
+            return dict containing all stats
+        """
         return {
             key: {
                 'desc': self._stats[key]['desc'] if 'desc' in self._stats[key] else key,
@@ -126,10 +130,10 @@ class Stats(Plugin):
 
 
 stats_scheme = {
-    "target": Stats,
-    "module": False,
-    "arg": (),
-    "kwargs": {},
-    "dependes": [],
-    "autostart": True
+    'target': Stats,
+    'module': False,
+    'arg': (),
+    'kwargs': {},
+    'dependes': [],
+    'autostart': True
 }

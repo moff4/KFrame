@@ -68,8 +68,8 @@ class Plugin:
     #
     # debug log function
     #
-    def Warring(self, st, *args, **kwargs):
-        self(st=st.format(*args, **kwargs), _type='warring')
+    def Warning(self, st, *args, **kwargs):
+        self(st=st.format(*args, **kwargs), _type='warning')
 
     #
     # debug log function

@@ -11,11 +11,11 @@ class Mchunk(Plugin):
         self._mask = b''
         self._data = b''
 
-    #
-    # set internal data in state 0
-    # data must be bytes
-    #
     def set(self, data):
+        """
+            set internal data in state 0
+            data must be bytes
+        """
         if len(data) <= 0:
             return
         self._masked = False
@@ -23,10 +23,10 @@ class Mchunk(Plugin):
         self._data = data
         return self
 
-    #
-    # mask data
-    #
     def mask(self):
+        """
+            mask data
+        """
         if not self._masked:
             data = self._data
             self._data = b''
@@ -35,10 +35,10 @@ class Mchunk(Plugin):
                 self._data += bytes([data[i] ^ self._mask[i]])
         return self
 
-    #
-    # unmask data
-    #
     def unmask(self):
+        """
+            unmask data
+        """
         if self._masked:
             data = self._data
             self._data = b''
@@ -47,9 +47,9 @@ class Mchunk(Plugin):
                 self._data += bytes([data[i] ^ self._mask[i]])
         return self
 
-    #
-    # return data as is
-    # return bytes
-    #
     def get(self):
+        """
+            return data as is
+            return bytes
+        """
         return self._data

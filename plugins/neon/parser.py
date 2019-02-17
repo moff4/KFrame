@@ -10,11 +10,11 @@ else:
     PEEK_FLAGS = MSG_PEEK | MSG_DONTWAIT
 
 
-#
-# take socket and cfg and parse HTTP headers
-# return dict of attributes/headers/url/args
-#
 def parse_data(conn, cfg):
+    """
+        take socket and cfg and parse HTTP headers
+        return dict of attributes/headers/url/args
+    """
     request = {
         'url': b'',
         'args': {},
@@ -106,6 +106,9 @@ def parse_data(conn, cfg):
 
 
 def pop_zeros(conn):
+    """
+        pop empty bytes from socket till get real data
+    """
     while True:
         s = conn.recv(1, PEEK_FLAGS)
         if len(s) <= 0 or ord(s) > 32:

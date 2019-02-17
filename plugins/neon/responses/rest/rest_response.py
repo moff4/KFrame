@@ -10,7 +10,7 @@ class RestResponse(Response):
     def set_data(self, data):
         self.data = data
 
-    def _extra_prepare_data(self):
+    def _extra_prepare_data(self) -> str:
         st = json.dumps(self.data)
         self.add_header(CONTENT_JSON)
-        return st if isinstance(st, bytes) else st.encode()
+        return st if isinstance(st, str) else st.decode()

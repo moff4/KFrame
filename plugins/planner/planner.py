@@ -7,28 +7,32 @@ from traceback import format_exc as Trace
 from kframe.base import Plugin
 
 
-#
-# task - dict = {
-#     MUST BE:
-#         key - str
-#         target - function
-#     OPTIONAL:
-#         hours - int , def 0
-#         min - int , def 0
-#         sec - int , def 0
-#         shedule - list of tuples ('HH:MM:SS' str, 'HH:MM:SS' str), def ('00:00:00','23:59:59') - shedule (from, to)
-#         calendar - { 'allowed' or 'disallowed': { month as key [1..12] => set of days [1..31] }}
-#           def {} (allowed always) - match days, when it's allowed or disallowed to run function
-#         offset - int , def 0
-#         args - list/tuple , def []
-#         kwargs - dict , def {}
-#         threading - bool or str , def False - no threadign; True - run in new thread; 'process' - run in new process;
-#         after - int , def None - do not run before this unix timestamp
-#         times - int , def None - number of runs
-#         max_parallel_copies - int , def None - allowed number of parallel tasks run (None - no restrictions)
-# }
-#
 class Planner(Plugin):
+    """
+        tasks - list of tasks
+        task - dict = {
+            MUST BE:
+                key - str
+                target - function
+            OPTIONAL:
+                hours - int , def 0
+                min - int , def 0
+                sec - int , def 0
+                shedule - list of tuples ('HH:MM:SS' str, 'HH:MM:SS' str), def ('00:00:00','23:59:59')
+                     - shedule (from, to)
+                calendar - { 'allowed' or 'disallowed': { month as key [1..12] => set of days [1..31] }}
+                  def {} (allowed always) - match days, when it's allowed or disallowed to run function
+                offset - int , def 0
+                args - list/tuple , def []
+                kwargs - dict , def {}
+                threading - bool or str , def False - no threadign; True - run in new thread; 'process'
+                     - run in new process;
+                after - int , def None - do not run before this unix timestamp
+                times - int , def None - number of runs
+                max_parallel_copies - int , def None - allowed number of parallel tasks run (None - no restrictions)
+        }
+    """
+
     def init(self, tasks=None):
         self._run = True
         self._m_thead = None
@@ -40,10 +44,10 @@ class Planner(Plugin):
             self.FATAL = True
             self.errmsg = "Some tasks badly configured"
 
-    #
-    # return ( key , delay as int )
-    #
     def next_task(self):
+        """
+            return ( key , delay as int )
+        """
         def calendar(t, allowed=None, disallowed=None):
             def in_cal(t, cal):
                 return t.tm_mon in cal and t.tm_mday in cal[t.tm_mon]
@@ -89,10 +93,10 @@ class Planner(Plugin):
                 self.Debug('shedule: next {key} in {delay} sec', key=key, delay=delay)
         return sorted(az, key=lambda x: x[1])[0]
 
-    #
-    # pop dead threads
-    #
     def check_threads(self):
+        """
+            pop dead threads
+        """
         az = []
         for i in self._running_tasks:
             if i[1].is_alive():
@@ -101,10 +105,10 @@ class Planner(Plugin):
                 i[1].join()
         self._running_tasks = az
 
-    #
-    # run single task
-    #
     def _do(self, key):
+        """
+            run single task
+        """
         self.Debug('Start {}', key)
         try:
             _t = time.time()
@@ -119,10 +123,10 @@ class Planner(Plugin):
             self.Debug("{} - ex: {}".format(key, Trace()))
             self.Error("{} - ex: {}".format(key, e))
 
-    #
-    # main loop
-    #
     def _loop(self, loops=None):
+        """
+            main loop
+        """
         while self._run and (loops is None or loops > 0):
             key, delay = self.next_task()
             if self.P.get_param('--debug-planner', False):

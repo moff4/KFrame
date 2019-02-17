@@ -7,13 +7,14 @@ from threading import Thread
 from ..base.plugin import Plugin
 
 
-#
-# kwargs:
-#   timeout - interval of checking nodes for old rows ; default: 1.0
-#   save_file - filename for temporary buffer ; default: cache.json
-#   autosave - save cached data to <save_file> every <timeout>
-#
 class Cache(Plugin):
+    """
+        kwargs:
+          timeout - interval of checking nodes for old rows ; default: 1.0
+          save_file - filename for temporary buffer ; default: cache.json
+          autosave - save cached data to <save_file> every <timeout>
+    """
+
     def init(self, **kwargs):
         defaults = {
             'timeout': 1.0,
@@ -21,12 +22,14 @@ class Cache(Plugin):
             'autosave': False,
         }
         self.cfg = {i: kwargs[i] if i in kwargs else defaults[i] for i in defaults}
-        # nodename -> [
-        #   cache as dict,
-        #   timeout as float,
-        #   filter as function : time.time() of add -> bool,
-        #   autoclean
-        # ]
+        """
+            nodename -> [
+              cache as dict,
+              timeout as float,
+              filter as function : time.time() of add -> bool,
+              autoclean
+            ]
+        """
         self._d = {}
         self._th = None
         self._run = True
@@ -40,14 +43,14 @@ class Cache(Plugin):
             data = {}
             for i in self._d:
                 data[i] = {
-                    "d": self._d[i][0],
-                    "t": self._d[i][1],
-                    "a": self._d[i][3]
+                    'd': self._d[i][0],
+                    't': self._d[i][1],
+                    'a': self._d[i][3],
                 }
-            with open(self.cfg['save_file'], "w") as f:
+            with open(self.cfg['save_file'], 'w') as f:
                 f.write(json.dumps(data))
         except Exception as e:
-            self("save temporary file: {}".format(e), _type="warring")
+            self.Warning('save temporary file: {}', e)
 
     def load(self):
         try:
@@ -55,7 +58,7 @@ class Cache(Plugin):
             for i in data:
                 self._d[i] = [data[i]["d"], data[i]["t"], None, data[i]["a"]]
         except Exception as e:
-            self("read temporary file: {}".format(e), _type="warring")
+            self.Warning('read temporary file: {}', e)
 
     def _clean(self):
         k = 0
@@ -63,64 +66,58 @@ class Cache(Plugin):
             if self._d[nodename][3]:
                 k += self.clean_node(nodename)
         if k > 0:
-            self("clean: delete {} rows".format(k), _type="debug")
+            self.Debug('clean: delete {} rows', k)
 
     def _loop(self):
-        self("start loop", _type="debug")
+        self.Debug("start loop")
         while self._run:
             time.sleep(self.cfg['timeout'])
             self._clean()
             if self.cfg['autosave']:
                 self.save()
-        self("stop loop", _type="debug")
+        self.Debug("stop loop")
 
 # ==========================================================================
 #                                USER API
 # ==========================================================================
 
-    #
-    # overwrite
-    #
     def start(self):
         self._run = True
         self._th = Thread(target=self._loop)
         self._th.start()
 
-    #
-    # overwrite
-    #
     def stop(self, wait=True):
         self._run = False
         if wait:
             self._th.join()
             self.save()
 
-    #
-    # Add new node or change timeout if node exists
-    # Timeout will be ignored if _filter passed
-    # filter is fuction : value , timestamp => bool
-    #   value - smth saved
-    #   timestamp - timestamp when this was added
-    #   return True if row must be deleted
-    #
     def add_node(self, nodename, timeout=3600, _filter=None, autoclean=True):
+        """
+            Add new node or change timeout if node exists
+            Timeout will be ignored if _filter passed
+            filter is fuction : value , timestamp => bool
+              value - smth saved
+              timestamp - timestamp when this was added
+              return True if row must be deleted
+        """
         if nodename not in self._d:
             self._d[nodename] = [{}, timeout, _filter, autoclean]
         else:
             self._d[nodename] = [self._d[nodename][0], timeout, _filter, autoclean]
 
-    #
-    # Delete whole node
-    #
     def delete_node(self, nodename):
+        """
+            Delete whole node
+        """
         if nodename in self._d:
             self._d.pop(nodename)
 
-    #
-    # delete old rows from node
-    # return number of deleted rows
-    #
     def clean_node(self, nodename):
+        """
+            delete old rows from node
+            return number of deleted rows
+        """
         if nodename not in self._d:
             return 0
         k = 0
@@ -135,26 +132,26 @@ class Cache(Plugin):
                 k += 1
         return k
 
-    #
-    # Push new data to cache
-    #
     def push(self, nodename, key, val):
+        """
+            Push new data to cache
+        """
         self._d[nodename][0][key] = (val, time.time())
 
-    #
-    # Return value for key in cache or None
-    #
     def get(self, nodename, key):
+        """
+            Return value for key in cache or None
+        """
         if key in self._d[nodename][0]:
             return self._d[nodename][0][key][0]
         else:
             return None
 
-    #
-    # return number of keys in one node
-    #  OR return 0
-    #
     def count(self, nodename):
+        """
+            return number of keys in one node
+             OR return 0
+        """
         if nodename in self._d:
             return len(self._d[nodename][0])
         else:

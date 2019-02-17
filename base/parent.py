@@ -397,7 +397,7 @@ class Parent:
     # st - message to save
     # _type | sence
     #   0 "notify"  |   Notify
-    #   1 "warring" |   Warring
+    #   1 "warning" |   Warning
     #   2 "error"   |   Error - default
     #   3 "debug"   |   Debug
     #
@@ -406,8 +406,8 @@ class Parent:
         yn = " Error "
         if _type in [0, "0", "notify"]:
             yn = "Notify "
-        elif _type in [1, "1", "warring"]:
-            yn = "Warring"
+        elif _type in [1, "1", "warning"]:
+            yn = "Warning"
         elif _type in [3, "3", "debug"]:
             if not self.debug:
                 return

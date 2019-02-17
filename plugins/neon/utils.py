@@ -90,7 +90,7 @@ MAX_HEADER_COUNT = 32
 MAX_HEADER_LEN = 2 * 2**10
 
 
-def readln(conn, max_len=2048):
+def readln(conn, max_len=2048) -> bytes:
     q = b' '
     st = b''
     while ord(q) != 10:
@@ -107,7 +107,7 @@ def readln(conn, max_len=2048):
 #
 # takes list of headers-lines and return extended list of str
 #
-def apply_standart_headers(headers):
+def apply_standart_headers(headers) -> list:
     for i in STANDART_HEADERS:
         key = i.split(':')[0]
         boo = False
@@ -118,11 +118,11 @@ def apply_standart_headers(headers):
     return headers
 
 
-#
-# get smth like b'A%66C'
-# return smth like b'ABC'
-#
-def urldecode(az):
+def urldecode(az) -> bytes:
+    """
+        get smth like b'A%66C'
+        return smth like b'ABC'
+    """
     def pp(z):
         if z in b'ABCDEF':
             return ord(z) - ord(b'A') + 10
@@ -147,11 +147,11 @@ def urldecode(az):
     return bz
 
 
-#
-# get filename and decide content-type header
-# st == req['url']
-#
-def Content_type(st):
+def Content_type(st) -> str:
+    """
+        get filename and decide content-type header
+        st == req.url
+    """
     extra = ''
     st = st.split('.')[-1]
     if st in {'html', 'css', 'txt', 'csv', 'xml', 'js', 'json', 'php', 'md'}:
@@ -181,7 +181,7 @@ def Content_type(st):
     return 'Content-type: {}/{}{}'.format(type_1, type_2, extra)
 
 
-def is_local_ip(addr):
+def is_local_ip(addr) -> bool:
     return any(
         map(
             lambda x: addr[0].startswith(x),
@@ -191,6 +191,11 @@ def is_local_ip(addr):
 
 
 class recursion(object):
+    """
+        optimizations in recursive calling
+        use as decorator
+    """
+
     def __init__(self, func):
         self.func = func
 

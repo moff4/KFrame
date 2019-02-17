@@ -19,11 +19,11 @@ class StaticResponse(Response):
         self.vars = {}
         self.P.add_plugin(key='ScR', target=ScriptRunner, autostart=False, module=False)
 
-    #
-    # get filename and decide content-type header
-    # return (Http-Header, content_mod)
-    #
     def Content_type(self, st):
+        """
+            get filename and decide content-type header
+            return (Http-Header, content_mod)
+        """
         extra = ''
         content_mod = None
         st = st.split('.')[-1]
@@ -47,20 +47,19 @@ class StaticResponse(Response):
         elif st in {'mkv', 'avi', 'mp4'}:
             content_mod = BIN
             type_1 = 'video'
-            if st in {'mp4', 'avi'}:
-                type_2 = st
-            else:
-                type_2 = 'webm'
+            type_2 = st if st in {'mp4', 'avi'} else 'webm'
         else:
             content_mod = TEXT
             type_1 = 'text'
             type_2 = 'plain'
         return 'Content-type: {}/{}{}'.format(type_1, type_2, extra), content_mod
 
-    # az - list of tuples:
-    #   [.., (template, data), ..]
-    # find template => change into data
     def usefull_inserts(self, az):
+        """
+            az - list of tuples:
+              [.., (template, data), ..]
+            find template => change into data
+        """
         if self.content_mod in {TEXT, HTML}:
             for i in az:
                 while i[0] in self.data:
@@ -78,9 +77,11 @@ class StaticResponse(Response):
                 self.code = 500
         return self
 
-    # load static file
-    # return True in case of success
     def load_static_file(self, filename):
+        """
+            load static file
+            return True in case of success
+        """
         if os.path.isfile(filename):
             self.Debug('gonna send file: {}'.format(filename))
             with open(filename, 'rb') as f:
