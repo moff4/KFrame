@@ -15,6 +15,18 @@ class Plugin:
             self.FATAL = False
             self.errmsg = 'initialized successfully - {}'.format(self.name)
 
+            argv = self.P.get_params()
+            prefix = '--{}-'.format(self.name)
+            kwargs.update({
+                '_'.join(k[len(prefix):].split('-')): int(argv[k])
+                if isinstance(argv[k], str) and argv[k].isdigit() else
+                argv[k]
+                for k in filter(
+                    lambda x: x.startswith(prefix) and x != prefix,
+                    argv,
+                )
+            })
+
             try:
                 self.init(*args, **kwargs)
             except Exception as e:
