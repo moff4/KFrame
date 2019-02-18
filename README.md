@@ -98,8 +98,8 @@ def add_site_module(self, module, path: str=None, response_type: str=None)
 
 Объект requests содержит в себе поле resp - объект класса Responce или наследника, отвечающий за ответ клиенту, который должен быть заполнен в обработчике запроса.  
 Если response_type был передан, то поле респ указывает на объект известного класса:  
-| response_type | response class |
-|-----|------|
+| response_type | response class |  
+|-----|------|  
 | base | Response |  
 | static | StaticResponse |  
 | rest | RestResponse |  
