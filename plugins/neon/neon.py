@@ -10,8 +10,8 @@ import threading as th
 from ...base.plugin import Plugin
 from ...modules import crypto
 from ..stats import stats_scheme
-from .request import Request
-from .responses import Response, StaticResponse
+from .requests import Request
+from .responses import Response, StaticResponse, RestResponse
 from .utils import *
 from .exceptions import ResponseError
 from .parser import pop_zeros
@@ -30,13 +30,11 @@ class Neon(Plugin):
                 'ca_cert': None,
                 'ssl_cert': {},
                 'site_directory': './var',
-                'cgi_modules': [],
                 'max_data_length': MAX_DATA_LEN,
                 'max_header_count': MAX_HEADER_COUNT,
                 'max_header_length': MAX_HEADER_LEN,
                 'threading': False,
                 'use_neon_server': False,
-                'extra_response_types': {'response'},
                 'response_settings': {
                     'cache_min': 120,
                 },
@@ -49,12 +47,17 @@ class Neon(Plugin):
                     self.cfg[i].update(kwargs.get(i, {}))
                 else:
                     self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
+            self.cgi_modules = []
 
             self._run = True
             self._th = None
             self._rng = random.random() * 10**2
 
-            self.Path = '/'
+            self.response_types = {
+                'base': 'response',
+                'rest': 'rest_response',
+                'static': 'static_response',
+            }
 
             if self.cfg['site_directory'].endswith('/'):
                 self.cfg['site_directory'] = self.cfg['site_directory'][:-1]
@@ -79,12 +82,9 @@ class Neon(Plugin):
                 self.context = None
 
             self.P.add_plugin(key='request', target=Request, autostart=False, module=False)
-            if 'response' in self.cfg['extra_response_types']:
-                self.P.add_plugin(key='response', target=Response, autostart=False, module=False)
-            if 'rest_response' in self.cfg['extra_response_types']:
-                self.P.add_plugin(key='rest_response', target=RestResponse, autostart=False, module=False)
-            if 'static_response' in self.cfg['extra_response_types']:
-                self.P.add_plugin(key='static_response', target=StaticResponse, autostart=False, module=False)
+            self.P.add_plugin(key='response', target=Response, autostart=False, module=False)
+            self.P.add_plugin(key='rest_response', target=RestResponse, autostart=False, module=False)
+            self.P.add_plugin(key='static_response', target=StaticResponse, autostart=False, module=False)
 
             if 'stats' not in self:
                 self.P.add_plugin(key='stats', **stats_scheme).init_plugin(key='stats', export=False)
@@ -163,25 +163,19 @@ class Neon(Plugin):
                 ),
                 **req.dict()
             )
-        path = self.cfg['site_directory'] + req.url
-        code = 200
+        path = self.cfg['site_directory'].rstrip('/') + req.url
         try:
             if os.path.isdir(path):
-                data = dirs(path)
-                headers = [CONTENT_HTML]
+                req.resp.data = dirs(path)
+                req.resp.add_header(CONTENT_HTML)
             else:
-                req.static_file(path)
-                data = None
-            code = req.resp.code
+                req.resp.load_static_file(path)
         except Exception as e:
             self.Error(e)
-            data = NOT_FOUND
-            headers = [CONTENT_HTML, 'Connection: close']
-            code = 404
-        if data is not None:
-            req.resp.set_data(data)
-            req.resp.add_headers(headers)
-        req.resp.set_code(code)
+            self.Trace(e, _type='debug')
+            req.resp.data = SMTH_HAPPENED
+            req.resp.add_headers([CONTENT_HTML, 'Connection: close'])
+            req.resp.code = 500
         return req.resp
 
     def choose_module(self, request):
@@ -207,27 +201,32 @@ class Neon(Plugin):
             modules = sorted(
                 list(
                     filter(
-                        lambda x: request.url.startswith(x.Path),
-                        self.cfg['cgi_modules']
+                        lambda x: request.url.startswith(x['path']),
+                        self.cgi_modules
                     )
                 ),
                 reverse=True,
-                key=lambda x: len(x.Path)
+                key=lambda x: len(x['path'])
             )
             if len(modules) > 0:
                 module = modules[0]
             elif self.cfg['use_neon_server']:
-                module = self
+                module = {
+                    'module': self,
+                    'path': '/',
+                    'type': 'static',
+                }
             else:
                 module = None
             if module is None:
                 request.Debug('{ip}: Handler not found ({url})'.format(**request.dict()))
             else:
-                request.Debug('Found handler: {name}'.format(name=module.name))
-                self.P.stats.init_and_add('choose_module_{name}'.format(name=module.name), type='inc')
+                request.Debug('Found handler: {name}'.format(name=module['module'].name))
+                self.P.stats.init_and_add('choose_module_{name}'.format(name=module['module'].name), type='inc')
                 try:
+                    request.init_response(self.response_types[module['type']])
                     handler = getattr(
-                        module,
+                        module['module'],
                         request.method.lower(),
                         None,
                     )
@@ -259,7 +258,7 @@ class Neon(Plugin):
         request.Notify('[{ip}] {code} : {method} {url} {args}', code=res.code, **request.dict())
         self.P.stats.init_and_add(
             'module_{name}_answer_{code}'.format(
-                name='None' if module is None else module.name,
+                name='None' if module is None else module['module'].name,
                 code=res.code
             ),
             type='inc'
@@ -269,7 +268,7 @@ class Neon(Plugin):
         if 200 <= res.code < 300:
             self.P.stats.init_and_add(
                 key="{name}-aver-response-time".format(
-                    name='None' if module is None else module.name
+                    name='None' if module is None else module['module'].name
                 ),
                 type="aver",
                 value=_t
@@ -443,11 +442,14 @@ class Neon(Plugin):
     #                                USER API
     # ========================================================================
 
-    def add_site_module(self, module, path=None):
+    def add_site_module(self, module, path: str=None, response_type: str=None):
         """
             add new cgi_modules
+            response_type - type of response object; default 'base'
+                possible values for response_type: 'base' / 'rest' / 'static'
+            path - str - default '/'; path that assosiates with this module
             Module - Module/Object that has special interface:
-              Path - str - begginig of all urls that this module handle
+              Path - str ; Going to be deprecated
               get(request)        - handler for GET requests      ; if not presented -> send 404 by default
               post(requests)      - handler for POST requests     ; if not presented -> send 404 by default
               head(requests)      - handler for HEAD requests     ; if not presented -> send 404 by default
@@ -455,9 +457,22 @@ class Neon(Plugin):
               delete(requests)    - handler for DELETE requests   ; if not presented -> send 404 by default
               options(requests)   - handler for OPTIONS requests  ; if not presented -> send 404 by default
         """
-        if path is not None and not hasattr(module, 'Path'):
-            setattr(module, 'Path', path)
-        self.cfg['cgi_modules'].append(module)
+        if isinstance(module, Plugin) and module.FATAL:
+            module.Error(module.errmsg)
+            raise ValueError('module is not initialized properly')
+
+        if getattr(module, 'Path', None) is not None and path is not None:
+            raise ValueError('"path" for passed as param and module has field "Path"; cannot choose')
+
+        if response_type is not None and response_type not in self.response_types:
+            raise ValueError('Invaled param "response_type"')
+
+        path = getattr(module, 'Path', None) if path is None else path
+        self.cgi_modules.append({
+            'module': module,
+            'path': '/' if path is None else path,
+            'type': 'base' if response_type is None else response_type,
+        })
 
     def start(self):
         """

@@ -2,9 +2,9 @@
 
 import os
 from traceback import format_exc as Trace
-from ...base.plugin import Plugin
-from .parser import parse_data
-from .utils import *
+from ....base.plugin import Plugin
+from ..parser import parse_data
+from ..utils import *
 
 
 class Request(Plugin):
@@ -23,6 +23,7 @@ class Request(Plugin):
     def init(self, addr, conn, **kwargs):
         defaults = {
             'id': 0,
+            'response_type': 'response',
             'cache_min': 120,
             'max_header_length': MAX_HEADER_LEN,
             'max_header_count': MAX_HEADER_COUNT,
@@ -59,7 +60,6 @@ class Request(Plugin):
         ) else self.addr[0]
         self.ssl = False
         self.secure = False
-        self.resp = self.P.init_plugin(key='response')
         self._send = False
 
     def __call__(self, st='', _type='notify'):
@@ -72,6 +72,9 @@ class Request(Plugin):
     # ==========================================================================
     #                             USER API
     # ==========================================================================
+
+    def init_response(self, type):
+        self.resp = self.P.init_plugin(key=type)
 
     @property
     def real_ip(self):

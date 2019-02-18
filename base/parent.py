@@ -436,7 +436,7 @@ class Parent:
             return self
         self.print_errmsg()
         self.check_critiacal_argv()
-        if self.FATAL:
+        if self.FATAL or any(map(lambda x: x.FATAL, self.plugins.values())):
             return self
         else:
             try:

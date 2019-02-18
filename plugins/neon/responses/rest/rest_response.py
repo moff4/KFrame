@@ -8,9 +8,9 @@ from ...utils import CONTENT_JSON
 
 class RestResponse(Response):
     def set_data(self, data):
-        self.data = data
+        self._data = data
 
     def _extra_prepare_data(self) -> str:
-        st = json.dumps(self.data)
+        st = json.dumps(self._data)
         self.add_header(CONTENT_JSON)
         return st if isinstance(st, str) else st.decode()

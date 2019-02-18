@@ -62,18 +62,18 @@ class StaticResponse(Response):
         """
         if self.content_mod in {TEXT, HTML}:
             for i in az:
-                while i[0] in self.data:
-                    j = self.data.index(i[0])
-                    self.data = self.data[:j] + i[1] + self.data[j + len(i[0]):]
+                while i[0] in self._data:
+                    j = self._data.index(i[0])
+                    self._data = self._data[:j] + i[1] + self._data[j + len(i[0]):]
         return self
 
     def run_scripts(self):
-        if self.content_mod in {TEXT, HTML} and self.data:
-            sr = self.P.init_plugin(key='ScR', text=self.data)
+        if self.content_mod in {TEXT, HTML} and self._data:
+            sr = self.P.init_plugin(key='ScR', text=self._data)
             if sr.run(args=self.vars):
-                self.data = sr.export()
+                self._data = sr.export()
             else:
-                self.data = SMTH_HAPPENED
+                self._data = SMTH_HAPPENED
                 self.code = 500
         return self
 
@@ -85,7 +85,7 @@ class StaticResponse(Response):
         if os.path.isfile(filename):
             self.Debug('gonna send file: {}'.format(filename))
             with open(filename, 'rb') as f:
-                self.data = f.read()
+                self._data = f.read()
             content_type, self.content_mod = self.Content_type(filename)
             self.add_headers(
                 [
@@ -98,7 +98,7 @@ class StaticResponse(Response):
             return True
         else:
             self.Debug('File not found: {}'.format(filename))
-            self.data = NOT_FOUND
+            self._data = NOT_FOUND
             self.add_headers(
                 [
                     CONTENT_HTML,
@@ -109,4 +109,4 @@ class StaticResponse(Response):
 
     def _extra_prepare_data(self):
         self.run_scripts()
-        return self.data
+        return self._data
