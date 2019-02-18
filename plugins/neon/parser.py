@@ -65,7 +65,7 @@ def parse_data(conn, cfg):
             break
         else:
             st = st.split(':')
-        key = st[0]
+        key = st[0].lower()
         for i in st[1:]:
             if len(value) > 0:
                 value += ':'
@@ -89,6 +89,8 @@ def parse_data(conn, cfg):
             raise RuntimeError("Too many headers")
 
     for i in {'http_version', 'url', 'method'}:
+        # FIXME
+        # check for binary
         request[i] = request[i].decode('utf-8')
 
     if '..' in request["url"] or "//" in request["url"]:
@@ -97,8 +99,8 @@ def parse_data(conn, cfg):
     for i in request['args']:
         request['args'][i] = request['args'][i].decode('utf-8')
 
-    if 'Content-Length' in request['headers']:
-        _len = int(request['headers']['Content-Length'])
+    if 'content-length' in request['headers']:
+        _len = int(request['headers']['content-length'])
         if _len >= cfg['max_data_length']:
             raise RuntimeError("Too much data")
         request['data'] = conn.recv(_len)

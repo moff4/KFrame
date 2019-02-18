@@ -48,8 +48,15 @@ class Request(Plugin):
             setattr(self, i, self._dict[i])
         self.addr = addr
         self.conn = conn
-        self.ip = self.addr[0]
+        self._real_ip = self.addr[0]
         self.port = self.addr[1]
+        self.ip = self.headers['x-from-y'] if (
+            (
+                'x-from-y' in self.headers
+            ) and (
+                self.P.neon.cfg['believe_x_from_y']
+            )
+        ) else self.addr[0]
         self.ssl = False
         self.secure = False
         self.resp = self.P.init_plugin(key='response')
@@ -65,6 +72,10 @@ class Request(Plugin):
     # ==========================================================================
     #                             USER API
     # ==========================================================================
+
+    @property
+    def real_ip(self):
+        return self._real_ip
 
     def set_ssl(self, ssl):
         self.ssl = ssl
@@ -117,21 +128,9 @@ class Request(Plugin):
             self.resp.add_header(CONTENT_HTML)
             self.resp.add_header('Connection: close')
 
-    def is_local(self):
+    def is_local(self) -> bool:
         """
             return True if IP is private
             like 'localhost' or '192.168.*.*'
         """
-        return is_local_ip(
-            self.addr
-        ) or (
-            (
-                'X-From-Y' in self.headers
-            ) and (
-                self.P.neon.cfg['believe_x_from_y']
-            ) and (
-                is_local_ip(
-                    self.headers['X-From-Y']
-                )
-            )
-        )
+        return is_local_ip(self.ip)

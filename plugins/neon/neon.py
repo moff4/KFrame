@@ -197,11 +197,11 @@ class Neon(Plugin):
         elif request.http_version not in HTTP_VERSIONS:
             request.Debug('{ip}: Unallowed version "{method}" ({url})', **request.dict())
             return False
-        elif 'Host' not in request.headers:
+        elif 'host' not in request.headers:
             request.Debug('{ip}: No Host passed ({url})', **request.dict())
             return False
-        elif request.headers['Host'] not in self.cfg['allowed_hosts'] and 'any' not in self.cfg['allowed_hosts']:
-            request.Debug('{ip}: Invalid Header-Host "{}"', request.headers['Host'], **request.dict())
+        elif request.headers['host'] not in self.cfg['allowed_hosts'] and 'any' not in self.cfg['allowed_hosts']:
+            request.Debug('{ip}: Invalid Header-Host "{}"', request.headers['host'], **request.dict())
             return False
         else:
             modules = sorted(
@@ -279,7 +279,7 @@ class Neon(Plugin):
         except Exception as e:
             request.Error('cgi after-handler: {ex}'.format(ex=e))
             request.Trace('cgi after-handler:')
-        return request.headers.get('Connection') == 'keep-alive'
+        return request.headers.get('connection') == 'keep-alive'
 
     # ========================================================================
     #                              DEMON TOOLS
