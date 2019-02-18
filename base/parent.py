@@ -4,7 +4,6 @@ import time
 import sys
 from traceback import format_exc as Trace
 
-
 # filename for logs (str)
 LOG_FILE = "log.txt"
 
@@ -12,17 +11,16 @@ LOG_FILE = "log.txt"
 SHOW_TIME_FORMAT = "%d.%m.%Y %H:%M:%S"
 
 
-#
-# cfg - module conf
-# plugins - dict : key as str => dict {
-#       target -> module/class,
-#       dependes -> list of key,
-#       module -> True if that's module,
-#       args -> tuple of args for plugins (optional)
-# }
-#
 class Parent:
     def __init__(self, plugins=None, name="KFrame"):
+        """
+            plugins - dict : key as str => dict {
+                  target -> module/class,
+                  dependes -> list of key,
+                  module -> True if that's module,
+                  args -> tuple of args for plugins (optional)
+            }
+        """
         try:
             self.name = name
 
@@ -36,12 +34,12 @@ class Parent:
             self._argv_rules = {}  # collected rules from all plugins
             self._params = {}
             self._my_argvs = {
-                '-h': {'critical': False, 'description': "See this message again"},
-                '-?': {'critical': False, 'description': "See this message again"},
-                '--help': {'critical': False, 'description': "See this message again"},
-                '--stdout': {'critical': False, 'description': "Extra print logs to stdout"},
-                '--debug': {'critical': False, 'description': "Verbose log"},
-                '--no-log': {'critical': False, 'description': "Do not save logs to log.file"},
+                '-h': {'critical': False, 'description': 'See this message again'},
+                '-?': {'critical': False, 'description': 'See this message again'},
+                '--help': {'critical': False, 'description': 'See this message again'},
+                '--stdout': {'critical': False, 'description': 'Extra print logs to stdout'},
+                '--debug': {'critical': False, 'description': 'Verbose log'},
+                '--no-log': {'critical': False, 'description': 'Do not save logs'},
 
             }
 
@@ -60,14 +58,14 @@ class Parent:
                     self.plugin_t.values()
                 )
             ):
-                raise ValueError('Plugin does not has important propery')
+                raise ValueError('Plugin does not has important propery "target" or "module"')
 
             self.FATAL = False
             self.errmsg = []
         except Exception as e:
             e = Trace()
             self.FATAL = True
-            self.errmsg = ["Parent init : %s" % (e)]
+            self.errmsg = ["Parent init : {}".format(e)]
 
     def collect_argv(self):
         rules = dict(self._my_argvs)
@@ -81,10 +79,10 @@ class Parent:
                     rules[j]['critical'] = rules[j]['critical'] or r[j]['critical']
         self._argv_rules = rules
 
-    #
-    # parse argv according to plugin's rules
-    #
     def parse_argv(self):
+        """
+            parse argv according to plugin's rules
+        """
         self.collect_argv()
         for arg in sys.argv[1:]:
             if '=' in arg:
@@ -95,12 +93,13 @@ class Parent:
                 key = arg
                 value = True
             self._argv_p[key] = value
+        return self
 
-    #
-    # check if all critical argv were passed
-    # set FATAL True if not all passed
-    #
     def check_critiacal_argv(self):
+        """
+            check if all critical argv were passed
+            set FATAL True if not all passed
+        """
         if any(
             map(
                 lambda x: self._argv_rules[x]['critical'] and x not in self._argv_p,
@@ -109,11 +108,12 @@ class Parent:
         ):
             self.FATAL = True
             self.errmsg += ["Parent: parse-argv: not all critical params were passed"]
+        return self
 
-    #
-    # initialize plugins and modules
-    #
     def _init_plugins(self):
+        """
+            initialize plugins and modules
+        """
         try:
             d = dict(self.plugin_t)
             az = []
@@ -154,15 +154,15 @@ class Parent:
             self.errmsg.append("Parent: init-plugins: %s" % e)
             self.FATAL = True
 
-    #
-    # initialize plugin with plugin_name
-    # and save it with key
-    # if export:
-    #   return initilized object (plugin or module)
-    # else:
-    #   return True on success , extra msg (errmsg)
-    #
     def __init_plugin(self, key, plugin_name, args, kwargs, export=False):
+        """
+            initialize plugin with plugin_name
+            and save it with key
+            if export:
+              return initilized object (plugin or module)
+            else:
+              return True on success , extra msg (errmsg)
+        """
         if key not in self.plugin_t:
             if export:
                 raise ValueError("Plugin %s not added" % key)
@@ -188,18 +188,18 @@ class Parent:
             self.log("Parent: init plugin(%s): %s" % (plugin_name, e), _type="error")
             return False, "%s: Exception: %s" % (plugin_name, e)
 
-    #
-    # print plugins' initializations status
-    #
     def print_errmsg(self):
+        """
+            print plugins' initializations status
+        """
         _type = "error" if self.FATAL else "notify"
         for i in self.errmsg:
             self.log("\t" + i, _type=_type)
 
-    #
-    # print all expected
-    #
     def print_help(self):
+        """
+            print all expected
+        """
         def topic(name):
             st = name
             while len(st) < 20:
@@ -216,31 +216,31 @@ class Parent:
             return "".join(
                 list(
                     map(
-                        lambda x: "".join(
-                            ["\t" for i in range(tabs)]
-                        ) + x + "\n",
-                        txt.split("\n")
+                        lambda x: ''.join(
+                            ['\t' for i in range(tabs)]
+                        ) + x + '\n',
+                        txt.split('\n')
                     )
                 )
             )
-        st = topic(self.name) + "Flags:\n"
+        st = topic(self.name) + 'Flags:\n'
         self.collect_argv()
         for i in self._argv_rules:
-            st += "\t{key}\n{desc}{critical}\n\n".format(
+            st += '\t{key}\n{desc}{critical}\n\n'.format(
                 key=i,
                 desc=insert_tabs(
                     self._argv_rules[i]['description'],
                     tabs=2
                 ),
-                critical="\n\t\tCritical!" if self._argv_rules[i]['critical'] else ""
+                critical='\n\t\tCritical!' if self._argv_rules[i]['critical'] else ''
             )
         print(st)
 
-    #
-    # start each plugins
-    #
     def run(self):
-        self("PARENT: start plugins", _type="debug")
+        """
+            start all plugins
+        """
+        self.log("PARENT: start plugins", _type="debug")
         for i in self.plugins:
             if self.plugin_t[i]['autostart']:
                 self.plugins[i].start()
@@ -250,78 +250,85 @@ class Parent:
             except KeyboardInterrupt:
                 self.stop(lite=False)
 
+    @staticmethod
+    def save_log(st):
+        """
+            save log message to file
+        """
+        with open(LOG_FILE, 'ab') as f:
+            f.write(st.encode('utf-8') + b'\n')
+
 # ========================================================================
 #                                USER API
 # ========================================================================
 
-    #
-    # Add new plugin/module
-    # kwargs:
-    # -- must be --
-    #   key as str - how u wanna call it
-    #   target as class/module - smth that'll be kept here and maybe called (if that's plugin)
-    # -- optional --
-    #   autostart as bool - initialize plugin when call Parent.init() (default: True)
-    #   module as bool - True if target is module ; otherwise target is plugin (default: False)
-    #   dependes as list of str - list of other plugins/modules that must be initialized before this one
-    #       ignored if kwagrs[module] == True
-    #       Default: empty list
-    #   args as tuple - tuple of arg that will be passed to init() as *args (plugins only)
-    #   kwargs as dict - dict of arg that will be passed to init() as **kwargs (plugins only)
-    #
     def add_plugin(self, key, target, **kw):
+        """
+            Add new plugin/module
+            kwargs:
+            -- must be --
+              key (str) - how u wanna call it
+              target (cl)(/module) - smth that'll be kept here and maybe called (if that's plugin)
+            -- optional --
+              autostart (bool) - initialize plugin when call Parent.init() (default: True)
+              module (bool) - True if target is module ; otherwise target is plugin (default: False)
+              dependes (list of str) - list of other plugins/modules that must be initialized before this one
+                  ignored if kwagrs[module] == True
+                  Default: empty list
+              args (tuple) - tuple of arg that will be passed to init() as *args (plugins only)
+              kwargs (dict) - dict of arg that will be passed to init() as **kwargs (plugins only)
+        """
         self.plugin_t[key] = {
-            "target": target,
-            "autostart": kw['autostart'] if 'autostart' in kw else True,
-            "module": kw['module'] if 'module' in kw else False,
-            "args": kw['args'] if 'args' in kw else (),
-            "kwargs": kw['kwargs'] if 'kwargs' in kw else {},
-            "dependes": kw['dependes'] if 'dependes' in kw else [],
+            'target': target,
+            'autostart': kw['autostart'] if 'autostart' in kw else True,
+            'module': kw['module'] if 'module' in kw else False,
+            'args': kw['args'] if 'args' in kw else (),
+            'kwargs': kw['kwargs'] if 'kwargs' in kw else {},
+            'dependes': kw['dependes'] if 'dependes' in kw else [],
         }
         return self
 
-    #
-    # Add new module
-    # same as to Parent.add_plugin() with module=True
-    #
     def add_module(self, key, target):
+        """
+            Add new module
+            same as to Parent.add_plugin() with module=True
+        """
         self.plugin_t[key] = {
-            "target": target,
-            "module": True,
-            "autostart": True,
-            "args": (),
-            "kwargs": {},
-            "dependes": [],
+            'target': target,
+            'module': True,
+            'autostart': True,
+            'args': (),
+            'kwargs': {},
+            'dependes': [],
         }
         return self
 
-    #
-    # just for easier use
-    #
     def init(self):
-        self.parse_argv()
-        self.init_plugins()
+        """
+            just for easier use
+        """
+        self.parse_argv().init_plugins()
         return self
 
-    #
-    # initialize plugins and modules
-    # return True in case of success
-    # or False if not
-    #
     def init_plugins(self):
+        """
+            initialize plugins and modules
+            return True in case of success
+            or False if not
+        """
         if self.FATAL:
             self.print_errmsg()
             return False
         self._init_plugins()
         return not self.FATAL
 
-    #
-    # initialize plugin/module and return it
-    # returned object doesn't saved in this class
-    # if args and kwargs not passed => use ones passed in Parent.add_plugin() or Parent.add_module()
-    # return initialized object
-    #
     def init_plugin(self, key, export=True, *args, **kwargs):
+        """
+            initialize plugin/module and return it
+            returned object doesn't saved in this class
+            if args and kwargs not passed => use ones passed in Parent.add_plugin() or Parent.add_module()
+            return initialized object
+        """
         return self.__init_plugin(
             key=key,
             plugin_name=key,
@@ -330,106 +337,99 @@ class Parent:
             export=export
         )
 
-    #
-    # return already initialized plugin or module
-    # or return None
-    #
     def get_plugin(self, key):
+        """
+            return already initialized plugin or module
+            or return None
+        """
         if key in self.plugins:
             return self.plugins[key]
         elif key in self.modules:
             return self.modules[key]
         raise AttributeError('no plugin/module "%s"' % (key))
 
-    #
-    # operator overload
-    # return already initialized plugin or module
-    # or return None
-    #
     def __getitem__(self, key):
+        """
+            operator overload
+            return already initialized plugin or module
+            or return None
+        """
         return self.get_plugin(key)
 
-    #
-    # operator overload
-    # return True if plugin or module exists
-    # or False if not
-    #
     def __contains__(self, key):
+        """
+            operator overload
+            return True if plugin or module exists
+            or False if not
+        """
         return key in self.plugins or key in self.modules
 
-    #
-    # return Class/Module for the key
-    # NOT the initialized object!
-    # or None in case of nothing was found
-    #
     def get_class(self, key):
+        """
+            return Class/Module for the key
+            NOT the initialized object!
+            or None in case of nothing was found
+        """
         return self.plugin_t[key]['target'] if key in self.plugin_t else None
 
-    #
-    # return param's value if param was passed
-    # return True as bool if that's was flag
-    # else return None if nothing was passed
-    #
     def get_param(self, key, default=None):
+        """
+            return param's value if param was passed
+            return True as bool if that's was flag
+            else return None if nothing was passed
+        """
         return self._argv_p[key] if key in self._argv_p else default
 
-    #
-    # return dict with all parsed sys.argv
-    #
     def get_params(self):
+        """
+            return dict with all parsed sys.argv
+        """
         return dict(self._argv_p)
 
-    #
-    # add expected key to storage
-    # flag as bool - True if we expect flag or False if param
-    # critical as bool - True if this param/flag is critical (default: False)
-    # description as str - some descrition for human (default: "")
-    #
     def expect_argv(self, key, critical=False, description=""):
+        """
+            add expected key to storage
+            flag as bool - True if we expect flag or False if param
+            critical as bool - True if this param/flag is critical (default: False)
+            description as str - some descrition for human (default: "")
+        """
         self._params[key] = {
             'critical': critical,
             'description': description,
         }
         return self
 
-    #
-    # log function
-    # st - message to save
-    # _type | sence
-    #   0 "notify"  |   Notify
-    #   1 "warning" |   Warning
-    #   2 "error"   |   Error - default
-    #   3 "debug"   |   Debug
-    #
     def log(self, st, _type=0):
+        """
+            log function
+            st - message to save
+            _type | sence
+              0 "notify"  |   Notify - default
+              1 "warning" |   Warning
+              2 "error"   |   Error
+              3 "debug"   |   Debug
+        """
         _type = str(_type)
-        yn = " Error "
-        if _type in [0, "0", "notify"]:
-            yn = "Notify "
-        elif _type in [1, "1", "warning"]:
-            yn = "Warning"
-        elif _type in [3, "3", "debug"]:
+        yn = ' Error '
+        if _type in [0, '0', 'notify']:
+            yn = 'Notify '
+        elif _type in [1, '1', 'warning']:
+            yn = 'Warning'
+        elif _type in [3, '3', 'debug']:
             if not self.debug:
                 return
-            yn = " Debug "
-        st = "%s -:- %s : %s" % (time.strftime(SHOW_TIME_FORMAT, time.localtime()), yn, st)
+            yn = ' Debug '
+        st = '%s -:- %s : %s' % (time.strftime(SHOW_TIME_FORMAT, time.localtime()), yn, st)
         if '--stdout' in sys.argv[1:]:
             print(st)
         if '--no-log' not in sys.argv[1:]:
-            with open(LOG_FILE, 'ab') as f:
-                f.write(st.encode('utf-8') + b'\n')
+            self.save_log(st)
         return self
 
-    #
-    # same as log()
-    #
-    def __call__(self, st, _type=0):
-        return self.log(st, _type)
-
-    #
-    # start program
-    #
     def start(self, wait=True):
+        """
+            start program
+        """
         self.parse_argv()
         if '-h' in sys.argv[1:] or '-?' in sys.argv[1:] or '--help' in sys.argv[1:]:
             self.print_help()
@@ -444,13 +444,13 @@ class Parent:
                 self.run()
             except Exception as e:
                 e = Trace()
-                self.log("Parent: start: %s" % (e), _type="error")
+                self.log('Parent: start: %s' % (e), _type='error')
         return self
 
-    #
-    # stop all plugins
-    #
     def stop(self, lite=True):
+        """
+            stop all plugins
+        """
         self.RUN_FLAG = False
         for i in self.plugins:
             self.plugins[i].stop(wait=False)

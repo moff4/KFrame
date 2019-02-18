@@ -10,13 +10,15 @@ from ..base.plugin import Plugin
 class Cache(Plugin):
     """
         kwargs:
-          timeout - interval of checking nodes for old rows ; default: 1.0
-          save_file - filename for temporary buffer ; default: cache.json
-          autosave - save cached data to <save_file> every <timeout>
+            auto_clean_in_new_thread - if True -> create new thread
+            timeout - interval of checking nodes for old rows ; default: 1.0
+            save_file - filename for temporary buffer ; default: cache.json
+            autosave - save cached data to <save_file> every <timeout>
     """
 
     def init(self, **kwargs):
         defaults = {
+            'auto_clean_in_new_thread': False,
             'timeout': 1.0,
             'save_file': 'cache.json',
             'autosave': False,
@@ -45,7 +47,6 @@ class Cache(Plugin):
                 data[i] = {
                     'd': self._d[i][0],
                     't': self._d[i][1],
-                    'a': self._d[i][3],
                 }
             with open(self.cfg['save_file'], 'w') as f:
                 f.write(json.dumps(data))
@@ -56,98 +57,95 @@ class Cache(Plugin):
         try:
             data = json.load(open(self.cfg['save_file']))
             for i in data:
-                self._d[i] = [data[i]["d"], data[i]["t"], None, data[i]["a"]]
+                self._d[i] = (data[i]['d'], data[i]['t'])
         except Exception as e:
             self.Warning('read temporary file: {}', e)
 
     def _clean(self):
         k = 0
         for nodename in self._d:
-            if self._d[nodename][3]:
-                k += self.clean_node(nodename)
+            k += self.clean(nodename)
         if k > 0:
             self.Debug('clean: delete {} rows', k)
 
     def _loop(self):
-        self.Debug("start loop")
+        self.Debug('start loop')
         while self._run:
             time.sleep(self.cfg['timeout'])
             self._clean()
             if self.cfg['autosave']:
                 self.save()
-        self.Debug("stop loop")
+        self.Debug('stop loop')
 
 # ==========================================================================
 #                                USER API
 # ==========================================================================
 
     def start(self):
-        self._run = True
-        self._th = Thread(target=self._loop)
-        self._th.start()
+        if self.cfg['auto_clean_in_new_thread']:
+            self._run = True
+            self._th = Thread(target=self._loop)
+            self._th.start()
 
     def stop(self, wait=True):
-        self._run = False
-        if wait:
-            self._th.join()
-            self.save()
+        if self.cfg['auto_clean_in_new_thread']:
+            self._run = False
+            if wait:
+                self._th.join()
+                self.save()
 
-    def add_node(self, nodename, timeout=3600, _filter=None, autoclean=True):
+    def add_node(self, nodename: str, timeout: int=3600):
         """
             Add new node or change timeout if node exists
-            Timeout will be ignored if _filter passed
-            filter is fuction : value , timestamp => bool
-              value - smth saved
-              timestamp - timestamp when this was added
-              return True if row must be deleted
         """
         if nodename not in self._d:
-            self._d[nodename] = [{}, timeout, _filter, autoclean]
+            self._d[nodename] = ({}, timeout)
         else:
-            self._d[nodename] = [self._d[nodename][0], timeout, _filter, autoclean]
+            self._d[nodename] = (self._d[nodename][0], timeout)
 
-    def delete_node(self, nodename):
+    def delete_node(self, nodename: str):
         """
             Delete whole node
         """
-        if nodename in self._d:
-            self._d.pop(nodename)
+        self._d.pop(nodename, None)
 
-    def clean_node(self, nodename):
+    def clean(self, nodename: str) -> int:
         """
             delete old rows from node
             return number of deleted rows
         """
         if nodename not in self._d:
             return 0
-        k = 0
+        k = len(self._d[nodename])
         _time = time.time()
-        for key in list(self._d[nodename][0].keys()):
-            if self._d[nodename][2] is None:
-                if (self._d[nodename][1] + self._d[nodename][0][key][1]) < _time:
-                    self._d[nodename][0].pop(key)
-                    k += 1
-            elif self._d[nodename][2](*self._d[nodename][0][key][1]):
+        for key in list(self._d[nodename][0]):
+            if (self._d[nodename][1] + self._d[nodename][0][key][1]) < _time:
                 self._d[nodename][0].pop(key)
-                k += 1
-        return k
+        return k - len(self._d[nodename])
 
-    def push(self, nodename, key, val):
+    def push(self, nodename: str, key: str, val) -> bool:
         """
             Push new data to cache
+            return True in case of success
         """
-        self._d[nodename][0][key] = (val, time.time())
+        if nodename in self._d:
+            self._d[nodename][0][key] = (val, time.time())
+            return True
+        else:
+            return False
 
-    def get(self, nodename, key):
+    def get(self, nodename: str, key: str):
         """
             Return value for key in cache or None
         """
         if key in self._d[nodename][0]:
+            if not self.cfg['auto_clean_in_new_thread']:
+                self.clean(nodename)
             return self._d[nodename][0][key][0]
         else:
             return None
 
-    def count(self, nodename):
+    def count(self, nodename: str):
         """
             return number of keys in one node
              OR return 0
