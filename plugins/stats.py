@@ -42,7 +42,7 @@ class Stats(Plugin):
                   default: 1
         """
         if type not in POSSIBLE_TYPES:
-            raise ValueError("Unknown type of stat")
+            raise ValueError('Unknown type of stat')
         if key in self._stats and not rewrite:
             return self
         d = dict(kwargs)
@@ -52,7 +52,7 @@ class Stats(Plugin):
         else:
             if d['type'] == 'inc':
                 default = 0
-            elif d['type'] in ['aver', 'collect']:
+            elif d['type'] in {'aver', 'collect'}:
                 default = []
             elif d['type'] == 'single':
                 default = None
