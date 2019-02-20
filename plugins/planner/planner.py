@@ -22,6 +22,7 @@ class Planner(Plugin):
                      - shedule (from, to)
                 calendar - { 'allowed' or 'disallowed': { month as key [1..12] => set of days [1..31] }}
                   def {} (allowed always) - match days, when it's allowed or disallowed to run function
+                weekdays - {0,..,6} - set/list of weekdays when it's allowed to run function (Monday is 0, Sunday is 6)
                 offset - int , def 0
                 args - list/tuple , def []
                 kwargs - dict , def {}
@@ -69,6 +70,9 @@ class Planner(Plugin):
                 )
             )
 
+        def weekdays(t, days):
+            return t.tm_wday in days
+
         tasks = []
         _t = time.localtime()
         t = int((_t.tm_hour * 60 + _t.tm_min) * 60 + _t.tm_sec)
@@ -78,6 +82,7 @@ class Planner(Plugin):
                 self.tasks[i]['times'] is None or self.tasks[i]['times'] > 0,
                 calendar(_t, **self.tasks[i]['calendar']),
                 shedule(t, self.tasks[i]['shedule']),
+                weekdays(_t, self.tasks[i]['weekdays']),
             ]):
                 tasks.append((i, self.tasks[i]))
         if len(tasks) <= 0:
@@ -171,6 +176,7 @@ class Planner(Plugin):
             'offset': 0,
             'shedule': [('00:00:00', '23:59:59')],
             'calendar': {},
+            'weekdays': {i for i in range(7)},
             'args': [],
             'kwargs': {},
             'threading': False,

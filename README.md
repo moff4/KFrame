@@ -215,6 +215,7 @@ Planner - Запускает задачи по расписанию
 * shedule - список кортежей ('HH:MM:SS', 'HH:MM:SS'), default ('00:00:00','23:59:59') - Расписание запусков (с, по)  
 * calendar - { 'allowed' or 'disallowed': { month as key [1..12] => set of days [1..31] }}  
 	default {} (всегда разрешено) - выделить дни, когда запускать или не запускать. Можно передать только один из двух ключей {allowed/disallowed}  
+* weekdays - {0,..,6} - список номеров дней недели, когда можно запускать задачу. Понедельник = 0, Воскресенье = 6.  
 * offset (int), default = 0 - начальнй отступ в секундах  
 * args (list), , default = [] - параметры функции  
 * kwargs (dict), default = {}  - параметры функции  
@@ -295,4 +296,4 @@ Parent(name='TestApp').add_plugin(key="neon", target=Neon, kwargs={
 * pygost - Криптографическая библиотека  
 * mysql-connector - драйвер MySQL  
 
-Версия 2.3.3  
+Версия 2.3.4  
