@@ -28,7 +28,7 @@ class Neon(Plugin):
                 'https_port': 8081,
                 'use_ssl': False,
                 'ca_cert': None,
-                'ssl_cert': {},
+                'ssl_certs': {},  # host -> {certfile -> str, keyfile -> str, keypassword -> str}
                 'site_directory': './var',
                 'max_data_length': MAX_DATA_LEN,
                 'max_header_count': MAX_HEADER_COUNT,
@@ -61,23 +61,31 @@ class Neon(Plugin):
 
             if self.cfg['site_directory'].endswith('/'):
                 self.cfg['site_directory'] = self.cfg['site_directory'][:-1]
+
+            self.contexts = {}
             if self.cfg['use_ssl']:
-                self.context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH, cafile=self.cfg['ca_cert'])
+                if self.cfg['ssl_certs']:
+                    for hostname in self.cfg['ssl_certs']:
+                        context = ssl.create_default_context(cafile=self.cfg['ca_cert'])
+                        context.load_cert_chain(
+                            certfile=self.cfg['ssl_certs'][hostname]['cert'],
+                            keyfile=self.cfg['ssl_certs'][hostname]['key'],
+                            password=self.cfg['ssl_certs'][hostname].get('password', None),
+                        )
+                        self.contexts[hostname] = context
+
+                # gonna be deprecated
                 if self.cfg['ssl_cert']:
-                    self.context.load_cert_chain(
+                    context = ssl.create_default_context(cafile=self.cfg['ca_cert'])
+                    context.load_cert_chain(
                         certfile=self.cfg['ssl_cert']['certfile'],
                         keyfile=self.cfg['ssl_cert']['keyfile'],
                         password=self.cfg['ssl_cert'].get('keypassword')
                     )
+                    self.contexts[None] = context
 
-                # this going to be deprecated
-                # use 'ssl_cert'
-                if all(map(lambda x: x in self.cfg, {'certfile', 'keyfile'})):
-                    self.context.load_cert_chain(
-                        certfile=self.cfg['certfile'],
-                        keyfile=self.cfg['keyfile'],
-                        password=self.cfg.get('keypassword'),
-                    )
+                self.context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+                self.context.set_servername_callback(self.servername_callback)
             else:
                 self.context = None
 
@@ -292,6 +300,16 @@ class Neon(Plugin):
                     self.thread_list.pop(self.thread_list.index(i))
         except Exception as e:
             self.Error('check_thread: {}', e)
+
+    def servername_callback(self, sock, req_hostname, cb_context, as_callback=True):
+        """
+            ssl context callback
+        """
+        context = self.contexts.get(req_hostname)
+        if context is None:
+            context = self.contexts.get(None)
+        if context is not None:
+            sock.context = context
 
     def wrap_ssl(self, conn):
         if self.context is not None:
