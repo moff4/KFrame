@@ -66,16 +66,19 @@ class Neon(Plugin):
             if self.cfg['use_ssl']:
                 if self.cfg['ssl_certs']:
                     for hostname in self.cfg['ssl_certs']:
-                        context = ssl.create_default_context(cafile=self.cfg['ca_cert'])
+                        context = ssl.create_default_context(
+                            purpose=ssl.Purpose.CLIENT_AUTH,
+                            cafile=self.cfg['ca_cert']
+                        )
                         context.load_cert_chain(
-                            certfile=self.cfg['ssl_certs'][hostname]['cert'],
-                            keyfile=self.cfg['ssl_certs'][hostname]['key'],
-                            password=self.cfg['ssl_certs'][hostname].get('password', None),
+                            certfile=self.cfg['ssl_certs'][hostname]['certfile'],
+                            keyfile=self.cfg['ssl_certs'][hostname]['keyfile'],
+                            password=self.cfg['ssl_certs'][hostname].get('keypassword', None),
                         )
                         self.contexts[hostname] = context
 
                 # gonna be deprecated
-                if self.cfg['ssl_cert']:
+                if self.cfg.get('ssl_cert'):
                     context = ssl.create_default_context(cafile=self.cfg['ca_cert'])
                     context.load_cert_chain(
                         certfile=self.cfg['ssl_cert']['certfile'],
