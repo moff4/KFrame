@@ -2,7 +2,19 @@
 
 from os import urandom
 
-from .consts import INT_POS, INT_NEG, FLOAT_POS, FLOAT_NEG, BYTES, STRING, LIST, MAP, TRUE, FALSE, NULL
+from .consts import (
+    INT_POS,
+    INT_NEG,
+    FLOAT_POS,
+    FLOAT_NEG,
+    BYTES,
+    STRING,
+    LIST,
+    MAP,
+    TRUE,
+    FALSE,
+    NULL,
+)
 
 
 class Coder:

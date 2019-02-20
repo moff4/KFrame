@@ -12,7 +12,7 @@ SHOW_TIME_FORMAT = "%d.%m.%Y %H:%M:%S"
 
 
 class Parent:
-    def __init__(self, plugins=None, name="KFrame"):
+    def __init__(self, **kwargs):
         """
             plugins - dict : key as str => dict {
                   target -> module/class,
@@ -22,7 +22,13 @@ class Parent:
             }
         """
         try:
-            self.name = name
+            defaults = {
+                'name': 'KFrame',
+                'plugins': {},
+                'log_file': LOG_FILE,
+            }
+            self.cfg = {k: kwargs[k] if k in kwargs else defaults[k] for k in defaults}
+            self.name = self.cfg['name']
 
             # variables
             self.debug = '--debug' in sys.argv[1:]
@@ -45,14 +51,14 @@ class Parent:
 
             self.log('---------------------------------------------')
 
-            self.plugin_t = {} if plugins is None else plugins
+            self.plugin_t = self.cfg['plugins']
 
             if any(
                 map(
                     lambda pl: any(
                         map(
                             lambda x: x not in pl,
-                            ['target', 'module']
+                            {'target', 'module'}
                         )
                     ),
                     self.plugin_t.values()
@@ -135,7 +141,6 @@ class Parent:
                             if j in bz:
                                 bz.pop(bz.index(j))
                 i += 1
-            self.log("Load priority queue: %s" % (az), _type="debug")
             for i in az:
                 try:
                     a, b = self.__init_plugin(
@@ -250,12 +255,11 @@ class Parent:
             except KeyboardInterrupt:
                 self.stop(lite=False)
 
-    @staticmethod
-    def save_log(st):
+    def save_log(self, st):
         """
             save log message to file
         """
-        with open(LOG_FILE, 'ab') as f:
+        with open(self.cfg['log_file'], 'ab') as f:
             f.write(st.encode('utf-8') + b'\n')
 
 # ========================================================================

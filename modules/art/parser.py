@@ -1,10 +1,22 @@
 #!/usr/bin/env python3
 
-from .consts import INT_POS, INT_NEG, FLOAT_POS, FLOAT_NEG, BYTES, STRING, LIST, MAP, TRUE, FALSE, NULL
+from .consts import (
+    INT_POS,
+    INT_NEG,
+    FLOAT_POS,
+    FLOAT_NEG,
+    BYTES,
+    STRING,
+    LIST,
+    MAP,
+    TRUE,
+    FALSE,
+    NULL,
+)
 
 
 class Parser:
-    def __init__(self, mask=None):
+    def __init__(self, mask=None, fd=None, data=None):
         self.result = None
         self.input_fd = None
         self.input_data = None
@@ -15,10 +27,15 @@ class Parser:
         self._read_total = 0
         self._len = None
 
+        if fd is not None:
+            self.set_fd(fd)
+        elif data is not None:
+            self.set_data(data if isinstance(data, bytes) else data.encode())
+
     def _get(self):
         if self._len is not None and self._read_total >= self._len:
-            raise RuntimeError("Reaced end of input")
-        if self.input_status == "fd":
+            raise RuntimeError('Reaced end of input')
+        if self.input_status == 'fd':
             if 'read' in dir(self.input_fd):
                 res = self.input_fd.read(1)
             else:
@@ -27,10 +44,10 @@ class Parser:
             x = self.input_data[self._read_total]
             res = x
         else:
-            raise ValueError("Unexpetedly reached end of input")
+            raise ValueError('Unexpetedly reached end of input')
         if type(res) == bytes:
             if len(res) <= 0:
-                raise RuntimeError("reached EOF")
+                raise RuntimeError('reached EOF')
             res = res[0]
         if self.mask is not None:
             res = res ^ self.mask[self._read_total % len(self.mask)]
@@ -38,12 +55,12 @@ class Parser:
         return res
 
     def _load(self, x):
-        if self.input_status == "fd":
+        if self.input_status == 'fd':
             if 'read' in dir(self.input_fd):
                 self.input_data = self.input_fd.read(x)
             else:
                 self.input_data = self.input_fd.recv(x)
-            self.input_status = "dt"
+            self.input_status = 'dt'
 
     #
     # 1 Integer
@@ -107,7 +124,7 @@ class Parser:
     def _get_map(self):
         az = {}
         while True:
-            key = self._type(unallowed_types=(LIST, MAP))
+            key = self._type(unallowed_types={LIST, MAP})
             if key is None:
                 return az
             value = self._type()
@@ -117,7 +134,7 @@ class Parser:
     def _type(self, unallowed_types=()):
         t = self._get() & 0x0F
         if t in unallowed_types:
-            raise ValueError("Unexpected element type of {}".format(t))
+            raise ValueError('Unexpected element type of {}'.format(t))
         if t == INT_POS:
             res = self._get_int()
         elif t == INT_NEG:
@@ -141,7 +158,7 @@ class Parser:
         elif t == NULL:
             res = None
         else:
-            raise ValueError("Unexpected type number: {}".format(t))
+            raise ValueError('Unexpected type number: {}'.format(t))
         return res
 
 # ==========================================================================
@@ -149,19 +166,22 @@ class Parser:
 # ==========================================================================
 
     def set_fd(self, fd):
-        if 'read' not in dir(fd) and 'recv' not in dir(fd):
-            raise ValueError("Filed descriptor does not has needed interface")
+        if not hasattr(fd, 'read') and not hasattr(fd, 'recv'):
+            raise ValueError('Filed descriptor does not has needed interface')
         self.input_fd = fd
-        self.input_status = "fd"
+        self.input_status = 'fd'
+        return self
 
     def set_data(self, data):
         self.input_data = data
-        self.input_status = "dt"
+        self.input_status = 'dt'
+        return self
 
     def magic(self):
         i = self._get_int()
         self._len = i + self._read_total
         self.result = self._type()
+        return self
 
     def export(self):
         return self.result

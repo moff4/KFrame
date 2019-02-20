@@ -4,11 +4,11 @@ from .parser import Parser
 from .coder import Coder
 
 
-#
-# convert data to bytes
-# mask - some mask to be applied on marshaled data
-#
 def marshal(data, mask=None, random=True):
+    """
+        convert data to bytes
+        mask - some mask to be applied on marshaled data
+    """
     c = Coder(data, random=random)
     c.magic()
     if mask is None:
@@ -18,20 +18,16 @@ def marshal(data, mask=None, random=True):
         return bytes([data[i] ^ mask[i % len(mask)] for i in range(len(data))])
 
 
-#
-# convert data as bytes() or from fd {interface : read() }
-#
 def unmarshal(data=None, fd=None, mask=None):
+    """
+        convert data as bytes() or from fd {interface : read() }
+    """
     if data is None and fd is None:
-        raise ValueError("Expected argement")
-    p = Parser(mask=mask)
-    if data is None:
-        p.set_fd(fd)
-    elif type(data) == bytes:
-        p.set_data(data)
-    elif type(data) == str:
-        p.set_data(data.encode())
-    else:
-        return data
-    p.magic()
-    return p.export()
+        raise ValueError('Expected param "data" of "fd"')
+    if data is not None and all(filter(lambda x: not isinstance(data, x), {bytes, str})):
+        raise ValueError('Unexpected type of "data" ({}), expected bytes or str'.format(type(data)))
+    return Parser(
+        mask=mask,
+        fd=fd,
+        data=data
+    ).magic().export()
