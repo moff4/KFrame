@@ -7,8 +7,8 @@ from ...base.plugin import Plugin
 from ...modules import jscheme
 from ...modules import crypto
 from ...modules import art
-from ..mchunk import mchunk_scheme  # FIXME # init normaly
-from ..stats import stats_scheme  # FIXME # init normaly
+from ..mchunk import Mchunk
+from ..stats import Stats
 
 
 class Auth(Plugin):
@@ -20,11 +20,15 @@ class Auth(Plugin):
         """
             sercret - secret key for crypto
         """
-        if 'mchunk' not in self:
-            self.P.add_plugin(key="mchunk", **mchunk_scheme)
-        self.secret = self.P.init_plugin(key="mchunk", export=True).set(secret).mask()
+        mch = self.P.fast_init(
+            key='mchunk',
+            target=Mchunk
+        ) if 'mchunk' not in self else self.P.init_plugin(
+            key='mchunk'
+        )
+        self.secret = mch.set(secret).mask()
         if 'stats' not in self:
-            self.P.add_plugin(key="stats", **stats_scheme).init_plugin(key="stats", export=False)
+            self.P.fast_init(key='stats', target=Stats, export=False)
 
         self.mask_1 = kwargs['mask_1'] if 'mask_1' in kwargs else None
         self.mask_2 = kwargs['mask_2'] if 'mask_2' in kwargs else None

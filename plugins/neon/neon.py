@@ -9,7 +9,7 @@ import threading as th
 
 from ...base.plugin import Plugin
 from ...modules import crypto
-from ..stats import stats_scheme
+from ..stats import Stats
 from .requests import Request
 from .responses import Response, StaticResponse, RestResponse
 from .utils import *

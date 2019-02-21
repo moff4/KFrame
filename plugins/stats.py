@@ -127,13 +127,3 @@ class Stats(Plugin):
         } if extension else {
             key: self._export(key) for key in self._stats
         }
-
-
-stats_scheme = {
-    'target': Stats,
-    'module': False,
-    'arg': (),
-    'kwargs': {},
-    'dependes': [],
-    'autostart': True
-}
