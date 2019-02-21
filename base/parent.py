@@ -48,6 +48,13 @@ class Parent:
                 '--no-log': {'critical': False, 'description': 'Do not save logs'},
 
             }
+            self.levels = {
+                'debug': ('Debug', 'debug'),
+                'info': ('Info', 'info'),
+                'warning': ( 'Warning', 'warning'),
+                'error': ('Error', 'error'),
+                'critical': ('Critical', 'critical'),
+            }
 
             self.log('---------------------------------------------')
 
@@ -197,9 +204,11 @@ class Parent:
         """
             print plugins' initializations status
         """
-        _type = "error" if self.FATAL else "notify"
+        _type = 'critical' if self.FATAL else 'info'
+        if not self.FATAL and any(map(lambda x: x.FATAL, self.plugins.values())):
+            _type = 'error'
         for i in self.errmsg:
-            self.log("\t" + i, _type=_type)
+            self.log('\t' + i, _type=_type)
 
     def print_help(self):
         """
@@ -245,22 +254,24 @@ class Parent:
         """
             start all plugins
         """
-        self.log("PARENT: start plugins", _type="debug")
-        for i in self.plugins:
-            if self.plugin_t[i]['autostart']:
-                self.plugins[i].start()
+        self.log('PARENT: start plugins', _type='debug')
+        for i in filter(
+            lambda x: self.plugin_t[x]['autostart'],
+            self.plugins,
+        ):
+            self.plugins[i].start()
         while self.RUN_FLAG:
             try:
                 time.sleep(1.0)
             except KeyboardInterrupt:
                 self.stop(lite=False)
 
-    def save_log(self, st):
+    def save_log(self, message, raw_msg, time, level, user_prefix):
         """
             save log message to file
         """
         with open(self.cfg['log_file'], 'ab') as f:
-            f.write(st.encode('utf-8') + b'\n')
+            f.write(''.join([message, '\n']).encode('utf-8'))
 
 # ========================================================================
 #                                USER API
@@ -412,31 +423,28 @@ class Parent:
         }
         return self
 
-    def log(self, st, _type=0):
+    def log(self, st, _type='info'):
         """
             log function
             st - message to save
-            _type | sence
-              0 "notify"  |   Notify - default
-              1 "warning" |   Warning
-              2 "error"   |   Error
-              3 "debug"   |   Debug
+             _type    |   level
+            'debug'   |   Debug
+            'info'    |   Info - default
+            'warning' |   Warning
+            'error'   |   Error
+            'critical'|   Critical
         """
-        _type = str(_type)
-        yn = ' Error '
-        if _type in [0, '0', 'notify']:
-            yn = 'Notify '
-        elif _type in [1, '1', 'warning']:
-            yn = 'Warning'
-        elif _type in [3, '3', 'debug']:
-            if not self.debug:
-                return
-            yn = ' Debug '
-        st = '%s -:- %s : %s' % (time.strftime(SHOW_TIME_FORMAT, time.localtime()), yn, st)
+        prefix, _type = self.levels[_type if _type in self.levels else 'error']
+        _time = time.localtime()
+        msg = '{_time} -:- {prefix} : {raw_msg}'.format(
+            _time=time.strftime(SHOW_TIME_FORMAT, _time),
+            prefix=prefix,
+            raw_msg=st,
+        )
         if '--stdout' in sys.argv[1:]:
-            print(st)
+            print(msg)
         if '--no-log' not in sys.argv[1:]:
-            self.save_log(st)
+            self.save_log(message=msg, raw_msg=st, time=_time, level=_type, user_prefix=prefix)
         return self
 
     def start(self, wait=True):
@@ -450,6 +458,9 @@ class Parent:
         self.print_errmsg()
         self.check_critiacal_argv()
         if self.FATAL or any(map(lambda x: x.FATAL, self.plugins.values())):
+            for i in self.plugins:
+                if self.plugins[i].FATAL:
+                    self.Error('error in initialize: {}', i)
             return self
         else:
             try:

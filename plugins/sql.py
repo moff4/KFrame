@@ -94,19 +94,21 @@ class SQL(Plugin):
         except Exception as e:
             self.Error('reconnect-error')
 
-    def create_table(self):
+    def create_table(self, ddl=None):
         """
             create all tables according to there DDL
             return tuple ( True in case of success or False , None or Exception)
         """
         try:
-            if 'ddl' in self.cfg:
-                for i in self.cfg['ddl']:
+            if ddl is None:
+                ddl = self.cfg.get('ddl', None)
+            if ddl is not None:
+                for i in ddl:
                     self.Debug(
                         "{name} execute create table script: {result}".format(
                             name=i,
                             result=self.execute(
-                                self.cfg['ddl'][i],
+                                ddl[i],
                                 commit=True
                             )[0]
                         )

@@ -87,15 +87,15 @@ class Plugin:
         """
             debug log function
         """
-        self(st=st.format(*args, **kwargs), _type='notify')
+        self(st=st.format(*args, **kwargs), _type='info')
 
-    def log(self, st='', _type='notify'):
+    def log(self, st='', _type='info'):
         """
             local log function
         """
         self.parent.log('%s: %s' % (self.name, st), _type=_type)
 
-    def __call__(self, st='', _type='notify'):
+    def __call__(self, st='', _type='info'):
         """
             local log function
         """
