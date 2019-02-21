@@ -19,6 +19,7 @@ class SQL(Plugin):
                 'port': port,
                 'user': user,
                 'passwd': passwd,
+                'scheme': None,
             }
             defaults = {
                 'ddl': {},
@@ -47,7 +48,7 @@ class SQL(Plugin):
         params = {}
         for i in ['user', 'passwd', 'host', 'port']:
             params[i] = self.cfg[i]
-        if 'scheme' in self.cfg:
+        if self.cfg['scheme']:
             params['db'] = self.cfg['scheme']
         return sql.connect(**params)
 
@@ -64,7 +65,7 @@ class SQL(Plugin):
                 user=self.cfg['user'],
                 host=self.cfg['host'],
                 port=self.cfg['port'],
-                scheme=self.cfg['scheme'] if 'scheme' in self.cfg else "",
+                scheme=self.cfg['scheme'] if self.cfg['scheme'] else "",
                 ex=e
             ))
             return False

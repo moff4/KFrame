@@ -15,4 +15,5 @@ __all__ = [
     '.eventer',
     '.jscheme',
     '.planner',
+    '.logger',
 ]

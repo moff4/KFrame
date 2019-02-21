@@ -167,6 +167,10 @@ class Planner(Plugin):
 # ==========================================================================
 
     def registrate(self, key, target, **task):
+        """
+            return True in case of success
+            -- possible raise Exception if params are of invalid type
+        """
         if key in self.tasks:
             return False
         defaults = {

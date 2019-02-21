@@ -49,11 +49,11 @@ class Parent:
 
             }
             self.levels = {
-                'debug': ('Debug', 'debug'),
-                'info': ('Info', 'info'),
-                'warning': ( 'Warning', 'warning'),
-                'error': ('Error', 'error'),
-                'critical': ('Critical', 'critical'),
+                'debug': 'Debug',
+                'info': 'Info',
+                'warning': 'Warning',
+                'error': 'Error',
+                'critical': 'Critical',
             }
 
             self.log('---------------------------------------------')
@@ -434,7 +434,8 @@ class Parent:
             'error'   |   Error
             'critical'|   Critical
         """
-        prefix, _type = self.levels[_type if _type in self.levels else 'error']
+        _type = _type if _type in self.levels else 'error'
+        prefix = self.levels[_type]
         _time = time.localtime()
         msg = '{_time} -:- {prefix} : {raw_msg}'.format(
             _time=time.strftime(SHOW_TIME_FORMAT, _time),
@@ -446,6 +447,9 @@ class Parent:
         if '--no-log' not in sys.argv[1:]:
             self.save_log(message=msg, raw_msg=st, time=_time, level=_type, user_prefix=prefix)
         return self
+
+    def add_log_level(self, key, user_prefix)
+        self.levels[key] = user_prefix
 
     def start(self, wait=True):
         """
