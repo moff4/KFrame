@@ -266,6 +266,15 @@ class Parent:
 #                                USER API
 # ========================================================================
 
+    def fast_init(self, key, target, export=True, *args, **kwargs):
+        """
+            add, init and export plugin
+            same as P.add_plugin().init_plugin()
+        """
+        if key not in self.plugin_t:
+            self.add_plugin(key=key, target=target, autostart=False)
+        return self.init_plugin(key=key, export=export, *args, **kwargs)
+
     def add_plugin(self, key, target, **kw):
         """
             Add new plugin/module

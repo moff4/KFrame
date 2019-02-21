@@ -98,9 +98,9 @@ class Neon(Plugin):
             self.P.add_plugin(key='static_response', target=StaticResponse, autostart=False, module=False)
 
             if 'stats' not in self:
-                self.P.add_plugin(key='stats', **stats_scheme).init_plugin(key='stats', export=False)
+                self.P.fast_init(key='stats', target=Stats, export=False)
             if 'crypto' not in self:
-                self.P.add_module(key='crypto', target=crypto).init_plugin(key='crypto', export=False)
+                self.P.add_module(key='crypto', target=crypto)
 
             self.P.stats.init_stat(
                 key='start-time',
