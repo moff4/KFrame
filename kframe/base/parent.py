@@ -448,7 +448,7 @@ class Parent:
             self.save_log(message=msg, raw_msg=st, time=_time, level=_type, user_prefix=prefix)
         return self
 
-    def add_log_level(self, key, user_prefix)
+    def add_log_level(self, key, user_prefix):
         self.levels[key] = user_prefix
 
     def start(self, wait=True):
