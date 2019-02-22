@@ -64,7 +64,7 @@ Neon - Веб-сервер
 * use_ssl - default: False, - использовать SSL  
 * ca_cert - default: None, - путь к файлу с корневыми сертификатами  
 * ssl_certs - default: {} - настройки ssl: ассоциативный массив, ключ - имя хоста, значение - словарь настроек  
-Пример такой настройки: {
+Пример такой настройки: {  
  -- certfile - путь к серверному сертификату в кодировке PEM  
  -- keyfile - путь к закрытому ключу от сертификата  
  -- keypassword - пароль от ключа (опционально)  
@@ -98,6 +98,7 @@ def add_site_module(self, module, path: str=None, response_type: str=None)
 
 Объект requests содержит в себе поле resp - объект класса Responce или наследника, отвечающий за ответ клиенту, который должен быть заполнен в обработчике запроса.  
 Если response_type был передан, то поле респ указывает на объект известного класса:  
+
 | response_type | response class |  
 |-----|------|  
 | base | Response |  
@@ -290,4 +291,3 @@ Parent(name='TestApp').add_plugin(key="neon", target=Neon, kwargs={
 * pygost - Криптографическая библиотека  
 * mysql-connector - драйвер MySQL  
 
-Версия 2.4.3  
