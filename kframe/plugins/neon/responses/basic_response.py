@@ -102,7 +102,7 @@ class Response(Plugin):
                                     },
                                 ),
                             ),
-                        ),
+                        )
                     ],
                 ),
                 '\r\n',
