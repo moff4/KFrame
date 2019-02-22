@@ -12,5 +12,5 @@ class RestResponse(Response):
 
     def _extra_prepare_data(self) -> str:
         st = json.dumps(self._data)
-        self.add_header(CONTENT_JSON)
+        self.add_headers(CONTENT_JSON)
         return st if isinstance(st, str) else st.decode()

@@ -52,7 +52,7 @@ class StaticResponse(Response):
             content_mod = TEXT
             type_1 = 'text'
             type_2 = 'plain'
-        return 'Content-type: {}/{}{}'.format(type_1, type_2, extra), content_mod
+        return {'Content-type': '{}/{}{}'.format(type_1, type_2, extra)}, content_mod
 
     def usefull_inserts(self, az):
         """
@@ -84,27 +84,24 @@ class StaticResponse(Response):
         """
         if os.path.isfile(filename):
             self.Debug('gonna send file: {}'.format(filename))
+            # FIXME check size of file and send part
             with open(filename, 'rb') as f:
                 self._data = f.read()
             content_type, self.content_mod = self.Content_type(filename)
-            self.add_headers(
-                [
-                    content_type,
-                    'Cache-Control: max-age={cache_min}'.format(
+            self.add_headers(content_type)
+            self.add_headers({
+                    'Cache-Control': 'max-age={cache_min}'.format(
                         cache_min=self.P.neon.cfg['response_settings']['cache_min']
                     ),
-                ],
+                },
             ).code = 200
             return True
         else:
             self.Debug('File not found: {}'.format(filename))
             self._data = NOT_FOUND
-            self.add_headers(
-                [
-                    CONTENT_HTML,
-                    'Connection: close',
-                ],
-            ).code = 404
+            self.add_headers(CONTENT_HTML)
+            self.add_header('Connection', 'close')
+            self.code = 404
             return False
 
     def _extra_prepare_data(self):

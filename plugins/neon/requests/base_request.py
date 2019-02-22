@@ -120,16 +120,18 @@ class Request(Plugin):
                 data = extra_modifier(self, data, *args, **kwargs)
             self.resp.code = 200
             self.resp.data = data
-            self.resp.add_header(Content_type(self.url))
-            self.resp.add_header('Cache-Control: max-age={cache_min}'.format(
-                cache_min=self.P.neon.cfg['response_settings']['cache_min']
-            ))
+            self.resp.add_headers(Content_type(self.url))
+            self.resp.add_headers({
+                'Cache-Control': 'max-age={cache_min}'.format(
+                    cache_min=self.P.neon.cfg['response_settings']['cache_min']
+                )
+            })
         else:
             self.Debug('File not found: {}'.format(filename))
             self.resp.code = 404
             self.resp.data = NOT_FOUND
-            self.resp.add_header(CONTENT_HTML)
-            self.resp.add_header('Connection: close')
+            self.resp.add_headers(CONTENT_HTML)
+            self.resp.add_header('Connection', 'close')
 
     def is_local(self) -> bool:
         """

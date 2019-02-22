@@ -178,14 +178,15 @@ class Neon(Plugin):
         try:
             if os.path.isdir(path):
                 req.resp.data = dirs(path)
-                req.resp.add_header(CONTENT_HTML)
+                req.resp.add_headers(CONTENT_HTML)
             else:
                 req.resp.load_static_file(path)
         except Exception as e:
             self.Error(e)
             self.Trace(e, _type='debug')
             req.resp.data = SMTH_HAPPENED
-            req.resp.add_headers([CONTENT_HTML, 'Connection: close'])
+            req.resp.add_headers(CONTENT_HTML)
+            req.resp.add_headers('Connection', 'close')
             req.resp.code = 500
         return req.resp
 

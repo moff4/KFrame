@@ -73,16 +73,14 @@ DIR_CELL_TEMPLATE = '''
 <li><a href="{url}{filename}">{filename}</a></li>
 '''
 
-CONTENT_HTML = 'Content-type: text/html; charset=utf-8'
-CONTENT_JS = 'Content-type: application/javascript'
-CONTENT_JSON = 'Content-type: text/json'
+CONTENT_HTML = {'Content-type': 'text/html; charset=utf-8'}
+CONTENT_JS = {'Content-type': 'application/javascript'}
+CONTENT_JSON = {'Content-type': 'text/json'}
 
-FUCK_U = NOT_FOUND, [CONTENT_HTML], 404
-
-STANDART_HEADERS = [
-    'Server: kek-server',
-    'Content-type: text/html; charset=utf-8',
-]
+STANDART_HEADERS = {
+    'Server': 'kek-server',
+    'Content-type': 'text/html; charset=utf-8',
+}
 
 
 MAX_DATA_LEN = 4 * 2**10
@@ -105,16 +103,15 @@ def readln(conn, max_len=2048) -> bytes:
 
 
 #
-# takes list of headers-lines and return extended list of str
+# takes dict of headers-lines and return extended dict of str
 #
-def apply_standart_headers(headers) -> list:
-    for i in STANDART_HEADERS:
-        key = i.split(':')[0]
-        boo = False
-        for j in headers:
-            boo = boo or j.startswith(key)
-        if not boo:
-            headers.append(i)
+def apply_standart_headers(headers: dict) -> dict:
+    headers.update(
+        filter(
+            lambda x: x not in headers,
+            STANDART_HEADERS,
+        )
+    )
     return headers
 
 
@@ -124,9 +121,9 @@ def urldecode(az) -> bytes:
         return smth like b'ABC'
     """
     def pp(z):
-        if z in b'ABCDEF':
+        if z in {b'A', b'B', b'C', b'D', b'E', b'F'}:
             return ord(z) - ord(b'A') + 10
-        elif z in b'abcdef':
+        elif z in {b'a', b'b', b'c', b'd', b'e', b'f'}:
             return ord(z) - ord(b'a') + 10
         else:
             return ord(z) - ord(b'0')
@@ -177,8 +174,8 @@ def Content_type(st) -> str:
         else:
             type_2 = 'webm'
     else:
-        return 'Content-type: text/plain'
-    return 'Content-type: {}/{}{}'.format(type_1, type_2, extra)
+        return {'Content-type': 'text/plain'}
+    return {'Content-type': '{}/{}{}'.format(type_1, type_2, extra)}
 
 
 def is_local_ip(addr) -> bool:

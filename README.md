@@ -290,4 +290,4 @@ Parent(name='TestApp').add_plugin(key="neon", target=Neon, kwargs={
 * pygost - Криптографическая библиотека  
 * mysql-connector - драйвер MySQL  
 
-Версия 2.4.2  
+Версия 2.4.3  

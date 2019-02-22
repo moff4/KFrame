@@ -3,13 +3,12 @@
 from ....base.plugin import Plugin
 from ..utils import *
 
-PROPS = {'data', 'code', 'headers', 'header', 'http_version'}
-
+PROPS = {'data', 'code', 'http_version'}
 
 class Response(Plugin):
     def init(self, data=None, headers=None, code=404, http_version='HTTP/1.1', *args, **kwargs):
         self._data = b"" if data is None else data
-        self.headers = [] if headers is None else headers
+        self._headers = dict() if headers is None else headers
         self._code = code
         self._http_version = http_version
 
@@ -21,17 +20,11 @@ class Response(Plugin):
             kwargs can be:
               data - (bytes) Response data
               code - (int) HTTP CODE
-              headers - (list of str) Http headers
-              header - (str) Http header (example: "Content-Type: text/html")
               http_version - (str) Version of protocol (example: "HTTP/1.1")
         """
         for key in kwargs:
             if key not in PROPS:
                 raise AttributeError('no response property "{}"'.format(key))
-            elif key == 'headers':
-                self.add_headers(kwargs[key])
-            elif key == 'header':
-                self.add_header(kwargs[key])
             else:
                 setattr(self, key, kwargs[key])
         return self
@@ -60,16 +53,15 @@ class Response(Plugin):
     def data(self, data):
         self.set_data(data)
 
-    def set_code(self, code):
-        self._code = code
+    def add_header(self, header: str, value: str):
+        self._headers[header] = value
         return self
 
-    def add_header(self, header):
-        self.headers.append(header)
-        return self
-
-    def add_headers(self, headers):
-        self.headers += headers
+    def add_headers(self, headers: dict):
+        """
+            headers - dict: header -> value
+        """
+        self._headers.update(headers)
         return self
 
     def set_data(self, data=None):
@@ -84,6 +76,10 @@ class Response(Plugin):
         return self
 
     def export(self) -> str:
+        def union(d1, d2):
+            d1.update(d2)
+            return d1
+
         data = self._extra_prepare_data()
         data = data.encode() if isinstance(data, str) else data
         return ''.join(
@@ -99,12 +95,15 @@ class Response(Plugin):
                         for i in filter(
                             lambda x: x is not None and len(x) > 0,
                             apply_standart_headers(
-                                self.headers + [
-                                    'Content-Length: {}'.format(len(data))
-                                ]
-                            )
-                        )
-                    ]
+                                union(
+                                    self._headers,
+                                    {
+                                        'Content-Length': len(data),
+                                    },
+                                ),
+                            ),
+                        ),
+                    ],
                 ),
                 '\r\n',
             ]
