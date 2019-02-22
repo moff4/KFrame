@@ -8,5 +8,3 @@ __all__ = [
     '.base.plugin',
     '.plugins',
 ]
-
-__version__ = '2.4.4'
