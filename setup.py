@@ -12,6 +12,10 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/moff4/kframe',
+    install_requires=[
+        'pygost',
+        'mysql-connector',
+    ],
     packages=setuptools.find_packages(),
     classifiers=[
         'Programming Language :: Python :: 3',
