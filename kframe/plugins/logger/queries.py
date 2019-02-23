@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 DDL = '''
-CREATE TABLE IF NOT EXISTS `{schema}`.`{log_table}` (
+CREATE TABLE IF NOT EXISTS `{scheme}`.`{log_table}` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `author` VARCHAR(255) NOT NULL,
     `level` VARCHAR(255) NOT NULL,
@@ -11,7 +11,8 @@ PRIMARY KEY (`id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 '''
-# schema , log_table
+# scheme , log_table
+
 
 def LOG_ROW(author, level, message):
     return '("{author}","{level}","{message}")'.format(
@@ -20,14 +21,15 @@ def LOG_ROW(author, level, message):
         message=message
     )
 
-def INSERT_LOGS(schema, log_table, rows):
+
+def INSERT_LOGS(scheme, log_table, rows):
     return'''
-        INSERT INTO `{schema}`.`{log_table}`
+        INSERT INTO `{scheme}`.`{log_table}`
         (author, level, message)
         VALUES
         {rows}
     '''.format(
-        schema=schema,
+        scheme=scheme,
         log_table=log_table,
         rows=','.join([rows]),
     )

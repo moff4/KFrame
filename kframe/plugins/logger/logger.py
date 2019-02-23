@@ -15,7 +15,7 @@ class Logger(Plugin):
     def init(self, **kwargs):
         """
             params:
-            schema - str - SQL schema for log-table 
+            scheme - str - SQL scheme for log-table
             log_table - str - name of log-table in SQL
             save_level - list or set - set of log-levels that'll be logged to SQL
             parent_save - bool - if True also save as used to
@@ -29,13 +29,13 @@ class Logger(Plugin):
                 self.errmsg = 'logger: sql must be already initialized'
                 self.FATAL = True
                 return
-            schema = kwargs['scheme'] if 'scheme' in kwargs else self.P.sql.cfg['scheme']
+            scheme = kwargs['scheme'] if 'scheme' in kwargs else self.P.sql.cfg['scheme']
             if scheme is None:
                 raise ValueError('Expected "scheme" as param of SQL or Logger')
             defaults = {
                 'save_level': {'warning', 'error', 'critical'},
                 'parent_save': True,
-                'schema': schema,
+                'scheme': scheme,
                 'log_table': 'log',
                 'max_queue_size': 10,
                 'use_planner': False,
@@ -57,10 +57,10 @@ class Logger(Plugin):
                         export=False,
                     )
                 if not self.P.planner.registrate(
-                        key='logger-push',
-                        target=self.planner_callback,
-                        sec=self.cfg['planner_timeout'],
-                    ):
+                    key='logger-push',
+                    target=self.planner_callback,
+                    sec=self.cfg['planner_timeout'],
+                ):
                     self.errmsg = 'logger: failed to registrate task in planner'
                     self.FATAL = True
 
@@ -73,7 +73,7 @@ class Logger(Plugin):
             push data to SQL
         """
         query = INSERT_LOGS(
-            schema=self.cfg['schema'],
+            scheme=self.cfg['scheme'],
             log_table=self.cfg['log_table'],
             rows=rows,
         )

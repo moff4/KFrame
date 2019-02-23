@@ -464,7 +464,7 @@ class Parent:
         if self.FATAL or any(map(lambda x: x.FATAL, self.plugins.values())):
             for i in self.plugins:
                 if self.plugins[i].FATAL:
-                    self.Error('error in initialize: {}', i)
+                    self.log('error in initialize: {}'.format(i), _type='error')
             return self
         else:
             try:
