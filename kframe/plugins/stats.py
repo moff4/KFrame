@@ -115,13 +115,14 @@ class Stats(Plugin):
         """
             extansion - flag to export more or less information
             extension - False => return dict : 'key' : value
-            extension - True => return dict : 'key' : { 'desc' : description , 'data' : value }
+            extension - True => return dict : 'key' : { 'desc' : description , 'data' : value, 'type': type }
             return dict containing all stats
         """
         return {
             key: {
-                'desc': self._stats[key]['desc'] if 'desc' in self._stats[key] else key,
-                'data': self._export(key)
+                'desc': self._stats[key].get('desc', key),
+                'data': self._export(key),
+                'type': self._stats[key]['type']
             }
             for key in self._stats
         } if extension else {
