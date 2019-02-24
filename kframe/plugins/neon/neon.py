@@ -7,14 +7,14 @@ import socket
 import binascii
 import threading as th
 
-from ...base.plugin import Plugin
-from ...modules import crypto
-from ..stats import Stats
-from .requests import Request
-from .responses import Response, StaticResponse, RestResponse
-from .utils import *
-from .exceptions import ResponseError
-from .parser import pop_zeros
+from kframe.base.plugin import Plugin
+from kframe.modules import crypto
+from kframe.plugins.stats import Stats
+from kframe.plugins.neon.requests import Request
+from kframe.plugins.neon.responses import Response, StaticResponse, RestResponse
+from kframe.plugins.neon.utils import *
+from kframe.plugins.neon.exceptions import ResponseError
+from kframe.plugins.neon.parser import pop_zeros
 
 
 class Neon(Plugin):
@@ -59,7 +59,6 @@ class Neon(Plugin):
                 'rest': 'rest_response',
                 'static': 'static_response',
             }
-
             if self.cfg['site_directory'].endswith('/'):
                 self.cfg['site_directory'] = self.cfg['site_directory'][:-1]
 
@@ -101,7 +100,7 @@ class Neon(Plugin):
             if 'stats' not in self:
                 self.P.fast_init(key='stats', target=Stats, export=False)
             if 'crypto' not in self:
-                self.P.add_module(key='crypto', target=crypto, module=True, export=False)
+                self.P.add_module(key='crypto', target=crypto)
                 self.P.init_plugin(key='crypto', export=False)
 
             self.P.stats.init_stat(
@@ -263,7 +262,7 @@ class Neon(Plugin):
                     res = self.P.init_plugin(
                         key='response',
                         code=500,
-                        headers=[CONTENT_HTML],
+                        headers=CONTENT_HTML,
                         data=SMTH_HAPPENED,
                     )
         if res is None:

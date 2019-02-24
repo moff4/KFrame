@@ -83,6 +83,14 @@ class Response(Plugin):
 
         data = self._extra_prepare_data()
         data = data.encode() if isinstance(data, str) else data
+        headers = apply_standart_headers(
+            union(
+                self._headers,
+                {
+                    'Content-Length': len(data),
+                },
+            ),
+        )
         return ''.join(
             [
                 '{http_version} {code} {code_msg}\r\n'.format(
@@ -92,17 +100,10 @@ class Response(Plugin):
                 ),
                 ''.join(
                     [
-                        ''.join([i, '\r\n'])
+                        ''.join([i, ': ', str(headers[i]), '\r\n'])
                         for i in filter(
                             lambda x: x is not None and len(x) > 0,
-                            apply_standart_headers(
-                                union(
-                                    self._headers,
-                                    {
-                                        'Content-Length': len(data),
-                                    },
-                                ),
-                            ),
+                            headers,
                         )
                     ],
                 ),

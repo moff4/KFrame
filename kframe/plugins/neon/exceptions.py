@@ -8,4 +8,4 @@ class ResponseError(Exception):
         super().__init__(message)
         self.status = status
         self.message = (SMTH_HAPPENED if status >= 500 else NOT_FOUND) if message is None else message
-        self.headers = [CONTENT_HTML] if headers is None else headers
+        self.headers = CONTENT_HTML if headers is None else headers
