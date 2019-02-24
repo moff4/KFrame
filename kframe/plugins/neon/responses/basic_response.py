@@ -87,7 +87,7 @@ class Response(Plugin):
             [
                 '{http_version} {code} {code_msg}\r\n'.format(
                     http_version=self.http_version,
-                    code=204 if len(data) <= 0 and self.code == 200 else self.code,
+                    code=204 if len(data) <= 0 and self.code in {200, 201} else self.code,
                     code_msg=http_code_msg[self.code]
                 ),
                 ''.join(

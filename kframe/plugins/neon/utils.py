@@ -9,7 +9,12 @@ private_ip = set(
 )
 
 http_code_msg = {
+    100: 'Continue',
+    101: 'Switching Protocols',
     200: 'OK',
+    201: 'Created',
+    202: 'Accepted',
+    203: 'Non-Authoritative Information',
     204: 'No Content',
     206: 'Partial Content',
     301: 'Moved Permanently',
@@ -111,7 +116,7 @@ def apply_standart_headers(headers: dict) -> dict:
             k: STANDART_HEADERS[k]
             for k in filter(
                 lambda x: x not in headers,
-                STANDART_HEADERS.values(),
+                STANDART_HEADERS.keys(),
             )
         }
     )

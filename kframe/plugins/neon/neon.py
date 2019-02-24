@@ -37,6 +37,7 @@ class Neon(Plugin):
                 'use_neon_server': False,
                 'response_settings': {
                     'cache_min': 120,
+                    'max_response_size': 2**20,
                 },
                 'single_request_per_socket': True,
             }

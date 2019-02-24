@@ -84,17 +84,42 @@ class StaticResponse(Response):
         """
         if os.path.isfile(filename):
             self.Debug('gonna send file: {}'.format(filename))
-            # FIXME check size of file and send part
-            with open(filename, 'rb') as f:
-                self._data = f.read()
+            size = os.path.getsize(filename)
+            if size <= self.P.neon.cfg['response_settings']['max_response_size']:
+                with open(filename, 'rb') as f:
+                    self._data = f.read()
+                _code = 200
+            else:
+                _from = 0
+                _to = self.P.neon.cfg['response_settings']['max_response_size']
+                if self.req is not None and 'range' in self.req.headers:
+                    tmp = self.req.headers['range'].split('=')
+                    if tmp[0] == 'bytes':
+                        a, b = tmp[1].split('-')
+                        _from = int(a)
+                        _to = int(b)
+                with open(filename, 'rb') as f:
+                    if _from > 0:
+                        f.read(_from)
+                    self._data = f.read(_to - _from)
+                    self.add_header(
+                        'Content-Range',
+                        'bytes={_from}-{_to}/{size}'.format(
+                            _from=_from,
+                            _to=_to,
+                            size=size,
+                        )
+                    )
+                _code = 206
             content_type, self.content_mod = self.Content_type(filename)
             self.add_headers(content_type)
-            self.add_headers({
+            self.add_headers(
+                {
                     'Cache-Control': 'max-age={cache_min}'.format(
                         cache_min=self.P.neon.cfg['response_settings']['cache_min']
                     ),
                 },
-            ).code = 200
+            ).code = _code
             return True
         else:
             self.Debug('File not found: {}'.format(filename))

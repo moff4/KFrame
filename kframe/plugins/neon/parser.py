@@ -82,19 +82,19 @@ def parse_data(conn, cfg):
                     break
 
         if key in request['headers']:
-            raise RuntimeError("Got 2 same headers ({key})".format(key=key))
+            raise RuntimeError('Got 2 same headers ({key})'.format(key=key))
         else:
             request['headers'][key] = value
         if len(request['headers']) >= cfg['max_header_count']:
-            raise RuntimeError("Too many headers")
+            raise RuntimeError('Too many headers')
 
     for i in {'http_version', 'url', 'method'}:
-        # FIXME
-        # check for binary
+        if any(map(lambda x: not (32 < x < 128), request[i])):
+            raise RuntimeError('Field {} must to be binary'.format(i))
         request[i] = request[i].decode('utf-8')
 
-    if '..' in request["url"] or "//" in request["url"]:
-        raise RuntimeError("Unallowed request: {url}".format(**request))
+    if '..' in request['url'] or '//' in request['url']:
+        raise RuntimeError('Unallowed request: {url}'.format(**request))
 
     for i in request['args']:
         request['args'][i] = request['args'][i].decode('utf-8')
@@ -102,7 +102,7 @@ def parse_data(conn, cfg):
     if 'content-length' in request['headers']:
         _len = int(request['headers']['content-length'])
         if _len >= cfg['max_data_length']:
-            raise RuntimeError("Too much data")
+            raise RuntimeError('Too much data')
         request['data'] = conn.recv(_len)
     return request
 
