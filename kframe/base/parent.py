@@ -160,10 +160,10 @@ class Parent:
                     self.errmsg.append(b)
                 except Exception as e:
                     self.FATAL = True
-                    self.errmsg.append("-- plugin (%s) init: %s" % (i, e))
+                    self.errmsg.append('-- plugin (%s) init: %s' % (i, e))
         except Exception as e:
             e = Trace()
-            self.errmsg.append("Parent: init-plugins: %s" % e)
+            self.errmsg.append('Parent: init-plugins: %s' % e)
             self.FATAL = True
 
     def __init_plugin(self, key, plugin_name, args, kwargs, export=False):
@@ -177,9 +177,9 @@ class Parent:
         """
         if key not in self.plugin_t:
             if export:
-                raise ValueError("Plugin %s not added" % key)
+                raise ValueError('Plugin %s not added' % key)
             else:
-                return False, "%s: Plugin %s not added" % (plugin_name, key)
+                return False, '%s: Plugin %s not added' % (plugin_name, key)
         try:
             if self.plugin_t[key]['module']:
                 obj = self.plugin_t[plugin_name]['target']
@@ -187,7 +187,7 @@ class Parent:
                     return obj
                 self.modules[key] = obj
                 setattr(self, key, obj)
-                return True, "loaded successfully - %s" % (plugin_name)
+                return True, 'loaded successfully - %s' % (plugin_name)
             else:
                 obj = self.plugin_t[plugin_name]['target'](self, plugin_name, args, kwargs)
                 if export:
@@ -197,8 +197,8 @@ class Parent:
                 return not self.plugins[key].FATAL, self.plugins[key].errmsg
         except Exception as e:
             e = Trace()
-            self.log("Parent: init plugin(%s): %s" % (plugin_name, e), _type="error")
-            return False, "%s: Exception: %s" % (plugin_name, e)
+            self.log('Parent: init plugin(%s): %s' % (plugin_name, e), _type='error')
+            return False, '%s: Exception: %s' % (plugin_name, e)
 
     def print_errmsg(self):
         """
@@ -292,7 +292,7 @@ class Parent:
             kwargs:
             -- must be --
               key (str) - how u wanna call it
-              target (cl)(/module) - smth that'll be kept here and maybe called (if that's plugin)
+              target (class/module) - smth that'll be kept here and maybe called (if that's plugin)
             -- optional --
               autostart (bool) - initialize plugin when call Parent.init() (default: True)
               module (bool) - True if target is module ; otherwise target is plugin (default: False)

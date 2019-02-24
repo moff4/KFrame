@@ -5,6 +5,7 @@ from ..utils import *
 
 PROPS = {'data', 'code', 'http_version'}
 
+
 class Response(Plugin):
     def init(self, data=None, headers=None, code=404, http_version='HTTP/1.1', *args, **kwargs):
         self._data = b"" if data is None else data
@@ -91,7 +92,7 @@ class Response(Plugin):
                 ),
                 ''.join(
                     [
-                        "".join([i, "\r\n"])
+                        ''.join([i, '\r\n'])
                         for i in filter(
                             lambda x: x is not None and len(x) > 0,
                             apply_standart_headers(

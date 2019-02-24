@@ -107,10 +107,13 @@ def readln(conn, max_len=2048) -> bytes:
 #
 def apply_standart_headers(headers: dict) -> dict:
     headers.update(
-        filter(
-            lambda x: x not in headers,
-            STANDART_HEADERS,
-        )
+        {
+            k: STANDART_HEADERS[k]
+            for k in filter(
+                lambda x: x not in headers,
+                STANDART_HEADERS.values(),
+            )
+        }
     )
     return headers
 
