@@ -111,7 +111,7 @@ def apply_standart_headers(headers: dict) -> dict:
             k: STANDART_HEADERS[k]
             for k in filter(
                 lambda x: x not in headers,
-                STANDART_HEADERS.values(),
+                STANDART_HEADERS.keys(),
             )
         }
     )

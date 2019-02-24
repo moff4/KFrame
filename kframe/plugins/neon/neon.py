@@ -100,7 +100,8 @@ class Neon(Plugin):
             if 'stats' not in self:
                 self.P.fast_init(key='stats', target=Stats, export=False)
             if 'crypto' not in self:
-                self.P.add_module(key='crypto', target=crypto)
+                self.P.add_module(key='crypto', target=crypto, module=True, export=False)
+                self.P.init_plugin(key='crypto', export=False)
 
             self.P.stats.init_stat(
                 key='start-time',
