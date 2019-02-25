@@ -116,5 +116,5 @@ class Stats(Plugin):
             }
             for key in self._stats
         } if extension else {
-            key: self._stats.value for key in self._stats
+            key: self._stats[key].value for key in self._stats
         }

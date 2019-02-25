@@ -189,7 +189,7 @@ def Content_type(st) -> str:
 def is_local_ip(addr) -> bool:
     return any(
         map(
-            lambda x: addr[0].startswith(x),
+            lambda x: addr.startswith(x),
             private_ip
         )
     )

@@ -102,7 +102,11 @@ class Request(Plugin):
         if not self._send:
             resp = self.resp if resp is None else resp
             self.conn.send(resp.export())
-            self.P.stats.add(key='requests-success' if 200 <= resp.code < 300 else 'requests-failed')
+            self.P.stats.add(
+                key='requests-{}xx'.format(
+                    resp.code // 100,
+                ),
+            )
             self._send = True
 
     def static_file(self, filename, extra_modifier=None, *args, **kwargs):

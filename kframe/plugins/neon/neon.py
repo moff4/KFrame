@@ -101,7 +101,6 @@ class Neon(Plugin):
                 self.P.fast_init(key='stats', target=Stats, export=False)
             if 'crypto' not in self:
                 self.P.add_module(key='crypto', target=crypto)
-                self.P.init_plugin(key='crypto', export=False)
 
             self.P.stats.init_stat(
                 key='start-time',
@@ -115,13 +114,16 @@ class Neon(Plugin):
                 default=int(time.time()),
                 desc='Время запуска сервера'
             )
-            self.P.stats.init_stat(key='requests-success', type='inc', desc='Кол-во успешных запросов')
-            self.P.stats.init_stat(key='requests-failed', type='inc', desc='Кол-во ошибочных запросов')
-            self.P.stats.init_stat(key='connections', type='inc', desc='Кол-во соединений')
+            self.P.stats.init_stat(key='requests-1xx', type='event_counter', desc='Кол-во запросов с кодом 1xx')
+            self.P.stats.init_stat(key='requests-2xx', type='event_counter', desc='Кол-во запросов с кодом 2xx')
+            self.P.stats.init_stat(key='requests-3xx', type='event_counter', desc='Кол-во запросов с кодом 3xx')
+            self.P.stats.init_stat(key='requests-4xx', type='event_counter', desc='Кол-во запросов с кодом 4xx')
+            self.P.stats.init_stat(key='requests-5xx', type='event_counter', desc='Кол-во запросов с кодом 5xx')
             self.P.stats.init_stat(key='aver-response-time', type='aver', desc='Среднее время ответа')
 
         except Exception as e:
-            print(e)
+            from traceback import format_exc
+            print(format_exc())
             self.FATAL = True
             self.errmsg = '{}: {}'.format(self.name, str(e))
 
@@ -235,7 +237,12 @@ class Neon(Plugin):
                 request.Debug('{ip}: Handler not found ({url})'.format(**request.dict()))
             else:
                 request.Debug('Found handler: {name}'.format(name=module['module'].name))
-                self.P.stats.init_and_add('choose_module_{name}'.format(name=module['module'].name), type='inc')
+                self.P.stats.init_and_add(
+                    'choose_module_{name}'.format(
+                        name=module['module'].name
+                    ),
+                    type='event_counter',
+                )
                 try:
                     request.init_response(self.response_types[module['type']])
                     handler = getattr(
@@ -270,11 +277,11 @@ class Neon(Plugin):
         request.send(res)
         request.Notify('[{ip}] {code} : {method} {url} {args}', code=res.code, **request.dict())
         self.P.stats.init_and_add(
-            'module_{name}_answer_{code}'.format(
+            'module_{name}_answer_{code}xx'.format(
                 name='None' if module is None else module['module'].name,
-                code=res.code
+                code=(res.code // 100),
             ),
-            type='inc'
+            type='event_counter',
         )
         _t = time.time() - _t
         self.P.stats.add(key="aver-response-time", value=_t)
@@ -284,7 +291,7 @@ class Neon(Plugin):
                     name='None' if module is None else module['module'].name
                 ),
                 type="aver",
-                value=_t
+                value=_t,
             )
         try:
             request.after_handler()

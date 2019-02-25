@@ -315,7 +315,6 @@ class Parent:
     def add_module(self, key, target):
         """
             Add new module
-            same as to Parent.add_plugin() with module=True
         """
         self.plugin_t[key] = {
             'target': target,
@@ -325,6 +324,10 @@ class Parent:
             'kwargs': {},
             'dependes': [],
         }
+        self.init_plugin(
+            key=key,
+            export=False,
+        )
         return self
 
     def init(self):
@@ -442,11 +445,11 @@ class Parent:
             prefix=prefix,
             raw_msg=st,
         )
-        if _type == 'debug' and '--debug' not in sys.argv[1:] and not force:
+        if _type == 'debug' and not ('--debug' in self._argv_p or force):
             return self
-        if '--stdout' in sys.argv[1:]:
+        if '--stdout' in self._argv_p:
             print(msg)
-        if '--no-log' not in sys.argv[1:]:
+        if '--no-log' not in self._argv_p:
             self.save_log(message=msg, raw_msg=st, time=_time, level=_type, user_prefix=prefix)
         return self
 

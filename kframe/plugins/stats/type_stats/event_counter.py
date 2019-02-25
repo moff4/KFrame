@@ -29,13 +29,13 @@ class StatEventCounter(AbstractStat):
         while len(self._stamps) > 0 and (t - self._stamps[0]) > self._limit:
             self._stamps.popleft()
 
-    def add(self, value=1):
+    def add(self, value=None):
         """
             add event
         """
         t = int(time.time())
         self._clean(t)
-        self._value[t] += value
+        self._value[t] += 1 if value is None else value
         self._stamps.append(t)
 
     def reset(self):

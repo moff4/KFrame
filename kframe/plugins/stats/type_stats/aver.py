@@ -43,4 +43,4 @@ class StatAver(AbstractStat):
         """
             export value
         """
-        return sum(self._value) / len(self._value)
+        return (sum(self._value) / len(self._value)) if len(self._value) > 0 else None
