@@ -423,7 +423,7 @@ class Parent:
         }
         return self
 
-    def log(self, st, _type='info'):
+    def log(self, st, _type='info', force=False):
         """
             log function
             st - message to save
@@ -442,6 +442,8 @@ class Parent:
             prefix=prefix,
             raw_msg=st,
         )
+        if '--debug' not in sys.argv[1:] and not force:
+            return self
         if '--stdout' in sys.argv[1:]:
             print(msg)
         if '--no-log' not in sys.argv[1:]:

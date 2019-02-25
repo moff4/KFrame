@@ -93,7 +93,16 @@ class Plugin:
         """
             local log function
         """
-        self.parent.log('%s: %s' % (self.name, st), _type=_type)
+        self.parent.log(
+            '%s: %s' % (self.name, st),
+            _type=_type,
+            force=self.P.get_param(
+                '--{}--debug'.format(
+                    self.name,
+                ),
+                False,
+            )
+        )
 
     def __call__(self, st='', _type='info'):
         """
