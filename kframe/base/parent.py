@@ -442,7 +442,7 @@ class Parent:
             prefix=prefix,
             raw_msg=st,
         )
-        if '--debug' not in sys.argv[1:] and not force:
+        if _type == 'debug' and '--debug' not in sys.argv[1:] and not force:
             return self
         if '--stdout' in sys.argv[1:]:
             print(msg)
