@@ -23,7 +23,7 @@ class StatEvent(AbstractStat):
 
     def _clean(self, t):
         while len(self._value) > 0 and (t - self._value[0][0]) > self._limit:
-            self._stamps.popleft()
+            self._value.popleft()
 
     def add(self, value):
         """
