@@ -27,7 +27,7 @@ class StatEventCounter(AbstractStat):
 
     def _clean(self, t):
         while len(self._stamps) > 0 and (t - self._stamps[0]) > self._limit:
-            self._value.pop(self._stamps.popleft())
+            self._value.pop(self._stamps.popleft(), None)
 
     def add(self, value=None):
         """
