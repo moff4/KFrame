@@ -138,9 +138,9 @@ class Cache(Plugin):
         """
             Return value for key in cache or None
         """
+        if not self.cfg['auto_clean_in_new_thread']:
+            self.clean(nodename)
         if key in self._d[nodename][0]:
-            if not self.cfg['auto_clean_in_new_thread']:
-                self.clean(nodename)
             return self._d[nodename][0][key][0]
         else:
             return None
