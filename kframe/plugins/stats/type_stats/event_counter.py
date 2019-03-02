@@ -27,7 +27,10 @@ class StatEventCounter(AbstractStat):
 
     def _clean(self, t):
         while len(self._stamps) > 0 and (t - self._stamps[0]) > self._limit:
-            self._value.pop(self._stamps.popleft(), None)
+            k = self._stamps.popleft()
+            if k in self._value:
+                self._value.pop(k)
+        return self
 
     def add(self, value=None):
         """
@@ -50,4 +53,10 @@ class StatEventCounter(AbstractStat):
         """
             export value
         """
-        return dict(self._value)
+        return dict(
+            self._clean(
+                int(
+                    time.time()
+                )
+            )._value
+        )
