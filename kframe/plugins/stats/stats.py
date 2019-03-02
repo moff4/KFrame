@@ -111,7 +111,7 @@ class Stats(Plugin):
         return {
             key: {
                 'desc': getattr(self._stats[key], 'desc', key),
-                'data': self._export(key),
+                'data': self._stats[key].value,
                 'type': self._stats[key]._type
             }
             for key in self._stats
