@@ -112,7 +112,7 @@ class Stats(Plugin):
             key: {
                 'desc': getattr(self._stats[key], 'desc', key),
                 'data': self._stats[key].value,
-                'type': self._stats[key]._type
+                'type': self._stats[key].stat_type
             }
             for key in self._stats
         } if extension else {
