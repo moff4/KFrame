@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from kframe.base.plugin import Plugin
+from kframe.plugins.stats.site_module import StatsCGI
 from kframe.plugins.stats.type_stats import (
     StatInc,
     StatSum,
@@ -21,8 +22,19 @@ STAT_TYPES = {
 
 
 class Stats(Plugin):
-    def init(self):
+    def init(self, **kwargs):
+        defaults = {
+            'add_neon_handler': False,
+            'neon_handler_cfg': {}
+        }
+        self.cfg = {k: kwargs[k] if k in kwargs else defaults[k] for k in defaults}
         self._stats = {}
+        self.P.fast_init(
+            key='stats_cgi',
+            target=StatsCGI,
+            export=False,
+            **self.cfg['neon_handler_cfg'],
+        )
 
 # ==========================================================================
 #                                 USER API
@@ -118,3 +130,13 @@ class Stats(Plugin):
         } if extension else {
             key: self._stats[key].value for key in self._stats
         }
+
+    def start(self):
+        if self.cfg['add_neon_handler']:
+            if 'neon' not in self:
+                raise ValueError('for neon-handler Neon must be already initialized')
+            else:
+                self.P.neon.add_site_module(
+                    module=self.P.stats_cgi,
+                    path=self.P.stats_cgi.cfg['stat_url'],
+                )

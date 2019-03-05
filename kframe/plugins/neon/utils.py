@@ -85,6 +85,7 @@ CONTENT_JSON = {'Content-type': 'text/json'}
 STANDART_HEADERS = {
     'Server': 'kek-server',
     'Content-type': 'text/html; charset=utf-8',
+    'Accept-Ranges': 'bytes',
 }
 
 

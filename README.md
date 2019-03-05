@@ -79,6 +79,7 @@ Neon - Веб-сервер
  -- cache_min - default 120, - значение 'Cache-Control' в секундах  
  -- max_response_size - default 2^20, - Масимальный размер ответа на запрос (для статических файлов)  
 * single_request_per_socket - default: True, - Если True, то работает принцип "одно соединение - один запрос"  
+* enable_stats - default: True, - Если True, то неон будет собирать статистику  
 
 Пользовательский интерфейс объекта этого класса:
 ```python
@@ -136,12 +137,20 @@ Stats - Сбор статистики
 
 Имеется пользовательский интерфейс в виде четырех методов:  
 ```python
+def init(self, **kwargs)
 def init_stat(self, key, type, **kwargs)  
 def add(self, key, value=None)  
 def init_and_add(self, key, type, value=None, **kwargs)
 def get(self, key)  
 def export(self, extension=False)  
 ```
+
+init может принимать следующие параметры:
+* add_neon_handler - default False - добавить в Неон ручку выдачи статистики  
+* neon_handler_cfg - default {} - набор параметров для модуля расширения неона.  
+Пример:  
+ -- only_local_hosts - default True - выдача только на запросы с приватных IP (127.0.0.1, 192.168.*.* итд)  
+ -- stat_url - default '/{parent.name}-admin/stats' - url, по которому будет выдаваться статистика  
 
 init_stat - объявляет о начале сбора статистики с ключом key и типа type  
 Статистика может быть типов:  

@@ -40,6 +40,7 @@ class Neon(Plugin):
                     'max_response_size': 2**20,
                 },
                 'single_request_per_socket': True,
+                'enable_stats': True,
             }
             self.cfg = {}
             for i in defaults:
@@ -97,29 +98,30 @@ class Neon(Plugin):
             self.P.add_plugin(key='rest_response', target=RestResponse, autostart=False, module=False)
             self.P.add_plugin(key='static_response', target=StaticResponse, autostart=False, module=False)
 
-            if 'stats' not in self:
-                self.P.fast_init(key='stats', target=Stats, export=False)
-            if 'crypto' not in self:
-                self.P.add_module(key='crypto', target=crypto)
+            if self.cfg['enable_stats']:
+                if 'stats' not in self:
+                    self.P.fast_init(key='stats', target=Stats, export=False)
+                if 'crypto' not in self:
+                    self.P.add_module(key='crypto', target=crypto)
 
-            self.P.stats.init_stat(
-                key='start-time',
-                type='single',
-                default=time.strftime('%H:%M:%S %d %b %Y'),
-                desc='Время запуска сервера'
-            )
-            self.P.stats.init_stat(
-                key='start-timestamp',
-                type='single',
-                default=int(time.time()),
-                desc='Время запуска сервера'
-            )
-            self.P.stats.init_stat(key='requests-1xx', type='event_counter', desc='Кол-во запросов с кодом 1xx')
-            self.P.stats.init_stat(key='requests-2xx', type='event_counter', desc='Кол-во запросов с кодом 2xx')
-            self.P.stats.init_stat(key='requests-3xx', type='event_counter', desc='Кол-во запросов с кодом 3xx')
-            self.P.stats.init_stat(key='requests-4xx', type='event_counter', desc='Кол-во запросов с кодом 4xx')
-            self.P.stats.init_stat(key='requests-5xx', type='event_counter', desc='Кол-во запросов с кодом 5xx')
-            self.P.stats.init_stat(key='aver-response-time', type='aver', desc='Среднее время ответа')
+                self.P.stats.init_stat(
+                    key='start-time',
+                    type='single',
+                    default=time.strftime('%H:%M:%S %d %b %Y'),
+                    desc='Время запуска сервера'
+                )
+                self.P.stats.init_stat(
+                    key='start-timestamp',
+                    type='single',
+                    default=int(time.time()),
+                    desc='Время запуска сервера'
+                )
+                self.P.stats.init_stat(key='requests-1xx', type='event_counter', desc='Кол-во запросов с кодом 1xx')
+                self.P.stats.init_stat(key='requests-2xx', type='event_counter', desc='Кол-во запросов с кодом 2xx')
+                self.P.stats.init_stat(key='requests-3xx', type='event_counter', desc='Кол-во запросов с кодом 3xx')
+                self.P.stats.init_stat(key='requests-4xx', type='event_counter', desc='Кол-во запросов с кодом 4xx')
+                self.P.stats.init_stat(key='requests-5xx', type='event_counter', desc='Кол-во запросов с кодом 5xx')
+                self.P.stats.init_stat(key='aver-response-time', type='aver', desc='Среднее время ответа')
 
         except Exception as e:
             from traceback import format_exc
@@ -237,12 +239,13 @@ class Neon(Plugin):
                 request.Debug('{ip}: Handler not found ({url})'.format(**request.dict()))
             else:
                 request.Debug('Found handler: {name}'.format(name=module['module'].name))
-                self.P.stats.init_and_add(
-                    'choose_module_{name}'.format(
-                        name=module['module'].name
-                    ),
-                    type='event_counter',
-                )
+                if self.cfg['enable_stats']:
+                    self.P.stats.init_and_add(
+                        'choose_module_{name}'.format(
+                            name=module['module'].name
+                        ),
+                        type='event_counter',
+                    )
                 try:
                     request.init_response(self.response_types[module['type']])
                     handler = getattr(
@@ -276,23 +279,24 @@ class Neon(Plugin):
             res = request.resp
         request.send(res)
         request.Notify('[{ip}] {code} : {method} {url} {args}', code=res.code, **request.dict())
-        self.P.stats.init_and_add(
-            'module_{name}_answer_{code}xx'.format(
-                name='None' if module is None else module['module'].name,
-                code=(res.code // 100),
-            ),
-            type='event_counter',
-        )
-        _t = time.time() - _t
-        self.P.stats.add(key="aver-response-time", value=_t)
-        if 200 <= res.code < 300:
+        if self.cfg['enable_stats']:
             self.P.stats.init_and_add(
-                key="{name}-aver-response-time".format(
-                    name='None' if module is None else module['module'].name
+                'module_{name}_answer_{code}xx'.format(
+                    name='None' if module is None else module['module'].name,
+                    code=(res.code // 100),
                 ),
-                type="aver",
-                value=_t,
+                type='event_counter',
             )
+            _t = time.time() - _t
+            self.P.stats.add(key="aver-response-time", value=_t)
+            if 200 <= res.code < 300:
+                self.P.stats.init_and_add(
+                    key="{name}-aver-response-time".format(
+                        name='None' if module is None else module['module'].name
+                    ),
+                    type="aver",
+                    value=_t,
+                )
         try:
             request.after_handler()
         except Exception as e:
@@ -334,7 +338,8 @@ class Neon(Plugin):
         @recursion
         def another_deal(conn, addr):
             try:
-                self.P.stats.add(key='connections')
+                if self.cfg['enable_stats']:
+                    self.P.stats.add(key='connections')
                 conn = self.wrap_ssl(conn) if _ssl else conn
                 request = self.P.init_plugin(key='request', conn=conn, addr=addr, id=self.gen_id(), **self.cfg)
                 if request.FATAL:
