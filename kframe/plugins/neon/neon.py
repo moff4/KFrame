@@ -384,7 +384,7 @@ class Neon(Plugin):
                 if (
                     not self.cfg['only_local_hosts']
                 ) or (
-                    self.cfg['only_local_hosts'] and is_local_ip(addr)
+                    self.cfg['only_local_hosts'] and is_local_ip(addr[0])
                 ):
                     if self.cfg['threading']:
                         t = th.Thread(target=another_deal, args=(conn, addr))
