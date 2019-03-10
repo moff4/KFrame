@@ -2,7 +2,6 @@
 import json
 
 from kframe import Plugin
-from kframe.plugins.neon.utils import NOT_FOUND
 
 
 class StatsCGI(Plugin):
@@ -24,6 +23,7 @@ class StatsCGI(Plugin):
                 )
             ).add_header('Content-Type', 'application/json')
         else:
+            from kframe.plugins.neon.utils import NOT_FOUND
             return req.resp.set(
                 code=404,
                 data=NOT_FOUND,

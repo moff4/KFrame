@@ -116,16 +116,15 @@ class Neon(Plugin):
                     default=int(time.time()),
                     desc='Время запуска сервера'
                 )
-                self.P.stats.init_stat(key='requests-1xx', type='event_counter', desc='Кол-во запросов с кодом 1xx')
-                self.P.stats.init_stat(key='requests-2xx', type='event_counter', desc='Кол-во запросов с кодом 2xx')
-                self.P.stats.init_stat(key='requests-3xx', type='event_counter', desc='Кол-во запросов с кодом 3xx')
-                self.P.stats.init_stat(key='requests-4xx', type='event_counter', desc='Кол-во запросов с кодом 4xx')
-                self.P.stats.init_stat(key='requests-5xx', type='event_counter', desc='Кол-во запросов с кодом 5xx')
+                for i in range(1, 6):
+                    self.P.stats.init_stat(
+                        key='requests-{}xx'.format(i),
+                        type='event_counter',
+                        desc='Кол-во запросов с кодом ответа {}xx'.format(i),
+                    )
                 self.P.stats.init_stat(key='aver-response-time', type='aver', desc='Среднее время ответа')
 
         except Exception as e:
-            from traceback import format_exc
-            print(format_exc())
             self.FATAL = True
             self.errmsg = '{}: {}'.format(self.name, str(e))
 
