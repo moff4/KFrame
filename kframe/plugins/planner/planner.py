@@ -118,17 +118,17 @@ class Planner(Plugin):
         if self.P.get_param('--debug-planner', False):
             for key, delay in az:
                 self.Debug('shedule: next {key} in {delay} sec', key=key, delay=delay)
-            if self.enable_stats:
-                self.P.stats.add('planner-next-task', '{} in {} sec'.format(
-                    **az[0],
-                ))
-                self.P.stats.add(
-                    'planner-shedule',
-                    '\n'.join([
-                        '{} in {}'.format(key, delay)
-                        for key, delay in az
-                    ])
-                )
+        if self.enable_stats:
+            self.P.stats.add('planner-next-task', '{} in {} sec'.format(
+                *az[0],
+            ))
+            self.P.stats.add(
+                'planner-shedule',
+                '\n'.join([
+                    '{} in {}'.format(key, delay)
+                    for key, delay in az
+                ])
+            )
         return az[0]
 
     def check_threads(self):
