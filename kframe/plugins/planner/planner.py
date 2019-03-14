@@ -210,6 +210,9 @@ class Planner(Plugin):
         self.tasks[key]['shedule'] = bz
         return True
 
+    def get_task(self, key):
+        return self.tasks.get(key)
+
     def update_task(self, key, **task):
         if key in self.tasks:
             self.tasks[key].update(task)
