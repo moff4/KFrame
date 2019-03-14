@@ -3,8 +3,9 @@
 import time
 from threading import Thread
 from multiprocessing import Process
-from traceback import format_exc as Trace
+
 from kframe.base import Plugin
+from kframe.plugins.stats import Stats
 
 
 class Planner(Plugin):
@@ -34,16 +35,36 @@ class Planner(Plugin):
         }
     """
 
-    def init(self, tasks=None):
+    def init(self, tasks=None, enable_stats=False):
         self._run = True
         self._m_thead = None
         self._threads = []
         self._running_tasks = []  # [ .. ,( key, thread), ..]
         self.tasks = {}
         self._last_task = None
+        self.enable_stats = enable_stats
         if not all([self.registrate(**task) for task in ([] if tasks is None else tasks)]):
             self.FATAL = True
             self.errmsg = "Some tasks badly configured"
+            return
+        if self.enable_stats:
+            if 'stats' not in self:
+                self.P.fast_init(key='stats', target=Stats, export=False)
+            self.P.stats.init_stat(
+                key='planner-next-task',
+                type='single',
+                desc='Следующая задача',
+            )
+            self.P.stats.init_stat(
+                key='planner-shedule',
+                type='single',
+                desc='Расписание задач',
+            )
+            self.P.stats.init_stat(
+                key='planner-done-task',
+                type='event',
+                desc='Факты выполнения задач',
+            )
 
     def next_task(self):
         """
@@ -93,10 +114,22 @@ class Planner(Plugin):
             _t = (task['hours'] * 60 + task['min']) * 60 + task['sec']
             _t = _t - ((t - task['offset']) % (_t))
             az.append((key, _t))
+        az = sorted(az, key=lambda x: x[1])
         if self.P.get_param('--debug-planner', False):
             for key, delay in az:
                 self.Debug('shedule: next {key} in {delay} sec', key=key, delay=delay)
-        return sorted(az, key=lambda x: x[1])[0]
+        if self.enable_stats:
+            self.P.stats.add('planner-next-task', '{} in {} sec'.format(
+                *az[0],
+            ))
+            self.P.stats.add(
+                'planner-shedule',
+                '\n'.join([
+                    '{} in {}'.format(key, delay)
+                    for key, delay in az
+                ])
+            )
+        return az[0]
 
     def check_threads(self):
         """
@@ -124,9 +157,17 @@ class Planner(Plugin):
                     self.tasks[key]['times'] -= 1
                 self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
                 self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
+                if self.enable_stats:
+                    self.P.stats.add(
+                        key='planner-done-task',
+                        value='{key} done in {t} sec'.format(
+                            t='%.2f' % (time.time() - _t),
+                            key=key,
+                        ),
+                    )
         except Exception as e:
-            self.Debug("{} - ex: {}".format(key, Trace()))
             self.Error("{} - ex: {}".format(key, e))
+            self.Trace("{} - ex:".format(key))
 
     def _loop(self, loops=None):
         """
