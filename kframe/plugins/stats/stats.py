@@ -33,7 +33,7 @@ class Stats(Plugin):
             key='stats_cgi',
             target=StatsCGI,
             export=False,
-            **self.cfg['neon_handler_cfg'],
+            **self.cfg['neon_handler_cfg']
         )
 
 # ==========================================================================

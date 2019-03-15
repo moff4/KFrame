@@ -25,7 +25,7 @@ class SQL(Plugin):
                 'ddl': {},
             }
             for i in defaults:
-                self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
+                self.cfg[i] = kwargs.get(i, defaults[i])
             self.conn = None
             self._lock = 0
 
@@ -93,7 +93,7 @@ class SQL(Plugin):
             self.close()
             self.connect()
         except Exception as e:
-            self.Error('reconnect-error')
+            self.Error('reconnect-error: {}', e)
 
     def create_table(self, ddl=None):
         """
@@ -123,7 +123,7 @@ class SQL(Plugin):
 #                                USER API
 # ==========================================================================
 
-    def execute(self, query, commit=False, multi=False, unique_cursor=False):
+    def execute(self, query, commit=False, multi=False):
         """
             exec query
             universal method: select/create/insert/update/...
@@ -132,13 +132,10 @@ class SQL(Plugin):
         res = []
         boo = True
         try:
-            if not unique_cursor:
+            if not self.conn.is_connected():
                 self.reconnect()
-                conn = self.conn
-            else:
-                conn = conn = self.__connect()
-            if conn is not None and conn.is_connected():
-                cu = conn.cursor()
+            if self.conn is not None and self.conn.is_connected():
+                cu = self.conn.cursor()
                 cu.execute(query, multi=multi)
                 res = []
                 try:
@@ -157,60 +154,46 @@ class SQL(Plugin):
             boo = False
         return boo, res
 
-    def select_all(self, query, unique_cursor=False):
+    def select_all(self, query, *args, **kwargs):
         """
             method specialy for select
             return list of tuples (rows) in case of success
             or None in case of error
         """
         try:
-            if unique_cursor:
-                conn = self.__connect()
-            else:
+            query = query.format(*args, **kwargs)
+            if not self.conn.is_connected():
                 self.reconnect()
-                conn = self.conn
-            if conn is None:
-                raise RuntimeError('Have no connection')
-            cu = conn.cursor()
-            cu.execute(query)
-            res = cu.fetchall()
-            if unique_cursor:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-            return res
+            if self.conn is not None and self.conn.is_connected():
+                cu = self.conn.cursor()
+                cu.execute(query)
+                res = cu.fetchall()
+                return res
         except Exception as e:
             self.Error('select-all: {ex}', ex=e)
             return None
 
-    def select(self, query, unique_cursor=True):
+    def select(self, query, *args, **kwargs):
         """
             method specialy for select
             return generator that returns tuples (row) in case of success
             or raise Exception in case of error
         """
         try:
-            if unique_cursor:
-                conn = self.__connect()
-            else:
+            query = query.format(*args, **kwargs)
+            if not self.conn.is_connected():
                 self.reconnect()
-                conn = self.conn
-            cu = conn.cursor()
-            cu.execute(query)
-            while True:
-                res = cu.fetchone()
-                if res is None:
-                    break
-                yield res
+            if self.conn is not None and self.conn.is_connected():
+                cu = self.conn.cursor()
+                cu.execute(query)
+                while True:
+                    res = cu.fetchone()
+                    if res is None:
+                        break
+                    yield res
         except Exception as e:
             self.Error('select-one: {ex}', ex=e)
             raise
-        if unique_cursor:
-            try:
-                conn.close()
-            except Exception:
-                pass
 
     def start(self):
         self.create_table()

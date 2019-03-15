@@ -48,6 +48,11 @@ class Parent:
                 '--no-log': {'critical': False, 'description': 'Do not save logs'},
 
             }
+            # list of strings
+            self._log_storage = []
+            # flag; if true -> keep logs in storage
+            self._log_store = False
+            # predefined log levels
             self.levels = {
                 'debug': 'Debug',
                 'info': 'Info',
@@ -449,12 +454,48 @@ class Parent:
             return self
         if '--stdout' in self._argv_p:
             print(msg)
+        if self._log_store:
+            self.log_store.append(msg)
         if '--no-log' not in self._argv_p:
             self.save_log(message=msg, raw_msg=st, time=_time, level=_type, user_prefix=prefix)
         return self
 
     def add_log_level(self, key, user_prefix):
+        """
+            add new level of logging
+        """
         self.levels[key] = user_prefix
+
+    @property
+    def log_store(self):
+        """
+            return log_store flag as bool
+        """
+        return self._log_store
+
+    @log_store.setter
+    def log_store_setter(self, value):
+        """
+            set log_store flag as bool
+        """
+        if not isinstance(value, bool):
+            raise ValueError(
+                'log_store must be bool; not "{}"'.format(
+                    type(
+                        value
+                    )
+                )
+            )
+        self._log_store = value
+
+    @property
+    def log_storage(self):
+        """
+            return stored list of str and clean buffer
+        """
+        res = list(self._log_storage)
+        self._log_storage.clear()
+        return res
 
     def start(self, wait=True):
         """

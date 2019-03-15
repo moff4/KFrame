@@ -6,6 +6,7 @@ from multiprocessing import Process
 
 from kframe.base import Plugin
 from kframe.plugins.stats import Stats
+from kframe.plugins.planner.site_module import PlannerCGI
 
 
 class Planner(Plugin):
@@ -35,19 +36,31 @@ class Planner(Plugin):
         }
     """
 
-    def init(self, tasks=None, enable_stats=False):
+    def init(self, tasks=None, **kwargs):
+        defaults = {
+            'enable_stats': False,
+            'add_neon_handler': False,
+            'neon_handler_cfg': {}
+        }
+        self.cfg = {i: kwargs.get(i, defaults[i]) for i in defaults}
         self._run = True
         self._m_thead = None
         self._threads = []
         self._running_tasks = []  # [ .. ,( key, thread), ..]
-        self.tasks = {}
+        self._tasks = {}
         self._last_task = None
-        self.enable_stats = enable_stats
+        self._shedule = []
         if not all([self.registrate(**task) for task in ([] if tasks is None else tasks)]):
             self.FATAL = True
             self.errmsg = "Some tasks badly configured"
             return
-        if self.enable_stats:
+        self.P.fast_init(
+            key='planner_cgi',
+            target=PlannerCGI,
+            export=False,
+            **self.cfg['neon_handler_cfg']
+        )
+        if self.cfg['enable_stats']:
             if 'stats' not in self:
                 self.P.fast_init(key='stats', target=Stats, export=False)
             self.P.stats.init_stat(
@@ -97,15 +110,15 @@ class Planner(Plugin):
         tasks = []
         _t = time.localtime()
         t = int((_t.tm_hour * 60 + _t.tm_min) * 60 + _t.tm_sec)
-        for i in self.tasks:
+        for i in self._tasks:
             if all([
-                self.tasks[i]['after'] is None or self.tasks[i]['after'] <= time.time(),
-                self.tasks[i]['times'] is None or self.tasks[i]['times'] > 0,
-                calendar(_t, **self.tasks[i]['calendar']),
-                shedule(t, self.tasks[i]['shedule']),
-                weekdays(_t, self.tasks[i]['weekdays']),
+                self._tasks[i]['after'] is None or self._tasks[i]['after'] <= time.time(),
+                self._tasks[i]['times'] is None or self._tasks[i]['times'] > 0,
+                calendar(_t, **self._tasks[i]['calendar']),
+                shedule(t, self._tasks[i]['shedule']),
+                weekdays(_t, self._tasks[i]['weekdays']),
             ]):
-                tasks.append((i, self.tasks[i]))
+                tasks.append((i, self._tasks[i]))
         if len(tasks) <= 0:
             return None, 10.0
 
@@ -114,22 +127,20 @@ class Planner(Plugin):
             _t = (task['hours'] * 60 + task['min']) * 60 + task['sec']
             _t = _t - ((t - task['offset']) % (_t))
             az.append((key, _t))
-        az = sorted(az, key=lambda x: x[1])
+        self._shedule = sorted(az, key=lambda x: x[1])
         if self.P.get_param('--debug-planner', False):
-            for key, delay in az:
+            for key, delay in self._shedule:
                 self.Debug('shedule: next {key} in {delay} sec', key=key, delay=delay)
-        if self.enable_stats:
-            self.P.stats.add('planner-next-task', '{} in {} sec'.format(
-                *az[0],
-            ))
+        if self.cfg['enable_stats']:
+            self.P.stats.add('planner-next-task', '{} in {} sec'.format(*self._shedule[0]))
             self.P.stats.add(
                 'planner-shedule',
                 '\n'.join([
                     '{} in {}'.format(key, delay)
-                    for key, delay in az
+                    for key, delay in self._shedule
                 ])
             )
-        return az[0]
+        return self._shedule[0]
 
     def check_threads(self):
         """
@@ -154,11 +165,11 @@ class Planner(Plugin):
             run_id = "{}^@^{}".format(key, int(_t))
             if self._last_task != run_id or unplanned:
                 self._last_task = run_id
-                if self.tasks[key]['times'] is not None and not unplanned:
-                    self.tasks[key]['times'] -= 1
-                self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
+                if self._tasks[key]['times'] is not None and not unplanned:
+                    self._tasks[key]['times'] -= 1
+                self._tasks[key]['target'](*self._tasks[key]['args'], **self._tasks[key]['kwargs'])
                 self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
-                if self.enable_stats:
+                if self.cfg['enable_stats']:
                     self.P.stats.add(
                         key='planner-done-task',
                         value='{key} done in {t} sec'.format(
@@ -185,16 +196,16 @@ class Planner(Plugin):
                 time.sleep(5.0)
             else:
                 time.sleep(delay)
-                if self.tasks[key]['threading']:
-                    if self.tasks[key]['max_parallel_copies'] is None or len(
+                if self._tasks[key]['threading']:
+                    if self._tasks[key]['max_parallel_copies'] is None or len(
                         list(filter(lambda x: x[0] == key, self._running_tasks))
-                    ) < self.tasks[key]['max_parallel_copies']:
-                        if self.tasks[key]['threading'] in {'thread', 'threading', True}:
+                    ) < self._tasks[key]['max_parallel_copies']:
+                        if self._tasks[key]['threading'] in {'thread', 'threading', True}:
                             cl = Thread
-                        elif self.tasks[key]['threading'] in {'process', 'processing'}:
+                        elif self._tasks[key]['threading'] in {'process', 'processing'}:
                             cl = Process
                         else:
-                            raise ValueError('Wrong value for "threading" property: {}', self.tasks[key]['threading'])
+                            raise ValueError('Wrong value for "threading" property: {}', self._tasks[key]['threading'])
                         t = cl(target=self._do, args=[key])
                         t.start()
                         self._running_tasks.append((key, t))
@@ -216,7 +227,7 @@ class Planner(Plugin):
             return True in case of success
             -- possible raise Exception if params are of invalid type
         """
-        if key in self.tasks:
+        if key in self._tasks:
             return False
         defaults = {
             'hours': 0,
@@ -235,14 +246,14 @@ class Planner(Plugin):
         }
         task['key'] = key
         task['target'] = target
-        self.tasks[key] = {
+        self._tasks[key] = {
             key: task[key] if key in task else defaults[key]
             for key in (
                 list(defaults.keys()) + ['key', 'target']
             )
         }
         bz = []
-        for i in self.tasks[key]['shedule']:
+        for i in self._tasks[key]['shedule']:
             if len(i) != 2:
                 raise ValueError('invalid value of property "shedule"')
             az = []
@@ -252,40 +263,65 @@ class Planner(Plugin):
                     r = r * 60 + int(k)
                 az.append(r)
             bz.append(tuple(az))
-        self.tasks[key]['shedule'] = bz
+        self._tasks[key]['shedule'] = bz
         return True
+
+    @property
+    def tasks(self):
+        """
+            return tasks as dict
+        """
+        return self._tasks
 
     def get_task(self, key):
         """
             get task properties
         """
-        return self.tasks.get(key)
+        return self._tasks.get(key)
 
     def update_task(self, key, **task):
         """
             update task properties
         """
-        if key in self.tasks:
-            self.tasks[key].update(task)
+        if key in self._tasks:
+            self._tasks[key].update(task)
             return True
         return self.registrate(key=key, **task)
 
-    def run_task(self, key):
+    def run_task(self, key, set_after=False):
         """
             run task
+            return tuple(flag of success as bool, errmsg as str)
         """
-        if key not in self.tasks:
+        if key not in self._tasks:
             return False, 'Has no task "{}"'.format(key)
         else:
-            return self._do(key, unplanned=True), 'Task must be done'
+            res = self._do(key, unplanned=True)
+            if set_after and res:
+                self._tasks[key]['after'] = next(
+                    filter(
+                        lambda x: x[0] == key,
+                        self._shedule
+                    )
+                )[0] + int(time.time())
+            return res, 'Task must be done'
 
     def delete_task(self, key):
         """
             delete task
         """
-        self.tasks.pop(key, None)
+        self._tasks.pop(key, None)
 
     def start(self):
+        if self.cfg['add_neon_handler']:
+            if 'neon' not in self:
+                raise ValueError('for neon-handler Neon must be already initialized')
+            else:
+                self.P.neon.add_site_module(
+                    module=self.P.planner_cgi,
+                    path=self.P.planner_cgi.cfg['stat_url'],
+                )
+
         self._run = True
         self._m_thead = Thread(target=self._loop)
         self._m_thead.start()
