@@ -143,17 +143,18 @@ class Planner(Plugin):
                 i[1].join()
         self._running_tasks = az
 
-    def _do(self, key):
+    def _do(self, key, unplanned=False):
         """
             run single task
+            unplanned - if True run anyway and not change 'times'
         """
         self.Debug('Start {}', key)
         try:
             _t = time.time()
             run_id = "{}^@^{}".format(key, int(_t))
-            if self._last_task != run_id:
+            if self._last_task != run_id or unplanned:
                 self._last_task = run_id
-                if self.tasks[key]['times'] is not None:
+                if self.tasks[key]['times'] is not None and not unplanned:
                     self.tasks[key]['times'] -= 1
                 self.tasks[key]['target'](*self.tasks[key]['args'], **self.tasks[key]['kwargs'])
                 self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
@@ -165,9 +166,12 @@ class Planner(Plugin):
                             key=key,
                         ),
                     )
+                return True
+            return False
         except Exception as e:
             self.Error("{} - ex: {}".format(key, e))
             self.Trace("{} - ex:".format(key))
+            return False
 
     def _loop(self, loops=None):
         """
@@ -252,17 +256,34 @@ class Planner(Plugin):
         return True
 
     def get_task(self, key):
+        """
+            get task properties
+        """
         return self.tasks.get(key)
 
     def update_task(self, key, **task):
+        """
+            update task properties
+        """
         if key in self.tasks:
             self.tasks[key].update(task)
             return True
         return self.registrate(key=key, **task)
 
+    def run_task(self, key):
+        """
+            run task
+        """
+        if key not in self.tasks:
+            return False, 'Has no task "{}"'.format(key)
+        else:
+            return self._do(key, unplanned=True), 'Task must be done'
+
     def delete_task(self, key):
-        if key in self.tasks:
-            self.tasks.pop(key)
+        """
+            delete task
+        """
+        self.tasks.pop(key, None)
 
     def start(self):
         self._run = True

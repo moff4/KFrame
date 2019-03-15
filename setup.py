@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='kframe',
-    version='2.7.3',
+    version='2.7.4',
     author='Komissarov Andrey',
     author_email='kak.to.tam@mail.ru',
     description='Framework for simple web service with it\'s own web-server Neon',
