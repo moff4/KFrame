@@ -2,7 +2,7 @@
 
 import mysql.connector as sql
 
-from ..base.plugin import Plugin
+from kframe.base.plugin import Plugin
 
 
 class SQL(Plugin):

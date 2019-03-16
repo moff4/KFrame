@@ -121,17 +121,22 @@ class PlannerCGI(Plugin):
 
     def get(self, req):
         if req.url.startswith(self.cfg['stat_url']) and self.cfg['only_local_hosts'] and req.is_local():
-            key = req.url.lstrip(self.cfg['stat_url'])
+            key = req.url[len(self.cfg['stat_url']):]
             if key in self.handlers:
                 return self.handlers[key](req)
             else:
                 from kframe.plugins.neon.utils import NOT_FOUND
+                self.Debug('key is "{}"', key)
                 return req.resp.set(
                     code=404,
                     data=NOT_FOUND,
                 ).add_header('Content-Type', 'application/json')
         else:
             from kframe.plugins.neon.utils import NOT_FOUND
+            if not req.url.startswith(self.cfg['stat_url']):
+                self.Debug('url does not starts with "{}"', self.cfg['stat_url'])
+            else:
+                self.Debug('ip({}) is not local', req.ip)
             return req.resp.set(
                 code=404,
                 data=NOT_FOUND,
