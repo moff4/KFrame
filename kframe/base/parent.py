@@ -431,7 +431,7 @@ class Parent:
         }
         return self
 
-    def log(self, st, _type='info', force=False):
+    def log(self, st, _type='info', force=False, plugin_name=None):
         """
             log function
             st - message to save
@@ -455,7 +455,7 @@ class Parent:
         if '--stdout' in self._argv_p:
             print(msg)
         if self._log_store:
-            self.log_store.append(msg)
+            self._log_storage.append(msg)
         if '--no-log' not in self._argv_p:
             self.save_log(message=msg, raw_msg=st, time=_time, level=_type, user_prefix=prefix)
         return self
@@ -473,8 +473,7 @@ class Parent:
         """
         return self._log_store
 
-    @log_store.setter
-    def log_store_setter(self, value):
+    def log_store_set(self, value):
         """
             set log_store flag as bool
         """
@@ -488,7 +487,6 @@ class Parent:
             )
         self._log_store = value
 
-    @property
     def log_storage(self):
         """
             return stored list of str and clean buffer

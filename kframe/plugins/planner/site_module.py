@@ -65,10 +65,11 @@ class PlannerCGI(Plugin):
             return req.resp
         set_after = req.args.get('set_after', '0')
         set_after = int(set_after) if set_after.isdigit() else False
-        self.P.log_store = True
+        self.P.log_store_set(True)
         status, errmsg = self.P.planner.run_task(key=key, set_after=set_after)
-        logs = self.P.log_storage
-        self.P.log_store = False
+        logs = self.P.log_storage()
+        self.P.log_store_set(False)
+        self.Debug('task done; collected {} logs', len(logs))
         req.resp.data = json.dumps({
             'result': status,
             'errmsg': errmsg,

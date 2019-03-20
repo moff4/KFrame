@@ -15,6 +15,13 @@ class Plugin:
             self.FATAL = False
             self.errmsg = 'initialized successfully - {}'.format(self.name)
 
+            self._force_log = self.P.get_param(
+                '--{}--debug'.format(
+                    self.name,
+                ),
+                False,
+            )
+
             argv = self.P.get_params()
             prefix = '--{}-'.format(self.name)
             kwargs.update({
@@ -93,15 +100,11 @@ class Plugin:
         """
             local log function
         """
-        self.parent.log(
-            '%s: %s' % (self.name, st),
+        self.P.log(
+            '{}: {}'.format(self.name, st),
             _type=_type,
-            force=self.P.get_param(
-                '--{}--debug'.format(
-                    self.name,
-                ),
-                False,
-            )
+            force=self._force_log,
+            plugin_name=self.name,
         )
 
     def __call__(self, st='', _type='info'):
@@ -116,7 +119,7 @@ class Plugin:
             return already initialized plugin or module
             or return None
         """
-        return self.parent.get_plugin(key)
+        return self.P.get_plugin(key)
 
     def __contains__(self, key):
         """
