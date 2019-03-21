@@ -41,6 +41,7 @@ class Neon(Plugin):
                 },
                 'single_request_per_socket': True,
                 'enable_stats': True,
+                'answer_ping': False,  # "/ping" -> pong!
             }
             self.cfg = {}
             for i in defaults:
@@ -213,6 +214,11 @@ class Neon(Plugin):
         elif request.headers['host'] not in self.cfg['allowed_hosts'] and 'any' not in self.cfg['allowed_hosts']:
             request.Debug('{ip}: Invalid Header-Host "{}"', request.headers['host'], **request.dict())
             return False
+        elif self.cfg['answer_ping'] and request.url == '/ping':
+            request.init_response('response')
+            request.resp.data = 'pong'
+            request.resp.code = 200
+            request.resp.add_headers(CONTENT_HTML)
         else:
             modules = sorted(
                 list(
