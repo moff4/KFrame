@@ -61,8 +61,6 @@ class Parent:
                 'critical': 'Critical',
             }
 
-            self.log('---------------------------------------------')
-
             self.plugin_t = self.cfg['plugins']
 
             if any(
@@ -339,7 +337,9 @@ class Parent:
         """
             just for easier use
         """
-        self.parse_argv().init_plugins()
+        self.parse_argv()
+        self.log('---------------------------------------------')
+        self.init_plugins()
         return self
 
     def init_plugins(self):
