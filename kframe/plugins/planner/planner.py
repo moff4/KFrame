@@ -33,6 +33,7 @@ class Planner(Plugin):
                 after - int , def None - do not run before this unix timestamp
                 times - int , def None - number of runs
                 max_parallel_copies - int , def None - allowed number of parallel tasks run (None - no restrictions)
+                enable - bool, def True - if False, task will not be run
         }
     """
 
@@ -77,6 +78,11 @@ class Planner(Plugin):
                 key='planner-done-task',
                 type='event',
                 desc='Факты выполнения задач',
+            )
+            self.P.stats.init_stat(
+                key='planner-running-task',
+                type='single',
+                desc='Задачи, которые сейчас выполняются',
             )
 
     @staticmethod
@@ -123,6 +129,7 @@ class Planner(Plugin):
         t = int((_t.tm_hour * 60 + _t.tm_min) * 60 + _t.tm_sec)
         for i in self._tasks:
             if all([
+                self._tasks[i]['enable'],
                 self._tasks[i]['after'] is None or self._tasks[i]['after'] <= time.time(),
                 self._tasks[i]['times'] is None or self._tasks[i]['times'] > 0,
                 calendar(_t, **self._tasks[i]['calendar']),
@@ -254,6 +261,7 @@ class Planner(Plugin):
             'after': None,
             'times': None,
             'max_parallel_copies': None,
+            'enable': True,
         }
         task['key'] = key
         task['target'] = target
