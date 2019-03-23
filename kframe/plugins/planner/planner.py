@@ -46,10 +46,10 @@ class Planner(Plugin):
         self._run = True
         self._m_thead = None
         self._threads = []
-        self._running_tasks = []  # [ .. ,( key, thread), ..]
+        self._running_tasks = []  # [ .. ,( key, thread, start-timestamp), ..]
         self._tasks = {}
         self._last_task = None
-        self._shedule = []
+        self._shedule = []  # [ .., (key , sec left), ..]
         if not all([self.registrate(**task) for task in ([] if tasks is None else tasks)]):
             self.FATAL = True
             self.errmsg = "Some tasks badly configured"
@@ -219,7 +219,7 @@ class Planner(Plugin):
                             raise ValueError('Wrong value for "threading" property: {}', self._tasks[key]['threading'])
                         t = cl(target=self._do, args=[key])
                         t.start()
-                        self._running_tasks.append((key, t))
+                        self._running_tasks.append((key, t, int(time.time())))
                     else:
                         self.Notify('too many running copies of task "{key}"', key=key)
                 else:
@@ -322,6 +322,55 @@ class Planner(Plugin):
             delete task
         """
         self._tasks.pop(key, None)
+
+    def get_running_tasks(self):
+        """
+            return list of dict {
+                key - str - key of task
+                starttime - int - timestamp of start
+            } or empty list if there are no running tasks
+        """
+        return [
+            {
+                'key': i[0],
+                'starttime': i[2],
+            }
+            for i in self._running_tasks
+        ]
+
+    def get_shedule(self):
+        """
+            return list of dict {
+                key - str - key of task
+                delay - int - seconds left before start
+                starttime - int - timestamp of start
+            } or empty list if there are no tasks
+        """
+        t = int(time.time())
+        return [
+            {
+                'key': i[0],
+                'delay': i[1],
+                'starttime': t + i[1],
+            }
+            for i in self._shedule
+        ]
+
+    def get_next_task(self):
+        """
+            return dict {
+                key - str - key of task
+                delay - int - seconds left before start
+                starttime - int - timestamp of start
+            } or None if there are no tasks
+        """
+        if self._shedule:
+            t = int(time.time())
+            return {
+                'key': self._shedule[0][0],
+                'delay': self._shedule[0][1],
+                'starttime': t + self._shedule[0][1],
+            }
 
     def start(self):
         if self.cfg['add_neon_handler']:

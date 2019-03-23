@@ -17,11 +17,22 @@ class PlannerCGI(Plugin):
             'run': self.task_run,
             'update': self.task_update,
             'delete': self.task_delete,
+            'status': self.status,
         }
 
     # =========================================================================
     #                              HANDLERS
     # =========================================================================
+
+    def status(self, req):
+        req.resp.code = 200
+        req.resp.data = json.dumps(
+            {
+                'running_tasks': self.P.planner.get_running_tasks(),
+                'shedule': self.P.planner.get_shedule(),
+                'next_task': self.P.planner.get_next_task(),
+            }
+        )
 
     def show_all(self, req):
         req.resp.code = 200

@@ -11,16 +11,12 @@ class Mchunk(Plugin):
         self._mask = b''
         self._data = b''
 
-    def set(self, data):
-        """
-            set internal data in state 0
-            data must be bytes
-        """
-        if len(data) <= 0:
-            return
-        self._masked = False
-        self._mask = urandom(len(data))
-        self._data = data
+    def __enter__(self, *args, **kwargs):
+        self.unmask()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.mask()
         return self
 
     def mask(self):
@@ -47,9 +43,29 @@ class Mchunk(Plugin):
                 self._data += bytes([data[i] ^ self._mask[i]])
         return self
 
+    def set(self, data):
+        """
+            set internal data in state 0
+            data must be bytes
+        """
+        if len(data) <= 0:
+            return
+        self._masked = False
+        self._mask = urandom(len(data))
+        self._data = data
+        return self
+
     def get(self):
         """
             return data as is
             return bytes
         """
         return self._data
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def set_data(self, value):
+        self.set(value)
