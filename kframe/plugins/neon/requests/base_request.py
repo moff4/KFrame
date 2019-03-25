@@ -20,6 +20,8 @@ class Request(Plugin):
           cache_min           - int - seconds for HTTP header 'Cache-Control: max-age'
     """
 
+    name = 'request'
+
     def init(self, addr, conn, **kwargs):
         defaults = {
             'id': 0,

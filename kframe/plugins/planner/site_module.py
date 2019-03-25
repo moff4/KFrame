@@ -5,6 +5,8 @@ from kframe import Plugin
 
 
 class PlannerCGI(Plugin):
+    name = 'planner_cgi'
+
     def init(self, **kwargs):
         defaults = {
             'only_local_hosts': True,

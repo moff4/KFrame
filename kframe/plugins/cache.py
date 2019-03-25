@@ -16,6 +16,8 @@ class Cache(Plugin):
             autosave - save cached data to <save_file> every <timeout>
     """
 
+    name = 'cache'
+
     def init(self, **kwargs):
         defaults = {
             'auto_clean_in_new_thread': False,

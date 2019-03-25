@@ -12,6 +12,8 @@ from kframe.plugins.logger.queries import (
 
 
 class Logger(Plugin):
+    name = 'logger'
+
     def init(self, **kwargs):
         """
             params:

@@ -4,6 +4,8 @@ from ......base import Plugin
 
 
 class ScriptRunner(Plugin):
+    name = 'ScR'
+
     def init(self, text):
         self.text = text if isinstance(text, str) else text.decode()
         self.scripts_info = [

@@ -7,6 +7,8 @@ PROPS = {'data', 'code', 'http_version'}
 
 
 class Response(Plugin):
+    name = 'response'
+
     def init(self, data=None, headers=None, code=404, http_version='HTTP/1.1', *args, **kwargs):
         self._data = b"" if data is None else data
         self._headers = dict() if headers is None else headers

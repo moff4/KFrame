@@ -37,6 +37,8 @@ class Planner(Plugin):
         }
     """
 
+    name = 'planner'
+
     def init(self, tasks=None, **kwargs):
         defaults = {
             'enable_stats': False,
@@ -56,14 +58,13 @@ class Planner(Plugin):
             self.errmsg = "Some tasks badly configured"
             return
         self.P.fast_init(
-            key='planner_cgi',
             target=PlannerCGI,
             export=False,
             **self.cfg['neon_handler_cfg']
         )
         if self.cfg['enable_stats']:
             if 'stats' not in self:
-                self.P.fast_init(key='stats', target=Stats, export=False)
+                self.P.fast_init(target=Stats, export=False)
             self.P.stats.init_stat(
                 key='planner-next-task',
                 type='single',
@@ -78,11 +79,6 @@ class Planner(Plugin):
                 key='planner-done-task',
                 type='event',
                 desc='Факты выполнения задач',
-            )
-            self.P.stats.init_stat(
-                key='planner-running-task',
-                type='single',
-                desc='Задачи, которые сейчас выполняются',
             )
 
     @staticmethod

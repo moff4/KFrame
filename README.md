@@ -306,7 +306,7 @@ main.py:
 #!/usr/bin/env python3
 from kframe.base.parent import Parent
 from kframe.plugins.neon import Neon
-Parent(name='TestApp').add_plugin(key="neon", target=Neon, kwargs={
+Parent(name='TestApp').add_plugin(target=Neon, kwargs={
 	'site_directory': '.',
 	'use_neon_server': True,
 	'http_port': 8080,

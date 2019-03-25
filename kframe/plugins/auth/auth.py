@@ -16,6 +16,8 @@ class Auth(Plugin):
         This module is to work with sessions, cookies and SQL-storing
     """
 
+    name = 'auth'
+
     def init(self, secret, **kwargs):
         """
             sercret - secret key for crypto

@@ -280,23 +280,27 @@ class Parent:
 #                                USER API
 # ========================================================================
 
-    def fast_init(self, key, target, export=True, *args, **kwargs):
+    def fast_init(self, target, export=True, *args, **kwargs):
         """
             add, init and export plugin
             same as P.add_plugin().init_plugin()
         """
+        if 'key' in kwargs:
+            key = kwargs.pop('key')
+        else:
+            key = target.name
         if key not in self.plugin_t:
             self.add_plugin(key=key, target=target, autostart=False)
         return self.init_plugin(key=key, export=export, *args, **kwargs)
 
-    def add_plugin(self, key, target, **kw):
+    def add_plugin(self, target, **kw):
         """
             Add new plugin/module
             kwargs:
             -- must be --
-              key (str) - how u wanna call it
               target (class/module) - smth that'll be kept here and maybe called (if that's plugin)
             -- optional --
+              key (str) - how u wanna call it (default: target.name)
               autostart (bool) - initialize plugin when call Parent.init() (default: True)
               module (bool) - True if target is module ; otherwise target is plugin (default: False)
               dependes (list of str) - list of other plugins/modules that must be initialized before this one
@@ -305,7 +309,10 @@ class Parent:
               args (tuple) - tuple of arg that will be passed to init() as *args (plugins only)
               kwargs (dict) - dict of arg that will be passed to init() as **kwargs (plugins only)
         """
-        self.plugin_t[key] = {
+        from kframe.base.plugin import Plugin
+        if Plugin not in target.__mro__:
+            raise ValueError('target ({}) bust be isinstance of kframe.Plugin'.format(str(target)))
+        self.plugin_t[kw.get('key', target.name)] = {
             'target': target,
             'autostart': kw['autostart'] if 'autostart' in kw else True,
             'module': kw['module'] if 'module' in kw else False,
@@ -313,12 +320,15 @@ class Parent:
             'kwargs': kw['kwargs'] if 'kwargs' in kw else {},
             'dependes': kw['dependes'] if 'dependes' in kw else [],
         }
+        self.log('add {} as {}'.format(str(target), kw.get('key', target.name)), _type='debug')
         return self
 
-    def add_module(self, key, target):
+    def add_module(self, target, key=None):
         """
             Add new module
         """
+        if key is None:
+            key = target.name
         self.plugin_t[key] = {
             'target': target,
             'module': True,

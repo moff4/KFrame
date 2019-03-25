@@ -4,10 +4,15 @@ from traceback import format_exc
 
 
 class Plugin:
+    """
+        Base class for all plugins
+    """
+
+    name = 'raw_plugin'
+
     def __init__(self, parent, plugin_name, args, kwargs):
         try:
-            self.parent = parent
-            self.P = self.parent
+            self.P = parent
             self.name = plugin_name
 
             self._params = {}
@@ -127,7 +132,7 @@ class Plugin:
             return True if plugin or module exists
             or False if not
         """
-        return key in self.parent
+        return key in self.P
 
     def get_param(self, key, default=None):
         """
@@ -135,7 +140,7 @@ class Plugin:
             return True as bool if that's was flag
             else return None if nothing was passed
         """
-        return self.parent.get_param(key=key, default=default)
+        return self.P.get_param(key=key, default=default)
 
     def start(self):
         """

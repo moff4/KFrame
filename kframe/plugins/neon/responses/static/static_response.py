@@ -12,6 +12,8 @@ TEXT = 'text'
 
 class StaticResponse(Response):
 
+    name = 'static_response'
+
     def init(self, *args, **kwargs):
         super().init(*args, **kwargs)
         self.content_mod = None

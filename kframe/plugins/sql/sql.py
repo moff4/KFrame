@@ -12,6 +12,8 @@ class SQL(Plugin):
             DDL - dict : tablename(str) => DDL script for creating(str)
     """
 
+    name = 'sql'
+
     def init(self, host, port, user, passwd, **kwargs):
         try:
             self.cfg = {

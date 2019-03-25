@@ -5,6 +5,8 @@ from kframe import Plugin
 
 
 class StatsCGI(Plugin):
+    name = 'stats_cgi'
+
     def init(self, **kwargs):
         defaults = {
             'only_local_hosts': True,

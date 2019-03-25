@@ -7,6 +7,8 @@ from ...utils import CONTENT_JSON
 
 
 class RestResponse(Response):
+    name = 'rest_response'
+
     def set_data(self, data):
         self._data = data
 

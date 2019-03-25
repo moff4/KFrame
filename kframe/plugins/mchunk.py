@@ -6,6 +6,8 @@ from ..base.plugin import Plugin
 
 
 class Mchunk(Plugin):
+    name = 'mchunk'
+
     def init(self):
         self._masked = False
         self._mask = b''

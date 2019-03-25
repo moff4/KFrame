@@ -18,6 +18,8 @@ from kframe.plugins.neon.parser import pop_zeros
 
 
 class Neon(Plugin):
+    name = 'neon'
+
     def init(self, **kwargs):
         try:
             defaults = {
@@ -94,10 +96,10 @@ class Neon(Plugin):
             else:
                 self.context = None
 
-            self.P.add_plugin(key='request', target=Request, autostart=False, module=False)
-            self.P.add_plugin(key='response', target=Response, autostart=False, module=False)
-            self.P.add_plugin(key='rest_response', target=RestResponse, autostart=False, module=False)
-            self.P.add_plugin(key='static_response', target=StaticResponse, autostart=False, module=False)
+            self.P.add_plugin(target=Request, autostart=False, module=False)
+            self.P.add_plugin(target=Response, autostart=False, module=False)
+            self.P.add_plugin(target=RestResponse, autostart=False, module=False)
+            self.P.add_plugin(target=StaticResponse, autostart=False, module=False)
 
             if self.cfg['enable_stats']:
                 if 'stats' not in self:

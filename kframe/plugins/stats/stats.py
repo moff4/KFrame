@@ -22,6 +22,8 @@ STAT_TYPES = {
 
 
 class Stats(Plugin):
+    name = 'stats'
+
     def init(self, **kwargs):
         defaults = {
             'add_neon_handler': False,
@@ -30,7 +32,6 @@ class Stats(Plugin):
         self.cfg = {k: kwargs[k] if k in kwargs else defaults[k] for k in defaults}
         self._stats = {}
         self.P.fast_init(
-            key='stats_cgi',
             target=StatsCGI,
             export=False,
             **self.cfg['neon_handler_cfg']
