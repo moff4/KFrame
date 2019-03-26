@@ -52,7 +52,9 @@ class Neon(Plugin):
                     self.cfg[i].update(kwargs.get(i, {}))
                 else:
                     self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
+
             self.cgi_modules = []
+            self.middleware = []
 
             self._run = True
             self._th = None
@@ -265,6 +267,8 @@ class Neon(Plugin):
                         req.resp.data = NOT_FOUND
                         res = req.resp
                     else:
+                        for middleware in self.middleware:
+                            middleware(request, handler)
                         res = handler(request)
                 except ResponseError as e:
                     res = self.P.init_plugin(
@@ -486,7 +490,7 @@ class Neon(Plugin):
 
     def add_site_module(self, module, path: str=None, response_type: str=None):
         """
-            add new cgi_modules
+            add new site_module
             response_type - type of response object; default 'base'
                 possible values for response_type: 'base' / 'rest' / 'static'
             path - str - default '/'; path that assosiates with this module
@@ -515,6 +519,21 @@ class Neon(Plugin):
             'path': '/' if path is None else path,
             'type': 'base' if response_type is None else response_type,
         })
+
+    def add_middleware(self, target):
+        """
+            Middleware will be called before calling site_module
+            There will be passed 2 arguments:
+                req - request object
+                module - site_module, that will be called after middleware
+            If site_module was not found or does not support method? the middlewaver will not be called
+            all return values will be ignored
+            If you registrate severals middlewares? they will be called order
+        """
+        if callable(target):
+            self.middleware.append(target)
+        else:
+            raise ValueError('middleware "{}" must be callable'.format(str(target)))
 
     def start(self):
         """

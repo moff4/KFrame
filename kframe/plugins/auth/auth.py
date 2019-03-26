@@ -3,12 +3,12 @@
 import time
 import binascii
 
-from ...base.plugin import Plugin
-from ...modules import jscheme
-from ...modules import crypto
-from ...modules import art
-from ..mchunk import Mchunk
-from ..stats import Stats
+from kframe.base.plugin import Plugin
+from kframe.modules import jscheme
+from kframe.modules import crypto
+from kframe.modules import art
+from kframe.plugins.mchunk import Mchunk
+from kframe.plugins.stats import Stats
 
 
 class Auth(Plugin):
@@ -21,6 +21,9 @@ class Auth(Plugin):
     def init(self, secret, **kwargs):
         """
             sercret - secret key for crypto
+            kwargs:
+                masks - tuple(bytes, bytes) - extra sercrets (default: (None, None))
+                enable_stats - bool - enable stat agregation (default: False)
         """
         defaults = {
             'masks': (None, None),
@@ -70,7 +73,7 @@ class Auth(Plugin):
             )
 
             with self.secret:
-                c = crypto.Cipher(key=self.secret.get())
+                c = crypto.Cipher(key=self.secret.data)
 
             data = art.unmarshal(
                 data=c.decrypt(
@@ -106,31 +109,30 @@ class Auth(Plugin):
         """
         data = {
             'create': int(time.time()),
+            'uid': user_id,
         }
-        kwargs = dict(kwargs)
         kwargs['user_id'] = user_id
         params = {
-            'user_id': 'uid',
             'expires': 'exp',
             'ip': 'ip'
         }
-        for i in filter(
-            lambda x: x in kwargs,
-            params.keys()
-        ):
-            data[params[i]] = kwargs[i]
+        data.update({params[i]: kwargs[i] for i in params if i in kwargs})
         data = art.marshal(data, mask=self.cfg['mask'][2], random=True)
 
         with self.secret:
-            c = crypto.Cipher(key=self.secret.get())
+            c = crypto.Cipher(key=self.secret.data)
 
         iv = crypto.gen_iv()
         data = c.encrypt(data=data, iv=iv)
 
-        res = art.marshal({
-            'd': data,
-            'i': iv
-        }, mask=self.cfg['mask'][1], random=True)
+        res = art.marshal(
+            {
+                'd': data,
+                'i': iv
+            },
+            mask=self.cfg['mask'][1],
+            random=True
+        )
         res = binascii.hexlify(res).decode()
         if self.cfg['enable_stats']:
             self.P.stats.add(
