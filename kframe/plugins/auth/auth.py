@@ -22,14 +22,20 @@ class Auth(Plugin):
         """
             sercret - secret key for crypto
         """
+        defaults = {
+            'masks': (None, None),
+            'enable_stats': False,
+        }
+        self.cfg = {k: kwargs.get(k, defaults[k]) for k in defaults}
+
         self.secret = self.P.fast_init(target=Mchunk).set(secret).mask()
-        if 'stats' not in self:
-            self.P.fast_init(key='stats', target=Stats, export=False)
+        if self.cfg['enable_stats']:
+            if 'stats' not in self:
+                self.P.fast_init(target=Stats, export=False)
 
-        self.mask_1 = kwargs['mask_1'] if 'mask_1' in kwargs else None
-        self.mask_2 = kwargs['mask_2'] if 'mask_2' in kwargs else None
-
-        self.P.stats.init_stat(key="cookie-created", type="inc", desc="Выдано Куки-файлов")
+            self.P.stats.init_stat(key='auth-created', type='event', desc='Выданные куки')
+            self.P.stats.init_stat(key='auth-verify', type='event', desc='Успешно проверенные куки')
+            self.P.stats.init_stat(key='auth-unverify', type='event', desc='Неуспешно проверенные куки')
 
         self.cookie_scheme = {
             'type': dict,
@@ -60,7 +66,7 @@ class Auth(Plugin):
         try:
             data = art.unmarshal(
                 data=cookie,
-                mask=self.mask_1
+                mask=self.cfg['mask'][1]
             )
 
             with self.secret:
@@ -71,7 +77,7 @@ class Auth(Plugin):
                     data=data['d'],
                     iv=data['i']
                 ),
-                mask=self.mask_2
+                mask=self.cfg['mask'][2]
             )
 
             return jscheme.apply(
@@ -88,7 +94,7 @@ class Auth(Plugin):
 #                               USER API
 # ==========================================================================
 
-    def generate_cookie(self, user_id, **kwargs) -> bytes:
+    def generate_cookie(self, user_id, **kwargs):
         """
             generate cookie
             must:
@@ -113,7 +119,7 @@ class Auth(Plugin):
             params.keys()
         ):
             data[params[i]] = kwargs[i]
-        data = art.marshal(data, mask=self.mask_2, random=True)
+        data = art.marshal(data, mask=self.cfg['mask'][2], random=True)
 
         with self.secret:
             c = crypto.Cipher(key=self.secret.get())
@@ -122,11 +128,15 @@ class Auth(Plugin):
         data = c.encrypt(data=data, iv=iv)
 
         res = art.marshal({
-            "d": data,
-            "i": iv
-        }, mask=self.mask_1, random=True)
+            'd': data,
+            'i': iv
+        }, mask=self.cfg['mask'][1], random=True)
         res = binascii.hexlify(res).decode()
-        self.P.stats.add('cookie-created')
+        if self.cfg['enable_stats']:
+            self.P.stats.add(
+                key='auth-created',
+                val=user_id,
+            )
         return res
 
     def valid_cookie(self, cookie, ip=None):
@@ -141,6 +151,14 @@ class Auth(Plugin):
             cookie['exp'] is not None and (cookie['create'] + cookie['exp']) < time.time(),
             ip is not None and cookie['ip'] != ip
         ]):
+            self.P.stats.add(
+                key='auth-unverify',
+                val='unknown' if cookie is None else cookie['uid'],
+            )
             return None
         else:
+            self.P.stats.add(
+                key='auth-verify',
+                val=cookie['uid'],
+            )
             return cookie['uid']

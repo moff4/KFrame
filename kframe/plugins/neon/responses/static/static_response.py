@@ -131,6 +131,10 @@ class StaticResponse(Response):
             self.code = 404
             return False
 
+    def rederict(self, url, permanent=False):
+        self.code = 307 + permanent
+        self.add_header('Location', url)
+
     def _extra_prepare_data(self):
         self.run_scripts()
         return self._data
