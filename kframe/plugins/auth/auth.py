@@ -22,13 +22,7 @@ class Auth(Plugin):
         """
             sercret - secret key for crypto
         """
-        mch = self.P.fast_init(
-            key='mchunk',
-            target=Mchunk
-        ) if 'mchunk' not in self else self.P.init_plugin(
-            key='mchunk'
-        )
-        self.secret = mch.set(secret).mask()
+        self.secret = self.P.fast_init(target=Mchunk).set(secret).mask()
         if 'stats' not in self:
             self.P.fast_init(key='stats', target=Stats, export=False)
 
@@ -69,9 +63,8 @@ class Auth(Plugin):
                 mask=self.mask_1
             )
 
-            self.secret.unmask()
-            c = crypto.Cipher(key=self.secret.get())
-            self.secret.mask()
+            with self.secret:
+                c = crypto.Cipher(key=self.secret.get())
 
             data = art.unmarshal(
                 data=c.decrypt(
@@ -122,9 +115,8 @@ class Auth(Plugin):
             data[params[i]] = kwargs[i]
         data = art.marshal(data, mask=self.mask_2, random=True)
 
-        self.secret.unmask()
-        c = crypto.Cipher(key=self.secret.get())
-        self.secret.mask()
+        with self.secret:
+            c = crypto.Cipher(key=self.secret.get())
 
         iv = crypto.gen_iv()
         data = c.encrypt(data=data, iv=iv)
