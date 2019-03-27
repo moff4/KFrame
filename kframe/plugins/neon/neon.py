@@ -267,9 +267,15 @@ class Neon(Plugin):
                         req.resp.data = NOT_FOUND
                         res = req.resp
                     else:
-                        for middleware in self.middleware:
+                        for middleware, postware in self.middleware:
                             middleware(request, handler)
+                            if postware:
+                                request.postware.append(postware)
                         res = handler(request)
+                        if res is None:
+                            res = request.resp
+                        for postware in reversed(request.postware):
+                            postware(request, res, handler)
                 except ResponseError as e:
                     res = self.P.init_plugin(
                         key='response',
@@ -286,8 +292,6 @@ class Neon(Plugin):
                         headers=CONTENT_HTML,
                         data=SMTH_HAPPENED,
                     )
-        if res is None:
-            res = request.resp
         request.send(res)
         request.Notify('[{ip}] {code} : {method} {url} {args}', code=res.code, **request.dict())
         if self.cfg['enable_stats']:
@@ -520,7 +524,7 @@ class Neon(Plugin):
             'type': 'base' if response_type is None else response_type,
         })
 
-    def add_middleware(self, target):
+    def add_middleware(self, target=None, post=None):
         """
             Middleware will be called before calling site_module
             There will be passed 2 arguments:
@@ -528,12 +532,18 @@ class Neon(Plugin):
                 module - site_module, that will be called after middleware
             If site_module was not found or does not support method? the middlewaver will not be called
             all return values will be ignored
-            If you registrate severals middlewares? they will be called order
+            If you registrate severals middlewares, they will be called order
+
+            post is same as middleware but will be called
         """
-        if callable(target):
-            self.middleware.append(target)
-        else:
+        if not target and not post:
+            raise ValueError('Expected "target" or "post"')
+        if target and not callable(target):
             raise ValueError('middleware "{}" must be callable'.format(str(target)))
+        elif psot and not callable(post):
+            raise ValueError('middleware "{}" must be callable'.format(str(post)))
+        else:
+            self.middleware.append((target, post))
 
     def start(self):
         """

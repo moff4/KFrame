@@ -31,6 +31,9 @@ class Request(Plugin):
             'max_header_count': MAX_HEADER_COUNT,
             'max_data_length': MAX_DATA_LEN,
         }
+
+        self.postware = []
+
         self.cfg = {}
         for i in defaults:
             self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
