@@ -126,5 +126,6 @@ class Response(Plugin):
                     ]
                 ),
                 '\r\n',
+                '\r\n',
             ]
         ).encode() + data
