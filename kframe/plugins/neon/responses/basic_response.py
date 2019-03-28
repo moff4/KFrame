@@ -14,6 +14,9 @@ class Response(Plugin):
         self._headers = dict() if headers is None else headers
         self._code = code
         self._http_version = http_version
+        # key = cookie-name ; value - Set-cookie Http-header values
+        # example: {'uid': 'uid=123; Max-Age=3600; HttpOnly'}
+        self._cookies = {}
 
     def _extra_prepare_data(self) -> str:
         return self.data
@@ -78,6 +81,16 @@ class Response(Plugin):
         self._http_version = http_version
         return self
 
+    def add_cookie(self, key, value, *cookie_properties_s, **cookie_properties_kw):
+        self._cookies[key] = '; '.join(
+            [
+                '{}={}'.format(key, quote(value))
+            ] + cookie_properties_s + [
+                '{}={}'.format(k, quote(cookie_properties_kw[k]))
+                for k in cookie_properties_kw
+            ]
+        )
+
     def export(self) -> str:
         def union(d1, d2):
             d1.update(d2)
@@ -100,14 +113,17 @@ class Response(Plugin):
                     code=204 if len(data) <= 0 and self.code in {200, 201} else self.code,
                     code_msg=http_code_msg[self.code]
                 ),
-                ''.join(
+                '\r\n'.join(
                     [
-                        ''.join([i, ': ', str(headers[i]), '\r\n'])
+                        ''.join([i, ': ', str(headers[i])])
                         for i in filter(
-                            lambda x: x is not None and len(x) > 0,
+                            lambda x: x,
                             headers,
                         )
-                    ],
+                    ] + [
+                        'Set-Cookie: {}'.format(k)
+                        for k in self._cookies
+                    ]
                 ),
                 '\r\n',
             ]
