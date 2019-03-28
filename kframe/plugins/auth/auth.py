@@ -137,7 +137,7 @@ class Auth(Plugin):
         if self.cfg['enable_stats']:
             self.P.stats.add(
                 key='auth-created',
-                val=user_id,
+                value=user_id,
             )
         return res
 
@@ -148,19 +148,21 @@ class Auth(Plugin):
         """
         cookie = binascii.unhexlify(cookie)
         cookie = self.decode_cookie(cookie)
-        if any([
-            cookie is None,
-            cookie['exp'] is not None and (cookie['create'] + cookie['exp']) < time.time(),
+        if (
+            cookie is None
+        ) or (
+            cookie['exp'] is not None and (cookie['create'] + cookie['exp']) < time.time()
+        ) or (
             ip is not None and cookie['ip'] != ip
-        ]):
+        ):
             self.P.stats.add(
                 key='auth-unverify',
-                val='unknown' if cookie is None else cookie['uid'],
+                value='unknown' if cookie is None else cookie['uid'],
             )
             return None
         else:
             self.P.stats.add(
                 key='auth-verify',
-                val=cookie['uid'],
+                value=cookie['uid'],
             )
             return cookie['uid']
