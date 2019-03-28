@@ -141,7 +141,7 @@ class Auth(Plugin):
             )
         return res
 
-    def valid_cookie(self, cookie, ip=None):
+    def valid_cookie(self, cookie, ip=None, raw=False):
         """
             return user_id if cookie is valid
             or None if cookie is not valid
@@ -165,4 +165,4 @@ class Auth(Plugin):
                 key='auth-verify',
                 value=cookie['uid'],
             )
-            return cookie['uid']
+            return cookie['uid'] if raw else cookie
