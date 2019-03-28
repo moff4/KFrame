@@ -283,6 +283,18 @@ class Neon(Plugin):
                         headers=e.headers,
                         data=e.message,
                     )
+                    try:
+                        for ck in e.cookies:
+                            res.add_cookie(*ck.get('s', []), **ck.get('kw', {}))
+                    except Exception as e:
+                        request.Error('cookie marshal: {ex}'.format(ex=e))
+                        request.Trace('cookie marshal:')
+                        res = self.P.init_plugin(
+                            key='response',
+                            code=500,
+                            headers=CONTENT_HTML,
+                            data=SMTH_HAPPENED,
+                        )
                 except Exception as e:
                     request.Error('cgi handler: {ex}'.format(ex=e))
                     request.Trace('cgi handler:')

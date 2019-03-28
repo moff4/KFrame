@@ -69,7 +69,7 @@ class Auth(Plugin):
         try:
             data = art.unmarshal(
                 data=cookie,
-                mask=self.cfg['mask'][1]
+                mask=self.cfg['masks'][0]
             )
 
             with self.secret:
@@ -80,7 +80,7 @@ class Auth(Plugin):
                     data=data['d'],
                     iv=data['i']
                 ),
-                mask=self.cfg['mask'][2]
+                mask=self.cfg['masks'][1]
             )
 
             return jscheme.apply(
@@ -117,7 +117,7 @@ class Auth(Plugin):
             'ip': 'ip'
         }
         data.update({params[i]: kwargs[i] for i in params if i in kwargs})
-        data = art.marshal(data, mask=self.cfg['mask'][2], random=True)
+        data = art.marshal(data, mask=self.cfg['masks'][1], random=True)
 
         with self.secret:
             c = crypto.Cipher(key=self.secret.data)
@@ -130,7 +130,7 @@ class Auth(Plugin):
                 'd': data,
                 'i': iv
             },
-            mask=self.cfg['mask'][1],
+            mask=self.cfg['masks'][0],
             random=True
         )
         res = binascii.hexlify(res).decode()

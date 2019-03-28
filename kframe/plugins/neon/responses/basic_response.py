@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-from ....base.plugin import Plugin
-from ..utils import *
+from kframe.base.plugin import Plugin
+from kframe.plugins.neon.utils import *
+
+from urllib.parse import quote
 
 PROPS = {'data', 'code', 'http_version'}
 
@@ -14,9 +16,7 @@ class Response(Plugin):
         self._headers = dict() if headers is None else headers
         self._code = code
         self._http_version = http_version
-        # key = cookie-name ; value - Set-cookie Http-header values
-        # example: {'uid': 'uid=123; Max-Age=3600; HttpOnly'}
-        self._cookies = {}
+        self._cookies = []
 
     def _extra_prepare_data(self) -> str:
         return self.data
@@ -81,14 +81,19 @@ class Response(Plugin):
         self._http_version = http_version
         return self
 
-    def add_cookie(self, key, value, *cookie_properties_s, **cookie_properties_kw):
-        self._cookies[key] = '; '.join(
-            [
-                '{}={}'.format(key, quote(value))
-            ] + cookie_properties_s + [
-                '{}={}'.format(k, quote(cookie_properties_kw[k]))
-                for k in cookie_properties_kw
-            ]
+    def add_cookie(self, *cookie_properties_s, **cookie_properties_kw):
+        """
+            cookie_properties_s - boolean pproperties like HttpOnly and Secure
+            cookie_properties_kw - kev-value properties like Max-Age and Domain
+                also may contain smth like 'session_id': 1234567
+        """
+        self._cookies.append(
+            '; '.join(
+                [
+                    '{}={}'.format(k, quote(str(cookie_properties_kw[k])))
+                    for k in cookie_properties_kw
+                ] + list(cookie_properties_s)
+            )
         )
 
     def export(self) -> str:
