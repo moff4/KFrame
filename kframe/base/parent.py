@@ -320,7 +320,6 @@ class Parent:
             'kwargs': kw['kwargs'] if 'kwargs' in kw else {},
             'dependes': kw['dependes'] if 'dependes' in kw else [],
         }
-        self.log('add {} as {}'.format(str(target), kw.get('key', target.name)), _type='debug')
         return self
 
     def add_module(self, target, key=None):

@@ -43,10 +43,11 @@ class Plugin:
                 self.init(*args, **kwargs)
             except Exception as e:
                 self.Trace('__init__ - init : ', _type='error')
+                raise
 
         except Exception as e:
             self.FATAL = True
-            self.errmsg = "%s: %s" % (self.name, e)
+            self.errmsg = '%s: %s' % (self.name, e)
 
     def get_argv_rules(self):
         """

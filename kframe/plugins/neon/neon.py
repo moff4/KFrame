@@ -540,7 +540,7 @@ class Neon(Plugin):
             raise ValueError('Expected "target" or "post"')
         if target and not callable(target):
             raise ValueError('middleware "{}" must be callable'.format(str(target)))
-        elif psot and not callable(post):
+        elif post and not callable(post):
             raise ValueError('middleware "{}" must be callable'.format(str(post)))
         else:
             self.middleware.append((target, post))
