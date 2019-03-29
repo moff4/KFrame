@@ -102,20 +102,14 @@ class SQL(Plugin):
             create all tables according to there DDL (dict or list of CREATE TABLE scripts)
             return tuple ( True in case of success or False , None or Exception)
         """
+        boo = True
         try:
             if ddl is None:
                 ddl = self.cfg.get('ddl', None)
             if ddl is not None:
                 for i in ddl.values() if isinstance(ddl, dict) else ddl:
-                    self.Debug(
-                        "{name} execute create table script: {result}".format(
-                            name=i,
-                            result=self.execute(
-                                i,
-                                commit=True
-                            )[0]
-                        )
-                    )
+                    boo &= self.execute(i, commit=True)[0]
+                self.Debug('All tables created: {}', boo)
             return True, None
         except Exception as e:
             self.Error("create-table: {}".format(e))
