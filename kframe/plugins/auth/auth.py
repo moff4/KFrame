@@ -61,7 +61,7 @@ class Auth(Plugin):
             }
         }
 
-    def decode_cookie(self, cookie):
+    def decode_cookie(self, cookie, mask=None):
         """
             return decoded cookie as dict
             or None in case of error
@@ -74,13 +74,21 @@ class Auth(Plugin):
 
             with self.secret:
                 c = crypto.Cipher(key=self.secret.data)
-
+            if mask and self.cfg['masks'][1]:
+                mask = bytes(
+                    [
+                        mask[i] ^ self.cfg['masks'][1][i % len(self.cfg['masks'][1])]
+                        for i in range(len(mask))
+                    ]
+                )
+            elif self.cfg['masks'][1]:
+                mask = self.cfg['masks'][1]
             data = art.unmarshal(
                 data=c.decrypt(
                     data=data['d'],
                     iv=data['i']
                 ),
-                mask=self.cfg['masks'][1]
+                mask=mask,
             )
 
             return jscheme.apply(
@@ -116,8 +124,21 @@ class Auth(Plugin):
             'expires': 'exp',
             'ip': 'ip'
         }
+        if 'mask' in kwargs and self.cfg['masks'][1]:
+            mask = bytes(
+                [
+                    kwargs['mask'][i] ^ self.cfg['masks'][1][i % len(self.cfg['masks'][1])]
+                    for i in range(len(kwargs['mask']))
+                ]
+            )
+        elif 'mask' in kwargs:
+            mask = kwargs['mask']
+        elif self.cfg['masks'][1]:
+            mask = self.cfg['masks'][1]
+        else:
+            mask = None
         data.update({params[i]: kwargs[i] for i in params if i in kwargs})
-        data = art.marshal(data, mask=self.cfg['masks'][1], random=True)
+        data = art.marshal(data, mask=mask, random=True)
 
         with self.secret:
             c = crypto.Cipher(key=self.secret.data)
@@ -141,13 +162,13 @@ class Auth(Plugin):
             )
         return res
 
-    def valid_cookie(self, cookie, ip=None):
+    def valid_cookie(self, cookie, ip=None, mask=None):
         """
             return user_id if cookie is valid
             or None if cookie is not valid
         """
         cookie = binascii.unhexlify(cookie)
-        cookie = self.decode_cookie(cookie)
+        cookie = self.decode_cookie(cookie, mask)
         if any([
             cookie is None,
             cookie['exp'] is not None and (cookie['create'] + cookie['exp']) < time.time(),
