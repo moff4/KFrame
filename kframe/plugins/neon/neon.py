@@ -285,7 +285,7 @@ class Neon(Plugin):
                     )
                     try:
                         for ck in e.cookies:
-                            res.add_cookie(*ck.get('s', []), **ck.get('kw', {}))
+                            res.add_cookie(*ck.get('s', []), **ck.get('kw', {}), cookie_name=ck['cookie_name'])
                     except Exception as e:
                         request.Error('cookie marshal: {ex}'.format(ex=e))
                         request.Trace('cookie marshal:')

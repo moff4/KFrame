@@ -89,10 +89,35 @@ class Response(Plugin):
         """
         self._cookies.append(
             '; '.join(
-                [
-                    '{}={}'.format(k, quote(str(cookie_properties_kw[k])))
-                    for k in cookie_properties_kw
-                ] + list(cookie_properties_s)
+                (
+                    [
+                        '{}={}'.format(
+                            cookie_properties_kw['cookie_name'],
+                            quote(
+                                str(
+                                    cookie_properties_kw[cookie_properties_kw['cookie_name']]
+                                )
+                            )
+                        )
+                    ]
+                    if 'cookie_name' in cookie_properties_kw else
+                    ['']
+                ) + [
+                    '{}={}'.format(
+                        key,
+                        quote(
+                            str(
+                                cookie_properties_kw[key]
+                            )
+                        )
+                    )
+                    for key in {
+                        k for k in cookie_properties_kw.keys()
+                        if k != 'cookie_name'
+                    }
+                ] + list(
+                    cookie_properties_s
+                )
             )
         )
 
