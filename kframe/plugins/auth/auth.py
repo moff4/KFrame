@@ -113,7 +113,7 @@ class Auth(Plugin):
             optional:
               expires     - int - num of seconds this cookie is valid
               ip          - str - ip addr of client
-            return bytes() as value of cookie
+            return str() as value of cookie
         """
         data = {
             'create': int(time.time()),
