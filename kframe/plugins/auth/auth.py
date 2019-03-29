@@ -186,4 +186,4 @@ class Auth(Plugin):
                 key='auth-verify',
                 value=cookie['uid'],
             )
-            return cookie['uid'] if raw else cookie
+            return cookie if raw else cookie['uid']
