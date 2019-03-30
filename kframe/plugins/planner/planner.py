@@ -259,8 +259,12 @@ class Planner(Plugin):
             'max_parallel_copies': None,
             'enable': True,
         }
-        task['key'] = key
-        task['target'] = target
+        task.update({
+            'key': key,
+            'target': target,
+            'created': int(time.time()),
+            'updated': int(time.time()),
+        })
         self._tasks[key] = {
             key: task[key] if key in task else defaults[key]
             for key in (
@@ -298,6 +302,7 @@ class Planner(Plugin):
         """
             update task properties
         """
+        task.update(updated=int(time.time()))
         if key in self._tasks:
             self._tasks[key].update(task)
             return True
