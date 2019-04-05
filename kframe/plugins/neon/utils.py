@@ -28,6 +28,7 @@ http_code_msg = {
     405: 'Method Not Allowed',
     409: 'Conflict',
     411: 'Length Required',
+    418: 'I’m a teapot',
     424: 'Failed Dependency',
     429: 'Too Many Requests',
     500: 'Internal Server Error',
