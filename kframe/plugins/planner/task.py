@@ -53,6 +53,46 @@ class Task:
             bz.append(tuple(az))
         cfg['shedule'] = bz
 
+    def _calendar(self, tm):
+            def in_cal(t, cal):
+                return t.tm_mon in cal and t.tm_mday in cal[t.tm_mon]
+            if (
+                self.cfg['calendar'].get('allowed', None) is None
+            ) and (
+                self.cfg['calendar'].get('disallowed', None) is None
+            ):
+                return True
+            elif (
+                self.cfg['calendar'].get('allowed', None) is None
+            ) or (
+                self.cfg['calendar'].get('disallowed', None) is None
+            ):
+                if (
+                    self.cfg['calendar'].get('disallowed', None) is not None
+                ) and (
+                    in_cal(tm, self.cfg['calendar']['disallowed'])
+                ):
+                    return False
+                elif (
+                    self.cfg['calendar'].get('allowed', None) is not None
+                ) and (
+                    in_cal(tm, self.cfg['calendar']['allowed'])
+                ):
+                    return True
+            else:
+                raise ValueError('expected only "allowed" or "disallowed" in calendar property, not both of them')
+
+    def _shedule(self, t):
+        return any(
+            map(
+                lambda x: x[0] <= t <= x[1],
+                self.cfg['shedule'],
+            )
+        )
+
+    def _weekdays(self, tm):
+        return tm.tm_wday in self.cfg['weekdays']
+
     def __getitem__(self, key):
         return self.cfg[key]
 
@@ -75,6 +115,28 @@ class Task:
             cfg = kwargs
         self._convert_shedule(cfg)
         self.cfg.update(kwargs)
+
+    def ready_for_run(self, t, tm):
+        """
+            t - time in seconds as int (0 .. 86400)
+            tm - time_structure from time (like result of time.localtime())
+        """
+        return all([
+            self.cfg['enable'],
+            self.cfg['after'] is None or self.cfg['after'] <= time.time(),
+            self.cfg['times'] is None or self.cfg['times'] > 0,
+            self._calendar(tm),
+            self._shedule(t),
+            self._weekdays(tm),
+        ])
+
+    def seconds_left(self, t):
+        """
+            t - current time in seconds as int (0 .. 86400)
+            return number of seconds left before timeout (excludign filters such as shedule)
+        """
+        _t = (self.cfg['hours'] * 60 + self.cfg['min']) * 60 + self.cfg['sec']
+        return _t - ((t - self.cfg['offset']) % (_t))
 
     def to_dict(self):
         """

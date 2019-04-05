@@ -121,27 +121,12 @@ class Planner(Plugin):
         def weekdays(t, days):
             return t.tm_wday in days
 
-        tasks = []
         _t = time.localtime()
         t = int((_t.tm_hour * 60 + _t.tm_min) * 60 + _t.tm_sec)
-        for i in self._tasks:
-            if all([
-                self._tasks[i]['enable'],
-                self._tasks[i]['after'] is None or self._tasks[i]['after'] <= time.time(),
-                self._tasks[i]['times'] is None or self._tasks[i]['times'] > 0,
-                calendar(_t, **self._tasks[i]['calendar']),
-                shedule(t, self._tasks[i]['shedule']),
-                weekdays(_t, self._tasks[i]['weekdays']),
-            ]):
-                tasks.append((i, self._tasks[i]))
-        if len(tasks) <= 0:
+        az = [(i, self._tasks[i].seconds_left(t)) for i in self._tasks if self._tasks[i].ready_for_run(t=t, tm=_t)]
+        if len(az) <= 0:
             return None, 10.0
 
-        az = []  # key , sec left
-        for key, task in tasks:
-            _t = (task['hours'] * 60 + task['min']) * 60 + task['sec']
-            _t = _t - ((t - task['offset']) % (_t))
-            az.append((key, _t))
         self._shedule = sorted(az, key=lambda x: x[1])
         if self.P.get_param('--debug-planner', False):
             for key, delay in self._shedule:
