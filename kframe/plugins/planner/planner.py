@@ -97,34 +97,11 @@ class Planner(Plugin):
         """
             return ( key , delay as int )
         """
-        def calendar(t, allowed=None, disallowed=None):
-            def in_cal(t, cal):
-                return t.tm_mon in cal and t.tm_mday in cal[t.tm_mon]
-            if allowed is None and disallowed is None:
-                return True
-            elif allowed is None or disallowed is None:
-                if disallowed is not None and in_cal(t, disallowed):
-                    return False
-                elif allowed is not None and in_cal(t, allowed):
-                    return True
-            else:
-                raise ValueError('expected only "allowed" or "disallowed" in calendar property, not both of them')
-
-        def shedule(t, shed):
-            return any(
-                map(
-                    lambda x: x[0] <= t <= x[1],
-                    shed,
-                )
-            )
-
-        def weekdays(t, days):
-            return t.tm_wday in days
 
         _t = time.localtime()
         t = int((_t.tm_hour * 60 + _t.tm_min) * 60 + _t.tm_sec)
         az = [(i, self._tasks[i].seconds_left(t)) for i in self._tasks if self._tasks[i].ready_for_run(t=t, tm=_t)]
-        if len(az) <= 0:
+        if not az:
             return None, 10.0
 
         self._shedule = sorted(az, key=lambda x: x[1])
@@ -146,13 +123,8 @@ class Planner(Plugin):
         """
             pop dead threads
         """
-        az = []
-        for i in self._running_tasks:
-            if i[1].is_alive():
-                az.append(i)
-            else:
-                i[1].join()
-        self._running_tasks = az
+        for key in self._tasks:
+            self.tasks[key].check_threads()
 
     def _do(self, key, unplanned=False, task=None):
         """
@@ -173,6 +145,8 @@ class Planner(Plugin):
                 pass
             _t = time.time()
             run_id = "{}^@^{}".format(key, int(_t))
+            # FIXME
+            # move this to Task
             if self._last_task != run_id or unplanned:
                 self._last_task = run_id
                 if task['times'] is not None and not unplanned:
@@ -206,23 +180,13 @@ class Planner(Plugin):
                 time.sleep(5.0)
             else:
                 time.sleep(delay)
-                if self._tasks[key]['threading']:
-                    if self._tasks[key]['max_parallel_copies'] is None or len(
-                        list(filter(lambda x: x[0] == key, self._running_tasks))
-                    ) < self._tasks[key]['max_parallel_copies']:
-                        if self._tasks[key]['threading'] in {'thread', 'threading', True}:
-                            cl = Thread
-                        elif self._tasks[key]['threading'] in {'process', 'processing'}:
-                            cl = Process
-                        else:
-                            raise ValueError('Wrong value for "threading" property: {}', self._tasks[key]['threading'])
-                        t = cl(target=self._do, args=[key])
-                        t.start()
-                        self._running_tasks.append((key, t, int(time.time())))
-                    else:
-                        self.Notify('too many running copies of task "{key}"', key=key)
-                else:
-                    self._do(key)
+                code, msg, t = self._tasks[key].run()
+                if t is not None:
+                    self._running_tasks.append((key, t, int(time.time())))
+                if code == 'error':
+                    self.Error('task "{}" run: {}', key, msg)
+                elif code is not None:
+                    self.Debug('task "{}" run: {}', key, msg)
                 self.check_threads()
             if loops is not None and loops > 0:
                 loops -= 1
@@ -267,7 +231,7 @@ class Planner(Plugin):
         if key in self._tasks:
             self._tasks[key].update(task)
             return True
-        return self.registrate(key=key, **task)
+        return self.registrate(key=key, **task) if 'target' in task else False
 
     def run_task(self, key, set_after=False):
         """

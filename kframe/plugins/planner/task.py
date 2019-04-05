@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import time
+from threading import Thread
+from Process import Process
 
 
 class Task:
@@ -34,7 +36,18 @@ class Task:
             }
         )
         self.cfg = {k: kwargs.get(k, self.defaults[k]) for k in self.defaults}
+        self._threads = []
         self._convert_shedule(self.cfg)
+
+    def _run(self):
+        """
+            run task
+            (in this thread and this proccess)
+        """
+        return self.cfg['target'](
+            *self.cfg['args'],
+            **self.cfg['kwargs']
+        )
 
     @staticmethod
     def _convert_shedule(cfg):
@@ -144,12 +157,49 @@ class Task:
         """
         return self.cfg.copy()
 
+    def check_threads(self):
+        az = []
+        for i in self._threads:
+            if i.is_alive():
+                az.append(i)
+            else:
+                i.join()
+        self._threads = az
+
     def run(self):
         """
-            run task
-            (in this thread and this proccess)
+            method to start task
+            in this method proccess with be forked or threaded if requeried
+            return tuple(code as str, msg as str, proc/thread object or None)
         """
-        return self.cfg['target'](
-            *self.cfg['args'],
-            **self.cfg['kwargs']
-        )
+        try:
+            if (
+                self.cfg['threading']
+            ) and (
+                self.cfg['max_parallel_copies'] is not None
+            ) and (
+                len(self._threads) >= self.cfg['max_parallel_copies']
+            ):
+                return (
+                    'error',
+                    'too many running copies of task "{key}"'.format(key=self.cfg['key']),
+                    None,
+                )
+
+            if self.cfg['threading']:
+                if self.cfg['threading'] in {'thread', 'threading', True}:
+                    cl = Thread
+                    for_msg = 'thread'
+                elif self.cfg['threading'] in {'process', 'processing'}:
+                    cl = Process
+                    for_msg = 'process'
+                else:
+                    raise ValueError('Wrong value for "threading" property: {}', self.cfg['threading'])
+                t = cl(target=self._run)
+                t.start()
+                return ('start_parallel', 'Task started in new {}'.format(for_msg), t)
+            else:
+                self._run()
+                return ('done', 'Task done', None)
+        except Exception as e:
+            return ('error', str(e), None)
