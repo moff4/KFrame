@@ -7,6 +7,7 @@ from multiprocessing import Process
 from kframe.base import Plugin
 from kframe.plugins.stats import Stats
 from kframe.plugins.planner.site_module import PlannerCGI
+from kframe.plugins.planner.task import Task
 
 
 class Planner(Plugin):
@@ -168,20 +169,30 @@ class Planner(Plugin):
                 i[1].join()
         self._running_tasks = az
 
-    def _do(self, key, unplanned=False):
+    def _do(self, key, unplanned=False, task=None):
         """
             run single task
             unplanned - if True run anyway and not change 'times'
         """
         self.Debug('Start {}', key)
         try:
+            if task is None:
+                if key in self._tasks:
+                    task = self._tasks[key]
+                else:
+                    self.Error('unknown task: "{}"', key)
+                    return False
+            else:
+                # check task fileds
+                # FIXME
+                pass
             _t = time.time()
             run_id = "{}^@^{}".format(key, int(_t))
             if self._last_task != run_id or unplanned:
                 self._last_task = run_id
-                if self._tasks[key]['times'] is not None and not unplanned:
-                    self._tasks[key]['times'] -= 1
-                self._tasks[key]['target'](*self._tasks[key]['args'], **self._tasks[key]['kwargs'])
+                if task['times'] is not None and not unplanned:
+                    task['times'] -= 1
+                task['target'](*task['args'], **task['kwargs'])
                 self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
                 if self.cfg['enable_stats']:
                     self.P.stats.add(
@@ -243,47 +254,12 @@ class Planner(Plugin):
         """
         if key in self._tasks:
             return False
-        defaults = {
-            'hours': 0,
-            'min': 0,
-            'sec': 0,
-            'offset': 0,
-            'shedule': [('00:00:00', '23:59:59')],
-            'calendar': {},
-            'weekdays': {i for i in range(7)},
-            'args': [],
-            'kwargs': {},
-            'threading': False,
-            'after': None,
-            'times': None,
-            'max_parallel_copies': None,
-            'enable': True,
-        }
-        task.update({
-            'key': key,
-            'target': target,
-            'created': int(time.time()),
-            'updated': int(time.time()),
-        })
-        self._tasks[key] = {
-            key: task[key] if key in task else defaults[key]
-            for key in (
-                list(defaults.keys()) + ['key', 'target']
-            )
-        }
-        bz = []
-        for i in self._tasks[key]['shedule']:
-            if len(i) != 2:
-                raise ValueError('invalid value of property "shedule"')
-            az = []
-            for j in i:
-                r = 0
-                for k in j.split(':'):
-                    r = r * 60 + int(k)
-                az.append(r)
-            bz.append(tuple(az))
-        self._tasks[key]['shedule'] = bz
-        return True
+        try:
+            self._tasks[key] = Task(key=key, target=target, **task)
+            return True
+        except Exception as e:
+            self.Error('registrate new task: {}', e)
+            return False
 
     @property
     def tasks(self):
