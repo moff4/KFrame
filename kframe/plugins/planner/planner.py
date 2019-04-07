@@ -2,7 +2,6 @@
 
 import time
 from threading import Thread
-from multiprocessing import Process
 
 from kframe.base import Plugin
 from kframe.plugins.stats import Stats
