@@ -50,7 +50,6 @@ class Planner(Plugin):
         self._run = True
         self._m_thead = None
         self._threads = []
-        self._running_tasks = []  # [ .. ,( key, thread, start-timestamp), ..]
         self._tasks = {}
         self._last_task = None
         self._shedule = []  # [ .., (key , sec left), ..]
@@ -126,48 +125,6 @@ class Planner(Plugin):
         for key in self._tasks:
             self.tasks[key].check_threads()
 
-    def _do(self, key, unplanned=False, task=None):
-        """
-            run single task
-            unplanned - if True run anyway and not change 'times'
-        """
-        self.Debug('Start {}', key)
-        try:
-            if task is None:
-                if key in self._tasks:
-                    task = self._tasks[key]
-                else:
-                    self.Error('unknown task: "{}"', key)
-                    return False
-            else:
-                # check task fileds
-                # FIXME
-                pass
-            _t = time.time()
-            run_id = "{}^@^{}".format(key, int(_t))
-            # FIXME
-            # move this to Task
-            if self._last_task != run_id or unplanned:
-                self._last_task = run_id
-                if task['times'] is not None and not unplanned:
-                    task['times'] -= 1
-                task['target'](*task['args'], **task['kwargs'])
-                self.Debug('{key} done in {t} sec'.format(t='%.2f' % (time.time() - _t), key=key))
-                if self.cfg['enable_stats']:
-                    self.P.stats.add(
-                        key='planner-done-task',
-                        value='{key} done in {t} sec'.format(
-                            t='%.2f' % (time.time() - _t),
-                            key=key,
-                        ),
-                    )
-                return True
-            return False
-        except Exception as e:
-            self.Error("{} - ex: {}".format(key, e))
-            self.Trace("{} - ex:".format(key))
-            return False
-
     def _loop(self, loops=None):
         """
             main loop
@@ -180,9 +137,7 @@ class Planner(Plugin):
                 time.sleep(5.0)
             else:
                 time.sleep(delay)
-                code, msg, t = self._tasks[key].run()
-                if t is not None:
-                    self._running_tasks.append((key, t, int(time.time())))
+                code, msg = self._tasks[key].run()
                 if code == 'error':
                     self.Error('task "{}" run: {}', key, msg)
                 elif code is not None:
@@ -241,15 +196,15 @@ class Planner(Plugin):
         if key not in self._tasks:
             return False, 'Has no task "{}"'.format(key)
         else:
-            res = self._do(key, unplanned=True)
-            if set_after and res:
-                self._tasks[key]['after'] = next(
+            code, msg = self._tasks[key].run(unplanned=True)
+            if set_after and code in {'start_parallel', 'done'}:
+                self._tasks[key].after = next(
                     filter(
                         lambda x: x[0] == key,
                         self._shedule
                     )
                 )[0] + int(time.time())
-            return res, 'Task must be done'
+            return code in {'start_parallel', 'done'}, msg
 
     def delete_task(self, key):
         """
@@ -266,10 +221,11 @@ class Planner(Plugin):
         """
         return [
             {
-                'key': i[0],
-                'starttime': i[2],
+                'key': key,
+                'starttime': i,
             }
-            for i in self._running_tasks
+            for key in self._tasks
+            for i in self._tasks[key].get_running_tasks()
         ]
 
     def get_shedule(self):
