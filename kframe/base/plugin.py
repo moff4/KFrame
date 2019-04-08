@@ -2,6 +2,8 @@
 
 from traceback import format_exc
 
+from kframe.base.utils import copy_n_update
+
 
 class Plugin:
     """
@@ -9,6 +11,8 @@ class Plugin:
     """
 
     name = 'raw_plugin'
+
+    defaults = {}
 
     def __init__(self, parent, plugin_name, args, kwargs):
         try:
@@ -26,6 +30,13 @@ class Plugin:
                 ),
                 False,
             )
+            self.cfg = {
+                k:
+                copy_n_update(self.defaults[k], kwargs.get(k, {}))
+                if isinstance(self.defaults[k], dict) else
+                kwargs.get(k, self.defaults[k])
+                for k in self.defaults
+            }
 
             argv = self.P.get_params()
             prefix = '--{}-'.format(self.name)

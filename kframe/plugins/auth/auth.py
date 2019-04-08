@@ -17,6 +17,10 @@ class Auth(Plugin):
     """
 
     name = 'auth'
+    defaults = {
+        'masks': (None, None),
+        'enable_stats': False,
+    }
 
     def init(self, secret, **kwargs):
         """
@@ -25,12 +29,6 @@ class Auth(Plugin):
                 masks - tuple(bytes, bytes) - extra sercrets (default: (None, None))
                 enable_stats - bool - enable stat agregation (default: False)
         """
-        defaults = {
-            'masks': (None, None),
-            'enable_stats': False,
-        }
-        self.cfg = {k: kwargs.get(k, defaults[k]) for k in defaults}
-
         self.secret = self.P.fast_init(target=Mchunk).set(secret).mask()
         if self.cfg['enable_stats']:
             if 'stats' not in self:

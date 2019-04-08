@@ -17,15 +17,14 @@ class Cache(Plugin):
     """
 
     name = 'cache'
+    defaults = {
+        'auto_clean_in_new_thread': False,
+        'timeout': 1.0,
+        'save_file': 'cache.json',
+        'autosave': False,
+    }
 
     def init(self, **kwargs):
-        defaults = {
-            'auto_clean_in_new_thread': False,
-            'timeout': 1.0,
-            'save_file': 'cache.json',
-            'autosave': False,
-        }
-        self.cfg = {i: kwargs[i] if i in kwargs else defaults[i] for i in defaults}
         """
             nodename -> [
               cache as dict,

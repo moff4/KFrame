@@ -13,6 +13,15 @@ from kframe.plugins.logger.queries import (
 
 class Logger(Plugin):
     name = 'logger'
+    defaults = {
+        'save_level': {'warning', 'error', 'critical'},
+        'parent_save': True,
+        'log_table': 'log',
+        'max_queue_size': 10,
+        'use_planner': False,
+        'use_queue': True,
+        'planner_timeout': 15,
+    }
 
     def init(self, **kwargs):
         """
@@ -34,17 +43,7 @@ class Logger(Plugin):
             scheme = kwargs['scheme'] if 'scheme' in kwargs else self.P.sql.cfg['scheme']
             if scheme is None:
                 raise ValueError('Expected "scheme" as param of SQL or Logger')
-            defaults = {
-                'save_level': {'warning', 'error', 'critical'},
-                'parent_save': True,
-                'scheme': scheme,
-                'log_table': 'log',
-                'max_queue_size': 10,
-                'use_planner': False,
-                'use_queue': True,
-                'planner_timeout': 15,
-            }
-            self.cfg = {k: kwargs[k] if k in kwargs else defaults[k] for k in defaults}
+            self.cfg['scheme'] = scheme
             self._queue = deque()
             flag, e = self.P.sql.create_table(ddl={'log_table': DDL.format(**self.cfg)})
             if not flag:

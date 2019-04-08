@@ -38,14 +38,13 @@ class Planner(Plugin):
     """
 
     name = 'planner'
+    defaults = {
+        'enable_stats': False,
+        'add_neon_handler': False,
+        'neon_handler_cfg': {}
+    }
 
     def init(self, tasks=None, **kwargs):
-        defaults = {
-            'enable_stats': False,
-            'add_neon_handler': False,
-            'neon_handler_cfg': {}
-        }
-        self.cfg = {i: kwargs.get(i, defaults[i]) for i in defaults}
         self._run = True
         self._m_thead = None
         self._threads = []
@@ -122,7 +121,7 @@ class Planner(Plugin):
             pop dead threads
         """
         for key in self._tasks:
-            self.tasks[key].check_threads()
+            self._tasks[key].check_threads()
 
     def _loop(self, loops=None):
         """

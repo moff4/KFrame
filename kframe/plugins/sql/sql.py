@@ -13,21 +13,21 @@ class SQL(Plugin):
     """
 
     name = 'sql'
+    defaults = {
+        'ddl': [],
+    }
 
     def init(self, host, port, user, passwd, **kwargs):
         try:
-            self.cfg = {
-                'host': host,
-                'port': port,
-                'user': user,
-                'passwd': passwd,
-                'scheme': None,
-            }
-            defaults = {
-                'ddl': {},
-            }
-            for i in defaults:
-                self.cfg[i] = kwargs.get(i, defaults[i])
+            self.cfg.update(
+                {
+                    'host': host,
+                    'port': port,
+                    'user': user,
+                    'passwd': passwd,
+                    'scheme': None,
+                }
+            )
             self.conn = None
             self._lock = 0
 

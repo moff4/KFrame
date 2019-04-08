@@ -19,40 +19,32 @@ from kframe.plugins.neon.parser import pop_zeros
 
 class Neon(Plugin):
     name = 'neon'
+    defaults = {
+        'allowed_hosts': {'any'},
+        'only_local_hosts': False,
+        'believe_x_from_y': False,
+        'http_port': 8080,
+        'https_port': 8081,
+        'use_ssl': False,
+        'ca_cert': None,
+        'ssl_certs': {},  # host -> {certfile -> str, keyfile -> str, keypassword -> str}
+        'site_directory': './var',
+        'max_data_length': MAX_DATA_LEN,
+        'max_header_count': MAX_HEADER_COUNT,
+        'max_header_length': MAX_HEADER_LEN,
+        'threading': False,
+        'use_neon_server': False,
+        'response_settings': {
+            'cache_min': 120,
+            'max_response_size': 2**20,
+        },
+        'single_request_per_socket': True,
+        'enable_stats': True,
+        'answer_ping': False,  # "/ping" -> pong!
+    }
 
     def init(self, **kwargs):
         try:
-            defaults = {
-                'allowed_hosts': {'any'},
-                'only_local_hosts': False,
-                'believe_x_from_y': False,
-                'http_port': 8080,
-                'https_port': 8081,
-                'use_ssl': False,
-                'ca_cert': None,
-                'ssl_certs': {},  # host -> {certfile -> str, keyfile -> str, keypassword -> str}
-                'site_directory': './var',
-                'max_data_length': MAX_DATA_LEN,
-                'max_header_count': MAX_HEADER_COUNT,
-                'max_header_length': MAX_HEADER_LEN,
-                'threading': False,
-                'use_neon_server': False,
-                'response_settings': {
-                    'cache_min': 120,
-                    'max_response_size': 2**20,
-                },
-                'single_request_per_socket': True,
-                'enable_stats': True,
-                'answer_ping': False,  # "/ping" -> pong!
-            }
-            self.cfg = {}
-            for i in defaults:
-                if isinstance(defaults[i], dict):
-                    self.cfg[i] = dict(defaults[i])
-                    self.cfg[i].update(kwargs.get(i, {}))
-                else:
-                    self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
-
             self.cgi_modules = []
             self.middleware = []
 

@@ -53,7 +53,7 @@ def select(self, query, unique_cursor=False)
 В случае ошибки кинет исключение.  
 
 #### Neon  
-Neon - Веб-сервер 
+Neon - Веб-сервер. Особенность такого веб-севера в том, что он запускается не в главном треде, что удобно для программы, где веб не первостепенная задача.  
 
 Конфигурация передается веб-серверу через параметры в методе init:  
 * allowed_hosts - default: {'any'}, - список разрешенных значений HTTP-заголовка Host  
@@ -309,6 +309,8 @@ scheme - правила, по которым проверяется объект
 
 ## Простой пример:  
 
+### веб-сервис  
+
 main.py:  
 ```python
 #!/usr/bin/env python3
@@ -320,6 +322,23 @@ Parent(name='TestApp').add_plugin(target=Neon, kwargs={
 	'http_port': 8080,
 }).init().start()
 # open http://127.0.0.1:8080
+```
+
+запуск:  
+`$ ./main.py --stdout --debug`  
+
+### крон-сервис  
+
+main.py:  
+```python
+#!/usr/bin/env python3
+import time
+from kframe.base.parent import Parent
+from kframe.plugins.planner import Planner
+p = Parent(name='TestApp').add_plugin(target=Planner).init()
+p.planner.registrate(key='Task-1', target=lambda: print(time.ctime()), sec=5)
+p.start()  # Here program will stop and wait for end of Planner, who will work untill get SIGINT
+p.stop()
 ```
 
 запуск:  
