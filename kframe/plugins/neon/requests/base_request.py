@@ -114,34 +114,6 @@ class Request(Plugin):
             )
             self._send = True
 
-    def static_file(self, filename, extra_modifier=None, *args, **kwargs):
-        """
-            init response with static file
-            afterward method will be ready to send()
-            extra_modifier(Request,data,*args,**kwargs)
-              - some handler that will be called with data from file if passed
-        """
-        if os.path.isfile(filename):
-            self.Debug('gonna send file: {}'.format(filename))
-            with open(filename, 'rb') as f:
-                data = f.read()
-            if extra_modifier is not None:
-                data = extra_modifier(self, data, *args, **kwargs)
-            self.resp.code = 200
-            self.resp.data = data
-            self.resp.add_headers(Content_type(self.url))
-            self.resp.add_headers({
-                'Cache-Control': 'max-age={cache_min}'.format(
-                    cache_min=self.P.neon.cfg['response_settings']['cache_min']
-                )
-            })
-        else:
-            self.Debug('File not found: {}'.format(filename))
-            self.resp.code = 404
-            self.resp.data = NOT_FOUND
-            self.resp.add_headers(CONTENT_HTML)
-            self.resp.add_header('Connection', 'close')
-
     def is_local(self) -> bool:
         """
             return True if IP is private

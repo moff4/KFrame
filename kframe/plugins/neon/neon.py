@@ -11,7 +11,12 @@ from kframe.base.plugin import Plugin
 from kframe.modules import crypto
 from kframe.plugins.stats import Stats
 from kframe.plugins.neon.requests import Request
-from kframe.plugins.neon.responses import Response, StaticResponse, RestResponse
+from kframe.plugins.neon.responses import (
+    Response,
+    StaticResponse,
+    RestResponse,
+)
+from kframe.plugins.neon.decorators import recursion
 from kframe.plugins.neon.utils import *
 from kframe.plugins.neon.exceptions import ResponseError
 from kframe.plugins.neon.parser import pop_zeros
