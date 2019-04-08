@@ -3,7 +3,7 @@
 import time
 from functools import reduce
 from threading import Thread
-from Process import Process
+from multiprocessing import Process
 
 
 class Task:
@@ -64,7 +64,7 @@ class Task:
                     j.append(0)
                 if len(j) > 3:
                     raise ValueError('invalid value of property "shedule": (HH[:MM[:SS]])')
-                az.append(reduce(lambda x, y: x * 60 + int(y), j))
+                az.append(reduce(lambda x, y: int(x) * 60 + int(y), j))
             bz.append(tuple(az))
         return bz
 
