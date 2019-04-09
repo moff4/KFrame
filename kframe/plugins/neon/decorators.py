@@ -4,20 +4,28 @@ from kframe.plugins.neon.exceptions import ResponseError
 from kframe.modules.jscheme import apply
 
 
-def autocheck(scheme):
+def autocheck(scheme, method=False, post=False, data_decoder=None):
     """
         decator for checking incoming params
+        method must be True for decorating methods
+        post - for checking data in post
+        data_decoder - function req.data (bytes by default) -> dict
+            if data_decoder is None, req.data will be passed to Jscheme as it is
+        result will be assigned to req.args
     """
     def _f(func):
-        def _g(req, *args, **kwargs):
+        def _g(*args, **kwargs):
             try:
-                req.args = apply(req.args, scheme)
-            except Exception as e:
+                req = args[int(method)]
+                data = (req.data if data_decoder is None else data_decoder(req.data)) if post else req.args
+                req.args = apply(data, scheme)
+            except ValueError as e:
+                req.Warning('CheckScheme: {}', e)
                 raise ResponseError(
-                    code=400,
+                    status=400,
                     message='Bad format',
                 )
-            func(req, *args, **kwargs)
+            func(*args, **kwargs)
         return _g
     return _f
 

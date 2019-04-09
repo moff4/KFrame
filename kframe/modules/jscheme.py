@@ -76,18 +76,14 @@ def apply(obj, scheme, key=None):
                         extra=extra,
                     )
                 )
-            if any(
-                map(
-                    lambda x: x not in obj and 'default' not in scheme['value'][x],
-                    obj,
-                )
-            ):
-                raise ValueError(
-                    'expected value "{value}" {extra}'.format(
-                        value=scheme['type'],
-                        extra=extra
+            for x in scheme['value']:
+                if x not in obj and 'default' not in scheme['value'][x]:
+                    raise ValueError(
+                        'expected key "{value}" {extra}'.format(
+                            value=x,
+                            extra=extra
+                        )
                     )
-                )
             obj = {
                 i:
                 default(scheme['value'][i]['default'])
