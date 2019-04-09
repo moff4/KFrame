@@ -203,6 +203,7 @@ class Neon(Plugin):
         _t = time.time()
         res = None
         module = None
+        request.init_response(self.response_types[module['type']])
         if request.method not in HTTP_METHODS:
             request.Debug('{ip}: Unallowed method "{method}" ({url})', **request.dict())
             return False
@@ -216,7 +217,6 @@ class Neon(Plugin):
             request.Debug('{ip}: Invalid Header-Host "{}"', request.headers['host'], **request.dict())
             return False
         elif self.cfg['answer_ping'] and request.url == '/ping':
-            request.init_response('response')
             request.resp.data = 'pong'
             request.resp.code = 200
             request.resp.add_headers(CONTENT_HTML)
@@ -253,16 +253,15 @@ class Neon(Plugin):
                         type='event_counter',
                     )
                 try:
-                    request.init_response(self.response_types[module['type']])
                     handler = getattr(
                         module['module'],
                         request.method.lower(),
                         None,
                     )
                     if handler is None:
-                        req.resp.code = 405
-                        req.resp.data = NOT_FOUND
-                        res = req.resp
+                        request.resp.code = 405
+                        request.resp.data = NOT_FOUND
+                        res = request.resp
                     else:
                         for middleware, postware in self.middleware:
                             middleware(request, handler)
