@@ -103,7 +103,10 @@ class Request(Plugin):
 
     def send(self, resp=None):
         if not self._send:
-            resp = self.resp if resp is None else resp
+            if resp is None:
+                if not hasattr(req, resp):
+                    self.init_response('response')
+                resp = self.resp
             self.conn.send(resp.export())
             self.P.stats.add(
                 key='requests-{}xx'.format(
