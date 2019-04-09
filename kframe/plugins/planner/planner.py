@@ -79,17 +79,6 @@ class Planner(Plugin):
                 desc='Факты выполнения задач',
             )
 
-    @staticmethod
-    def copy(d):
-        if isinstance(d, dict):
-            return {k: Planner.copy(d[k]) for k in d}
-        elif isinstance(d, list) or isinstance(d, set):
-            return [Planner.copy(k) for k in d]
-        elif any(map(lambda x: isinstance(d, x), [int, str, float, bool, type(None)])):
-            return d
-        else:
-            return str(d)
-
     def next_task(self):
         """
             return ( key , delay as int )
@@ -168,13 +157,13 @@ class Planner(Plugin):
         """
             return tasks as dict
         """
-        return self.copy(self._tasks)
+        return {k: self._tasks[k].to_dict() for k in self._tasks}
 
     def get_task(self, key):
         """
             get task properties
         """
-        return self.copy(self._tasks.get(key))
+        return self._tasks[key].to_dict() if key in self._tasks else None
 
     def update_task(self, key, **task):
         """
