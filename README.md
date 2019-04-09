@@ -344,7 +344,18 @@ p.stop()
 запуск:  
 `$ ./main.py --stdout --debug`  
 
+## Установка
+
+Установка производится через утилиту pip:  
+```bash
+$ pip install git+https://github.com/moff4/kframe.git  
+```  
+или через ручную сборку:  
+```bash
+$ python3 setup.py build  
+$ python3 setup.py install  
+```
+
 ## Зависимости  
 * pygost - Криптографическая библиотека  
 * mysql-connector - драйвер MySQL  
-
