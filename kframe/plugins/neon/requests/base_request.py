@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-import os
-from traceback import format_exc as Trace
-from ....base.plugin import Plugin
-from ..parser import parse_data
-from ..utils import *
+from kframe.base.plugin import Plugin
+from kframe.plugins.neon.parser import parse_data
+from kframe.plugins.neon.utils import *
 
 
 class Request(Plugin):
@@ -46,7 +44,7 @@ class Request(Plugin):
             self.FATAL = True
             self.errmsg = 'parse data: %s' % e
             self.Error(self.errmsg)
-            self.Debug(Trace())
+            self.Trace()
             return
         self._dict.update(kwargs)
         self._dict_keys = list(self._dict.keys())
