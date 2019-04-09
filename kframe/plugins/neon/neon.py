@@ -243,6 +243,8 @@ class Neon(Plugin):
                 module = None
             if module is None:
                 request.Debug('{ip}: Handler not found ({url})'.format(**request.dict()))
+                request.resp.code = 404
+                res = request.resp
             else:
                 request.Debug('Found handler: {name}'.format(name=module['module'].name))
                 if self.cfg['enable_stats']:
