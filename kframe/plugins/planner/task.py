@@ -357,7 +357,19 @@ class Task:
         """
             return all properties as dict
         """
-        return self.cfg.copy()
+        conv_map = {
+            int: lambda x: x,
+            float: lambda x: x,
+            str: lambda x: x,
+            dict: lambda x: {y: conv_map[type(x[y])](x[y]) if type(x[y]) in conv_map else str(x[y]) for y in x},
+            list: lambda x: [conv_map[type(y)](y) if type(y) in conv_map else str(y) for y in x],
+            set: lambda x: [conv_map[type(y)](y) if type(y) in conv_map else str(y) for y in x],
+        }
+        return {
+            i:
+            conv_map[type(self.cfg[i])](self.cfg[i]) if type(self.cfg[i]) in conv_map else str(self.cfg[i])
+            for i in self.cfg
+        }
 
     def check_threads(self):
         """
