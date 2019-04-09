@@ -104,7 +104,7 @@ class Request(Plugin):
     def send(self, resp=None):
         if not self._send:
             if resp is None:
-                if not hasattr(req, resp):
+                if not hasattr(self, resp):
                     self.init_response('response')
                 resp = self.resp
             self.conn.send(resp.export())
