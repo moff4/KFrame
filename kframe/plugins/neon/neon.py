@@ -58,6 +58,9 @@ class Neon(Plugin):
             self._th = None
             self._rng = random.random() * 10**2
 
+            self.thread_list = []
+            self._ws = []
+
             self.response_types = {
                 'base': 'response',
                 'rest': 'rest_response',
@@ -221,7 +224,7 @@ class Neon(Plugin):
             request.resp.data = 'pong'
             request.resp.code = 200
             request.resp.add_headers(CONTENT_HTML)
-        elif request.url in self.ws_handlers:
+        elif request.url in self.ws_handlers and request.headers.get('upgrade') == 'websocket':
             try:
                 self.P.fast_init(
                     self.ws_handlers[request.url],
@@ -352,6 +355,7 @@ class Neon(Plugin):
 
     def check_thread(self):
         try:
+            self._ws = [i for i in self._ws if i.alive]
             for i in self.thread_list:
                 if not i.is_alive():
                     i.join()
@@ -405,7 +409,6 @@ class Neon(Plugin):
                 self.Trace('Another-Deal: ({}) ', addr[0])
         self.Debug('Starting my work on port {}!', port)
         try:
-            self.thread_list = []
             while self._run:
                 try:
                     conn, addr = sock.accept()
@@ -511,8 +514,12 @@ class Neon(Plugin):
             self._run = False
             self.Notify('socket closed')
             self._open()
+            for i in self._ws:
+                i.close()
             for i in self._threads:
                 i[0].join()
+            for i in self.thread_list:
+                i.join()
         self.Notify('Finishing my work!')
 
     # ========================================================================
