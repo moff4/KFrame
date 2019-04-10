@@ -310,7 +310,7 @@ class Parent:
               kwargs (dict) - dict of arg that will be passed to init() as **kwargs (plugins only)
         """
         from kframe.base.plugin import Plugin
-        if Plugin not in target.__mro__:
+        if issubclass(target, Plugin):
             raise ValueError('target ({}) bust be isinstance of kframe.Plugin'.format(str(target)))
         self.plugin_t[kw.get('key', target.name)] = {
             'target': target,

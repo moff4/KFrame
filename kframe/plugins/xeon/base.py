@@ -57,6 +57,7 @@ class BaseWSHandler(Plugin):
 
     def init(self, req, **kwargs):
         self.req = req
+        self.alive = True
         self.conn = req.conn
         self.handler_map = {
             self.OPCODE_TEXT: self.handle_incoming_msg,
@@ -87,12 +88,35 @@ class BaseWSHandler(Plugin):
     def on_end(self):
         pass
 
+    def close(self):
+        self.finish()
+
+    def __call__(self, st='', _type='notify'):
+        """
+            local log function
+            extra save request-id
+        """
+        self.log(
+            st='[{id}] {st}'.format(
+                id=self.req.id,
+                st=st
+            ),
+            _type=_type
+        )
+
     def loop(self):
-        while self.keep_alive:
-            if not self.handshake_done:
-                self.handshake()
-            elif self.valid_client:
-                self.read_next_message()
+        self.setup()
+        try:
+            while self.keep_alive:
+                if not self.handshake_done:
+                    self.handshake()
+                elif self.valid_client:
+                    self.read_next_message()
+        except Exception as e:
+            self.Error('Loop: {}', e)
+            self.Trace('Loop:')
+        finally:
+            self.finish()
 
     def read_next_message(self):
         try:
@@ -141,16 +165,21 @@ class BaseWSHandler(Plugin):
         self.handler_map[opcode](message_bytes.decode('utf8'))
 
     def send_message(self, message):
-        self.send_text(message)
+        self.send_text(message, self.OPCODE_TEXT)
+
+    def send_binary(self, message):
+        self.send_text(message, self.OPCODE_BINARY)
 
     def send_pong(self, message):
         self.send_text(message, self.OPCODE_PONG)
 
-    def send_text(self, message, opcode=OPCODE_TEXT):
+    def send_text(self, message, opcode=None):
         """
             Important: Fragmented(=continuation) messages are not supported since
             their usage cases are limited - when we don't know the payload length.
         """
+        if opcode is None:
+            opcode = self.OPCODE_TEXT
 
         # Validate message
         if isinstance(message, bytes):
@@ -186,7 +215,7 @@ class BaseWSHandler(Plugin):
         self.conn.send(header + payload)
 
     def handshake(self):
-        if self.req.headers['upgrade'].lower() != 'websocket':
+        if 'upgrade' not in self.req.headers or self.req.headers['upgrade'].lower() != 'websocket':
             self.keep_alive = False
             return
 
@@ -206,7 +235,8 @@ class BaseWSHandler(Plugin):
                 'Sec-WebSocket-Accept': '{}'.format(self.calculate_response_key(key)),
             }
         )
-        self.handshake_done = self.req.send()
+        self.req.send()
+        self.handshake_done = True
         self.valid_client = True
         self.on_validate()
 
@@ -218,7 +248,7 @@ class BaseWSHandler(Plugin):
 
     def finish(self):
         self.on_end()
-        self.server._client_left_(self)
+        self.keep_alive = False
         if not self.wfile.closed:
             try:
                 self.wfile.flush()
@@ -226,3 +256,4 @@ class BaseWSHandler(Plugin):
                 pass
         self.wfile.close()
         self.rfile.close()
+        self.alive = False

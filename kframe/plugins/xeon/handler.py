@@ -47,15 +47,11 @@ class WSHandler(BaseWSHandler):
         """
         pass
 
-    def __call__(self, st='', _type='notify'):
+    def close(self):
         """
-            local log function
-            extra save request-id
+            Will be called when server is shutting down
+            You should send message to close connection / reconnect
+            if you are ready to close connection, call super().close()
+            otherwise server will wait for client close connection
         """
-        self.log(
-            st='[{id}] {st}'.format(
-                id=self.req.id,
-                st=st
-            ),
-            _type=_type
-        )
+        super().close()

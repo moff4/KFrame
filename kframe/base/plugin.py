@@ -77,7 +77,7 @@ class Plugin:
         """
         pass
 
-    def Trace(self, st, *args, **kwargs):
+    def Trace(self, st='', *args, **kwargs):
         """
             save Traceback
         """
