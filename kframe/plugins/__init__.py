@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 
 __all__ = [
-    '.web',
     '.neon',
-    '.cookie',
-    '.firewall',
+    '.xeon',
     '.sql',
     '.mchunk',
     '.cache',
-    '.crypto',
     '.stats',
-    '.art',
-    '.ssp',
     '.eventer',
-    '.jscheme',
     '.planner',
     '.logger',
+    '.auth',
 ]

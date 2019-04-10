@@ -51,6 +51,7 @@ class Neon(Plugin):
     def init(self, **kwargs):
         try:
             self.cgi_modules = []
+            self.ws_handlers = {}  # key = path; value - WSHandler
             self.middleware = []
 
             self._run = True
@@ -220,6 +221,17 @@ class Neon(Plugin):
             request.resp.data = 'pong'
             request.resp.code = 200
             request.resp.add_headers(CONTENT_HTML)
+        elif request.url in self.ws_handlers:
+            try:
+                self.P.fast_init(
+                    self.ws_handlers[request.url],
+                    req=request
+                ).loop()
+                return True
+            except Exception as e:
+                self.Error('Handle ws [{}], {}', request.id, e)
+                self.Trace('Handle ws [{}],', request.id)
+                return False
         else:
             modules = sorted(
                 list(
@@ -284,7 +296,11 @@ class Neon(Plugin):
                     )
                     try:
                         for ck in e.cookies:
-                            res.add_cookie(*ck.get('s', []), **ck.get('kw', {}), cookie_name=ck['cookie_name'])
+                            res.add_cookie(
+                                *ck.get('s', []),
+                                cookie_name=ck['cookie_name'],
+                                **ck.get('kw', {})
+                            )
                     except Exception as e:
                         request.Error('cookie marshal: {ex}'.format(ex=e))
                         request.Trace('cookie marshal:')
@@ -502,6 +518,19 @@ class Neon(Plugin):
     # ========================================================================
     #                                USER API
     # ========================================================================
+
+    def add_ws_handler(self, handler, path: str=None):
+        """
+            Add ws handler to Neon
+            if path not passed then user handler.Path
+            WS handler must be isinstance of kframe.plugins.xeon.WSHandler
+        """
+        from kframe.plugins.xeon import WSHandler
+        if not isinstance(module, WSHandler):
+            raise TypeError('WS handler must be isinstance of kframe.plugins.xeon.WSHandler')
+        if path is None:
+            path = handler.Path
+        self.ws_handlers[path] = handler
 
     def add_site_module(self, module, path: str=None, response_type: str=None):
         """
