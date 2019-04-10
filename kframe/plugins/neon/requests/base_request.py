@@ -19,22 +19,18 @@ class Request(Plugin):
     """
 
     name = 'request'
+    defaults = {
+        'id': 0,
+        'response_type': 'response',
+        'cache_min': 120,
+        'max_header_length': MAX_HEADER_LEN,
+        'max_header_count': MAX_HEADER_COUNT,
+        'max_data_length': MAX_DATA_LEN,
+    }
 
     def init(self, addr, conn, **kwargs):
-        defaults = {
-            'id': 0,
-            'response_type': 'response',
-            'cache_min': 120,
-            'max_header_length': MAX_HEADER_LEN,
-            'max_header_count': MAX_HEADER_COUNT,
-            'max_data_length': MAX_DATA_LEN,
-        }
-
         self.postware = []
 
-        self.cfg = {}
-        for i in defaults:
-            self.cfg[i] = kwargs[i] if i in kwargs else defaults[i]
         self._dict = {}
         try:
             self.Debug('Gonna read')
