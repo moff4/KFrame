@@ -80,7 +80,7 @@ DIR_CELL_TEMPLATE = '''
 '''
 
 CONTENT_HTML = {'Content-type': 'text/html; charset=utf-8'}
-CONTENT_JS = {'Content-type': 'application/javascript'}
+CONTENT_JS = {'Content-type': 'application/javascript; charset=utf-8'}
 CONTENT_JSON = {'Content-type': 'text/json'}
 
 STANDART_HEADERS = {
