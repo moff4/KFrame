@@ -32,6 +32,7 @@ class StaticResponse(Response):
         if st in {'html', 'css', 'txt', 'csv', 'xml', 'js', 'json', 'php', 'md'}:
             type_1 = 'text'
             content_mod = TEXT
+            extra = '; charset=utf-8'
             if st == 'js':
                 type_2 = 'javascript'
             elif st == 'md':
@@ -39,7 +40,6 @@ class StaticResponse(Response):
             elif st == 'html':
                 type_2 = st
                 content_mod = HTML
-                extra = '; charset=utf-8'
             else:
                 type_2 = st
         elif st in {'jpg', 'jpeg', 'png', 'gif', 'tiff'}:
