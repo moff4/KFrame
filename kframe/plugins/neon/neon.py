@@ -257,6 +257,7 @@ class Neon(Plugin):
             else:
                 module = None
             if module is None:
+                request.init_response('response')
                 request.Debug('{ip}: Handler not found ({url})'.format(**request.dict()))
                 request.resp.code = 404
                 res = request.resp
