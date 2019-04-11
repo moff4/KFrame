@@ -4,11 +4,14 @@ import time
 import sys
 from traceback import format_exc as Trace
 
+from kframe.base.logger import BaseLogger
+
+
 # filename for logs (str)
-LOG_FILE = "log.txt"
+LOG_FILE = 'log.txt'
 
 # how to show user time (str)
-SHOW_TIME_FORMAT = "%d.%m.%Y %H:%M:%S"
+SHOW_TIME_FORMAT = '%d.%m.%Y %H:%M:%S'
 
 
 class Parent:
@@ -25,6 +28,8 @@ class Parent:
             defaults = {
                 'name': 'KFrame',
                 'plugins': {},
+                'logger': BaseLogger,
+                'logger_kwargs': {},
                 'log_file': LOG_FILE,
             }
             self.cfg = {k: kwargs[k] if k in kwargs else defaults[k] for k in defaults}
@@ -45,9 +50,13 @@ class Parent:
                 '--help': {'critical': False, 'description': 'See this message again'},
                 '--stdout': {'critical': False, 'description': 'Extra print logs to stdout'},
                 '--debug': {'critical': False, 'description': 'Verbose log'},
+                '--debug-<plugin-name>': {'critical': False, 'description': 'Verbose log of certain plugin'},
                 '--no-log': {'critical': False, 'description': 'Do not save logs'},
 
             }
+            self.logger = self.cfg['logger'](**self.cfg['logger_kwargs'])
+
+            # FIXME
             # list of strings
             self._log_storage = []
             # flag; if true -> keep logs in storage
@@ -427,6 +436,10 @@ class Parent:
         """
         return dict(self._argv_p)
 
+    @property
+    def argv(self):
+        return self._argv_p
+
     def expect_argv(self, key, critical=False, description=""):
         """
             add expected key to storage
@@ -459,7 +472,11 @@ class Parent:
             prefix=prefix,
             raw_msg=st,
         )
-        if _type == 'debug' and not ('--debug' in self._argv_p or force):
+        if (
+            _type == 'debug'
+        ) and not (
+            '--debug' in self._argv_p or force or '--debug-{}'.format(plugin_name) in self._argv_p
+        ):
             return self
         if '--stdout' in self._argv_p:
             print(msg)
