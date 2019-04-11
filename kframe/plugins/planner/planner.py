@@ -169,7 +169,6 @@ class Planner(Plugin):
         """
             update task properties
         """
-        task.update(updated=int(time.time()))
         if key in self._tasks:
             self._tasks[key].update(task)
             return True

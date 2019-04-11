@@ -17,6 +17,7 @@ class BaseLogger:
         self. P = parent
         self.cfg = {k: kwargs.get(k, self.defaults[k]) for k in self.defaults}
         self._hooks = {}
+
         self.levels = {
             'debug': 'Debug',
             'info': 'Info',
@@ -74,7 +75,7 @@ class BaseLogger:
         if (
             _type == 'debug'
         ) and not (
-            '--debug' in self.P.geargv() or force or '--debug-{}'.format(plugin_name) in self.P.argv
+            '--debug' in self.P.argv or force or '--debug-{}'.format(plugin_name) in self.P.argv
         ):
             return self
         if '--stdout' in self.P.argv:
