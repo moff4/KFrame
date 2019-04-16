@@ -104,5 +104,15 @@ class BaseLogger:
             'kwargs': {} if extra_hook_kwargs is None else extra_hook_kwargs,
         }
 
+    def upd_hook(self, key, **kwargs):
+        if key not in self._hooks:
+            raise ValueError('Unregistrated log hook: {}', key)
+        self._hooks[key].update(
+            {
+                i: kwargs.get(i, self._hooks[key][i])
+                for i in self._hooks[key]
+            }
+        )
+
     def del_hook(self, key):
         self._hooks.pop(key, None)
