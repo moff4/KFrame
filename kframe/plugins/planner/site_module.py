@@ -21,6 +21,7 @@ class PlannerCGI(Plugin):
             'delete': self.task_delete,
             'status': self.status,
         }
+        self._hook_counter = 0
 
     # =========================================================================
     #                              HANDLERS
@@ -69,6 +70,11 @@ class PlannerCGI(Plugin):
             run task stored in planner
             return status, errmsg and logs
         """
+        logs = []
+
+        def log_collecter(**kwargs):
+            logs.append(kwargs['message'])
+
         key = req.args.get('key')
         if not key:
             req.resp.data = json.dumps({
@@ -78,11 +84,14 @@ class PlannerCGI(Plugin):
             return req.resp
         set_after = req.args.get('set_after', '0')
         set_after = int(set_after) if set_after.isdigit() else False
-        self.P.log_store_set(True)
+
+        self._hook_counter += 1
+        hook_key = 'Pl-{}'.format(self._hook_counter)
+        self.P.logger.add_hook(key=hook_key, target=log_collecter)
         status, errmsg = self.P.planner.run_task(key=key, set_after=set_after)
-        logs = self.P.log_storage()
+        self.P.logger.del_hook(key=hook_key)
+
         self.P.log_store_set(False)
-        self.Debug('task done; collected {} logs', len(logs))
         req.resp.data = json.dumps({
             'result': status,
             'errmsg': errmsg,

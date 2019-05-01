@@ -9,6 +9,5 @@ __all__ = [
     '.stats',
     '.eventer',
     '.planner',
-    '.logger',
     '.auth',
 ]

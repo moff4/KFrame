@@ -4,11 +4,14 @@ import time
 import sys
 from traceback import format_exc as Trace
 
+from kframe.base.logger import BaseLogger
+
+
 # filename for logs (str)
-LOG_FILE = "log.txt"
+LOG_FILE = 'log.txt'
 
 # how to show user time (str)
-SHOW_TIME_FORMAT = "%d.%m.%Y %H:%M:%S"
+SHOW_TIME_FORMAT = '%d.%m.%Y %H:%M:%S'
 
 
 class Parent:
@@ -21,10 +24,13 @@ class Parent:
                   args -> tuple of args for plugins (optional)
             }
         """
+        self.logger = None
         try:
             defaults = {
                 'name': 'KFrame',
                 'plugins': {},
+                'logger': BaseLogger,
+                'logger_kwargs': {},
                 'log_file': LOG_FILE,
             }
             self.cfg = {k: kwargs[k] if k in kwargs else defaults[k] for k in defaults}
@@ -45,21 +51,14 @@ class Parent:
                 '--help': {'critical': False, 'description': 'See this message again'},
                 '--stdout': {'critical': False, 'description': 'Extra print logs to stdout'},
                 '--debug': {'critical': False, 'description': 'Verbose log'},
+                '--debug-<plugin-name>': {'critical': False, 'description': 'Verbose log of certain plugin'},
                 '--no-log': {'critical': False, 'description': 'Do not save logs'},
 
             }
-            # list of strings
-            self._log_storage = []
-            # flag; if true -> keep logs in storage
-            self._log_store = False
-            # predefined log levels
-            self.levels = {
-                'debug': 'Debug',
-                'info': 'Info',
-                'warning': 'Warning',
-                'error': 'Error',
-                'critical': 'Critical',
-            }
+            self.logger = self.cfg['logger'](
+                parent=self,
+                **self.cfg['logger_kwargs']
+            )
 
             self.plugin_t = self.cfg['plugins']
 
@@ -79,9 +78,18 @@ class Parent:
             self.FATAL = False
             self.errmsg = []
         except Exception as e:
-            e = Trace()
-            self.FATAL = True
-            self.errmsg = ["Parent init : {}".format(e)]
+            if self.logger is None:
+                raise e
+            else:
+                e = Trace()
+                self.FATAL = True
+                msg = 'Parent init : {}'.format(e)
+                self.errmsg = [msg]
+                self.logger.log(
+                    st=msg,
+                    _type='_type',
+                    plugin_name='Parent',
+                )
 
     def collect_argv(self):
         rules = dict(self._my_argvs)
@@ -269,13 +277,6 @@ class Parent:
             except KeyboardInterrupt:
                 self.stop(lite=False)
 
-    def save_log(self, message, raw_msg, time, level, user_prefix):
-        """
-            save log message to file
-        """
-        with open(self.cfg['log_file'], 'ab') as f:
-            f.write(''.join([message, '\n']).encode('utf-8'))
-
 # ========================================================================
 #                                USER API
 # ========================================================================
@@ -427,6 +428,10 @@ class Parent:
         """
         return dict(self._argv_p)
 
+    @property
+    def argv(self):
+        return self._argv_p
+
     def expect_argv(self, key, critical=False, description=""):
         """
             add expected key to storage
@@ -440,69 +445,14 @@ class Parent:
         }
         return self
 
-    def log(self, st, _type='info', force=False, plugin_name=None):
-        """
-            log function
-            st - message to save
-             _type    |   level
-            'debug'   |   Debug
-            'info'    |   Info - default
-            'warning' |   Warning
-            'error'   |   Error
-            'critical'|   Critical
-        """
-        _type = _type if _type in self.levels else 'error'
-        prefix = self.levels[_type]
-        _time = time.localtime()
-        msg = '{_time} -:- {prefix} : {raw_msg}'.format(
-            _time=time.strftime(SHOW_TIME_FORMAT, _time),
-            prefix=prefix,
-            raw_msg=st,
+    def log(self, st, _type='info', force=False, plugin_name='parent'):
+        self.logger.log(
+            st=st,
+            _type=_type,
+            force=force,
+            plugin_name=plugin_name,
         )
-        if _type == 'debug' and not ('--debug' in self._argv_p or force):
-            return self
-        if '--stdout' in self._argv_p:
-            print(msg)
-        if self._log_store:
-            self._log_storage.append(msg)
-        if '--no-log' not in self._argv_p:
-            self.save_log(message=msg, raw_msg=st, time=_time, level=_type, user_prefix=prefix)
         return self
-
-    def add_log_level(self, key, user_prefix):
-        """
-            add new level of logging
-        """
-        self.levels[key] = user_prefix
-
-    @property
-    def log_store(self):
-        """
-            return log_store flag as bool
-        """
-        return self._log_store
-
-    def log_store_set(self, value):
-        """
-            set log_store flag as bool
-        """
-        if not isinstance(value, bool):
-            raise ValueError(
-                'log_store must be bool; not "{}"'.format(
-                    type(
-                        value
-                    )
-                )
-            )
-        self._log_store = value
-
-    def log_storage(self):
-        """
-            return stored list of str and clean buffer
-        """
-        res = list(self._log_storage)
-        self._log_storage.clear()
-        return res
 
     def start(self, wait=True):
         """
