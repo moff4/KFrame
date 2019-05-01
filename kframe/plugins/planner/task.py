@@ -329,7 +329,7 @@ class Task:
         cfg.update(kwargs)
         if 'shedule' in cfg:
             cfg['shedule'] = self._convert_shedule(cfg['shedule'])
-        self.cfg.update(kwargs)
+        self.cfg.update(cfg)
 
     def ready_for_run(self, t, tm):
         """
