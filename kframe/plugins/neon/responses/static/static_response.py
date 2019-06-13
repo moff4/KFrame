@@ -42,14 +42,25 @@ class StaticResponse(Response):
                 content_mod = HTML
             else:
                 type_2 = st
-        elif st in {'jpg', 'jpeg', 'png', 'gif', 'tiff'}:
+        elif st in {'jpg', 'jpeg', 'png', 'gif', 'tiff', 'svg'}:
             type_1 = 'image'
-            type_2 = st
+            type_2 = st if st != 'svg' else 'svg+xml'
             content_mod = BIN
         elif st in {'mkv', 'avi', 'mp4'}:
             content_mod = BIN
             type_1 = 'video'
             type_2 = st if st in {'mp4', 'avi'} else 'webm'
+        elif st in {'ttf', 'otf', 'woff', 'woff2', 'eot', 'sfnt'}:
+            content_mod = BIN
+            type_1 = 'application'
+            type_2 = {
+                'ttf': 'x-font-ttf',
+                'otf': 'x-font-opentype',
+                'woff': 'font-woff',
+                'woff2': 'font-woff2',
+                'eot': 'vnd.ms-fontobject',
+                'sfnt': 'font-sfnt',
+            }[st]
         else:
             content_mod = TEXT
             type_1 = 'text'
