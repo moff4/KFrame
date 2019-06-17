@@ -46,6 +46,10 @@ class StaticResponse(Response):
             type_1 = 'image'
             type_2 = st if st != 'svg' else 'svg+xml'
             content_mod = BIN
+        elif st in {'mp3', 'wav', 'odd'}:
+            content_mod = BIN
+            type_1 = 'audio'
+            type_2 = st
         elif st in {'mkv', 'avi', 'mp4'}:
             content_mod = BIN
             type_1 = 'video'
