@@ -16,8 +16,13 @@ from os import urandom
 
 from pygost.gost34112012512 import GOST34112012512      # hash 512bit
 from pygost.gost28147 import cfb_decrypt, cfb_encrypt   # simentric
-from pygost.gost3410 import CURVE_PARAMS                # crypto-param
-from pygost.gost3410 import GOST3410Curve               # crypto-param
+try:
+    from pygost.gost3410 import CURVE_PARAMS                # crypto-param
+    from pygost.gost3410 import GOST3410Curve               # crypto-param
+    CURVA = GOST3410Curve(*CURVE_PARAMS["GostR3410_2012_TC26_ParamSetA"])
+except ImportError:
+    from pygost.gost3410 import CURVES
+    CURVA = CURVES["id-tc26-gost-3410-12-512-paramSetA"]
 from pygost.gost3410 import prv_unmarshal               # private key unmarshal (There are no marsha)
 from pygost.gost3410 import public_key                  # public key
 from pygost.gost3410 import pub_marshal                 # public key marshal
@@ -35,7 +40,6 @@ from pygost.gost3410_vko import kek_34102012256         # key agreement (like Di
       - key agreement algorithm (like Diffi-Hellman)
 """
 
-CURVA = GOST3410Curve(*CURVE_PARAMS["GostR3410_2012_TC26_ParamSetA"])
 
 # =============================================================
 #            import and export keys
