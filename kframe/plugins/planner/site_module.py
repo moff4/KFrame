@@ -91,7 +91,6 @@ class PlannerCGI(Plugin):
         status, errmsg = self.P.planner.run_task(key=key, set_after=set_after)
         self.P.logger.del_hook(key=hook_key)
 
-        self.P.log_store_set(False)
         req.resp.data = json.dumps({
             'result': status,
             'errmsg': errmsg,
